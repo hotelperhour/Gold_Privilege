@@ -285,3 +285,9 @@ LOGGING = {
 # Create logs directory
 LOGS_DIR = os.path.join(BASE_DIR, 'logs')
 os.makedirs(LOGS_DIR, exist_ok=True)
+
+
+try:
+    from .settings_production import *
+except ImportError:
+    pass
