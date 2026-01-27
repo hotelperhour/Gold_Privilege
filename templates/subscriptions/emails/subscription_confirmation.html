@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to Gold Privilege!</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .header { background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); color: #d4af37; padding: 40px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 32px; }
+        .content { padding: 40px 30px; color: #333; }
+        .button { display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%); color: #000; text-decoration: none; padding: 18px 45px; border-radius: 10px; font-weight: bold; font-size: 18px; margin: 25px 0; }
+        .plan-info { background: #f8f9fa; padding: 25px; border-radius: 10px; margin: 25px 0; border-left: 5px solid #d4af37; }
+        .highlight { color: #d4af37; font-weight: bold; }
+        .footer { background: #1a1a1a; color: #fff; padding: 30px; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Gold Privilege</h1>
+            <p>Congratulations! Your membership is now active</p>
+        </div>
+        <div class="content">
+            <h2>Hello {{ user.get_full_name|default:user.email }},</h2>
+            <p>Welcome to the exclusive world of Gold Privilege! Your subscription has been successfully activated.</p>
+
+            {% if is_trial %}
+                <p class="highlight">You're currently on a <strong>FREE TRIAL</strong> — enjoy full access with no charge!</p>
+            {% endif %}
+
+            <div class="plan-info">
+                <h3>Your Plan: {{ plan.name }}</h3>
+                <p>
+                    <strong>Amount Paid:</strong> ₦{{ subscription.price_paid|floatformat:2 }}<br>
+                    <strong>Billing Period:</strong> {{ plan.get_billing_period_display }}<br>
+                    {% if is_trial %}
+                        <strong>Trial Ends:</strong> {{ subscription.trial_end_date|date:"F j, Y" }}<br>
+                    {% endif %}
+                    <strong>Valid Until:</strong> {{ subscription.end_date|date:"F j, Y" }}
+                </p>
+            </div>
+
+            <p>You can now enjoy unlimited access to premium pools, spas, gyms, restaurants, and more across Nigeria.</p>
+
+            <div style="text-align: center;">
+                <a href="{{ protocol }}://{{ domain }}{% url 'subscriptions:my_subscription' %}" class="button">
+                    View My Membership Dashboard
+                </a>
+            </div>
+
+            <p>Start exploring venues and making bookings today!</p>
+            <p>Thank you for choosing Gold Privilege — the smarter way to live luxuriously.</p>
+        </div>
+        <div class="footer">
+            <p><strong>Gold Privilege Team</strong></p>
+            <p>Luxury Access • Affordable Price • Nigerian Style</p>
+            <p>© 2025 Gold Privilege. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,543 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block title %}{{ plan.name }} Plan - Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    .plan-header {
+        background: linear-gradient(135deg, {{ plan.highlight_color|default:'#FFD700' }} 0%, {{ plan.highlight_color|default:'#DAA520' }}CC 100%);
+        color: #000;
+        padding: 50px 0;
+        text-align: center;
+        border-radius: 0 0 50px 50px;
+        margin-bottom: 30px;
+    }
+    
+    .plan-badge {
+        display: inline-block;
+        background: rgba(0, 0, 0, 0.2);
+        color: #000;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .plan-price {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin: 10px 0;
+    }
+    
+    .plan-period {
+        font-size: 1.2rem;
+        color: rgba(0, 0, 0, 0.7);
+        margin-bottom: 20px;
+    }
+    
+    .feature-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 20px;
+        transition: all 0.3s;
+        height: 100%;
+    }
+    
+    .feature-card:hover {
+        border-color: #FFD700;
+        box-shadow: 0 5px 15px rgba(255, 215, 0, 0.1);
+        transform: translateY(-5px);
+    }
+    
+    .feature-icon {
+        font-size: 40px;
+        color: #FFD700;
+        margin-bottom: 15px;
+    }
+    
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .feature-list li {
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .feature-list li:last-child {
+        border-bottom: none;
+    }
+    
+    .feature-list i {
+        color: #28a745;
+        margin-right: 10px;
+    }
+    
+    .highlighted-feature {
+        background: #fffef0;
+        border: 2px solid #FFD700;
+    }
+    
+    .promo-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 30px 0;
+    }
+    
+    .promo-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    
+    .btn-subscribe {
+        background: linear-gradient(135deg, #FFD700 0%, #DAA520 100%);
+        border: none;
+        color: #000;
+        font-weight: 700;
+        font-size: 1.2rem;
+        padding: 15px 30px;
+        border-radius: 10px;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .btn-subscribe:hover {
+        background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+        color: #000;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(218, 165, 32, 0.3);
+    }
+    
+    .btn-subscribe:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .comparison-table th,
+    .comparison-table td {
+        padding: 15px;
+        text-align: center;
+        border: 1px solid #e0e0e0;
+    }
+    
+    .comparison-table th {
+        background: #f8f9fa;
+        font-weight: 600;
+    }
+    
+    .comparison-table .feature-name {
+        text-align: left;
+        background: #f8f9fa;
+    }
+    
+    .trial-badge {
+        background: #17a2b8;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+    
+    .popular-badge {
+        background: #dc3545;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 0 0 10px 10px;
+        font-size: 14px;
+        position: absolute;
+        top: 0;
+        right: 20px;
+    }
+    
+    .plan-card {
+        position: relative;
+        border: 2px solid {{ plan.highlight_color|default:'#FFD700' }};
+        border-radius: 15px;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="plan-header">
+    <div class="container">
+        <div class="plan-badge">{{ plan.get_billing_period_display }} Billing</div>
+        <h1 class="display-4 fw-bold">{{ plan.name }} Plan</h1>
+        <p class="lead mb-4">{{ plan.tagline|default:"Premium access to exclusive venues" }}</p>
+        
+        <div class="plan-price">₦{{ plan.price|intcomma }}</div>
+        <div class="plan-period">per {{ plan.get_billing_period_display|lower }}</div>
+        
+        {% if plan.trial_period_days > 0 %}
+        <div class="mt-3">
+            <span class="trial-badge">
+                <i class="fas fa-gift me-1"></i>
+                {{ plan.trial_period_days }} days free trial
+            </span>
+        </div>
+        {% endif %}
+        
+        {% if plan.is_featured %}
+        <div class="popular-badge">Most Popular</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row">
+        <!-- Plan Overview -->
+        <div class="col-lg-8 mb-5">
+            <div class="plan-card p-4 mb-5">
+                <h2 class="mb-4">Plan Overview</h2>
+                <p class="lead">{{ plan.description }}</p>
+                
+                {% if features %}
+                <h3 class="mb-4 mt-5">What's Included</h3>
+                <div class="row">
+                    {% for assignment in features %}
+                    <div class="col-md-6 mb-4">
+                        <div class="feature-card {% if assignment.is_highlighted %}highlighted-feature{% endif %}">
+                            {% if assignment.feature.icon %}
+                            <div class="feature-icon">
+                                <i class="{{ assignment.feature.icon }}"></i>
+                            </div>
+                            {% endif %}
+                            <h5>{{ assignment.feature.name }}</h5>
+                            <p class="text-muted mb-3">
+                                {% if assignment.custom_value %}
+                                <strong>{{ assignment.custom_value }}</strong>
+                                {% endif %}
+                                {{ assignment.feature.description }}
+                            </p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Detailed Features -->
+                <div class="mt-5">
+                    <h3 class="mb-4">Detailed Features</h3>
+                    <div class="feature-list">
+                        <li>
+                            <i class="fas fa-check-circle text-success"></i>
+                            <strong>Max Bookings per Month:</strong>
+                            {% if plan.max_bookings_per_month %}
+                                {{ plan.max_bookings_per_month }} bookings
+                            {% else %}
+                                Unlimited bookings
+                            {% endif %}
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle text-success"></i>
+                            <strong>Max Guests per Booking:</strong>
+                            {{ plan.max_guests_per_booking }} guests
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle text-success"></i>
+                            <strong>Billing Period:</strong>
+                            {{ plan.get_billing_period_display }}
+                        </li>
+                        {% if plan.trial_period_days > 0 %}
+                        <li>
+                            <i class="fas fa-check-circle text-success"></i>
+                            <strong>Free Trial:</strong>
+                            {{ plan.trial_period_days }} days
+                        </li>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar - Subscription -->
+        <div class="col-lg-4">
+            <div class="sticky-top" style="top: 20px;">
+                <div class="card shadow-lg border-0">
+                    <div class="card-body p-4">
+                        <h4 class="card-title mb-4">Subscribe Now</h4>
+                        
+                        {% if has_active_subscription %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            You already have an active subscription. You can subscribe to a new plan after your current one ends.
+                        </div>
+                        <a href="{% url 'subscriptions:my_subscription' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-eye me-2"></i>
+                            View My Subscription
+                        </a>
+                        {% else %}
+                        <!-- Promo Code Section -->
+                        <div class="promo-section">
+                            <h6 class="mb-3">Have a promo code?</h6>
+                            <form id="promo-form" method="post" action="{% url 'subscriptions:validate_promo' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="plan_slug" value="{{ plan.slug }}">
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           placeholder="Enter promo code" 
+                                           id="promo-code"
+                                           name="code">
+                                    <button class="btn btn-outline-primary" type="button" id="apply-promo">
+                                        Apply
+                                    </button>
+                                </div>
+                                <div id="promo-message" class="mt-2"></div>
+                            </form>
+                        </div>
+                        
+                        <!-- Price Summary -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Plan Price:</span>
+                                <span>₦{{ plan.price|intcomma }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2" id="discount-row" style="display: none;">
+                                <span>Discount:</span>
+                                <span class="text-success" id="discount-amount">-₦0</span>
+                            </div>
+                            <hr>
+                            <div class="d-flex justify-content-between fw-bold fs-5">
+                                <span>Total:</span>
+                                <span id="final-price">₦{{ plan.price|intcomma }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Subscription Form -->
+                        <form method="post" action="{% url 'subscriptions:subscribe' plan.slug %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="promo_code" id="promo-code-input">
+                            
+                            <button type="submit" class="btn-subscribe w-100 mb-3">
+                                <i class="fas fa-crown"></i>
+                                Subscribe Now
+                            </button>
+                            
+                            {% if plan.trial_period_days > 0 %}
+                            <p class="text-center small text-muted mb-3">
+                                Start with {{ plan.trial_period_days }} days free trial
+                            </p>
+                            {% endif %}
+                        </form>
+                        
+                        <div class="text-center small text-muted mt-3">
+                            <p class="mb-1">
+                                <i class="fas fa-lock me-1"></i>
+                                Secure payment powered by Paystack
+                            </p>
+                            <p class="mb-0">
+                                <i class="fas fa-sync-alt me-1"></i>
+                                Cancel anytime
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Additional Info -->
+                <div class="card mt-4 border-0">
+                    <div class="card-body p-4">
+                        <h6 class="mb-3">What you get</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Access to all partner venues
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Priority booking confirmations
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                Member-only discounts
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                24/7 customer support
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success me-2"></i>
+                                No long-term contracts
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- FAQ Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <h2 class="mb-4">Frequently Asked Questions</h2>
+            <div class="accordion" id="planFAQ">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                            How do I cancel my subscription?
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#planFAQ">
+                        <div class="accordion-body">
+                            You can cancel your subscription at any time from your dashboard. Your access will continue until the end of your billing period.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                            Can I upgrade or downgrade my plan?
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#planFAQ">
+                        <div class="accordion-body">
+                            Yes, you can upgrade or downgrade your plan at any time. The changes will take effect at the start of your next billing cycle.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                            What payment methods do you accept?
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#planFAQ">
+                        <div class="accordion-body">
+                            We accept all major credit/debit cards (Visa, Mastercard, Verve) through our secure payment partner, Paystack.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const promoForm = document.getElementById('promo-form');
+    const promoCodeInput = document.getElementById('promo-code');
+    const applyPromoBtn = document.getElementById('apply-promo');
+    const promoMessage = document.getElementById('promo-message');
+    const discountRow = document.getElementById('discount-row');
+    const discountAmount = document.getElementById('discount-amount');
+    const finalPrice = document.getElementById('final-price');
+    const promoCodeHidden = document.getElementById('promo-code-input');
+    
+    // Apply promo code
+    applyPromoBtn.addEventListener('click', function() {
+        const code = promoCodeInput.value.trim();
+        const planSlug = '{{ plan.slug }}';
+        
+        if (!code) {
+            showPromoMessage('Please enter a promo code', 'danger');
+            return;
+        }
+        
+        // Show loading
+        applyPromoBtn.disabled = true;
+        applyPromoBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Validating...';
+        
+        // Send AJAX request
+        fetch('{% url "subscriptions:validate_promo" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `code=${encodeURIComponent(code)}&plan_slug=${encodeURIComponent(planSlug)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.valid) {
+                showPromoMessage(data.message, 'success');
+                
+                // Show discount
+                discountRow.style.display = 'flex';
+                discountAmount.textContent = `-₦${parseFloat(data.discount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                
+                // Update final price
+                const finalPriceValue = parseFloat(data.final_price);
+                finalPrice.textContent = `₦${finalPriceValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                
+                // Store promo code in hidden field
+                promoCodeHidden.value = code;
+            } else {
+                showPromoMessage(data.message, 'danger');
+                resetPromoCode();
+            }
+        })
+        .catch(error => {
+            showPromoMessage('An error occurred. Please try again.', 'danger');
+            resetPromoCode();
+        })
+        .finally(() => {
+            applyPromoBtn.disabled = false;
+            applyPromoBtn.innerHTML = 'Apply';
+        });
+    });
+    
+    // Enter key in promo code field
+    promoCodeInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            applyPromoBtn.click();
+        }
+    });
+    
+    function showPromoMessage(message, type) {
+        promoMessage.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+    }
+    
+    function resetPromoCode() {
+        discountRow.style.display = 'none';
+        discountAmount.textContent = '-₦0';
+        finalPrice.textContent = `₦{{ plan.price|intcomma }}`;
+        promoCodeHidden.value = '';
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}

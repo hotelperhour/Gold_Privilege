@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Booking Notification</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+        .header {
+            background: linear-gradient(135deg, #000000 0%, #d4af37 100%);
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .logo {
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .content {
+            padding: 35px 30px;
+        }
+        .notification-badge {
+            background: #d4af37;
+            color: #1a1a1a;
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #1a1a1a;
+            font-size: 22px;
+            margin: 0 0 25px 0;
+        }
+        .booking-info {
+            background: #f8f9fa;
+            border: 2px solid #d4af37;
+            padding: 25px;
+            border-radius: 8px;
+            margin: 25px 0;
+        }
+        .booking-ref {
+            background: #1a1a1a;
+            color: #d4af37;
+            padding: 12px;
+            text-align: center;
+            border-radius: 6px;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+        }
+        .info-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            width: 120px;
+        }
+        .info-value {
+            color: #1a1a1a;
+            flex-grow: 1;
+        }
+        .alert-box {
+            background: #d1ecf1;
+            border-left: 4px solid #0dcaf0;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .button {
+            display: inline-block;
+            background: #d4af37;
+            color: #1a1a1a;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            margin: 15px 0;
+        }
+        .footer {
+            background: #1a1a1a;
+            color: #ffffff;
+            padding: 25px;
+            text-align: center;
+            font-size: 13px;
+        }
+        .footer a {
+            color: #d4af37;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1 class="logo">Gold Privilege Partner</h1>
+        </div>
+        
+        <div class="content">
+            <span class="notification-badge">🔔 New Booking</span>
+            
+            <h1>You have a new Gold Privilege booking!</h1>
+            
+            <p style="color: #6c757d; margin-bottom: 25px;">
+                A Gold Privilege member has booked a visit to <strong>{{ venue.name }}</strong>.
+            </p>
+            
+            <div class="booking-info">
+                <div class="booking-ref">{{ booking.booking_reference }}</div>
+                
+                <div class="info-row">
+                    <span class="info-label">📅 Visit Date:</span>
+                    <span class="info-value"><strong>{{ booking.visit_date|date:"l, F j, Y" }}</strong></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">👤 Member:</span>
+                    <span class="info-value">{{ member_name }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">👥 Guests:</span>
+                    <span class="info-value">{{ booking.guests_count }} person{{ booking.guests_count|pluralize }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">🕐 Booked:</span>
+                    <span class="info-value">{{ booking.created_at|date:"M j, Y g:i A" }}</span>
+                </div>
+                {% if booking.special_requests %}
+                <div class="info-row">
+                    <span class="info-label">📝 Requests:</span>
+                    <span class="info-value">{{ booking.special_requests }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="alert-box">
+                <p style="margin: 0; color: #0c5460; font-size: 14px;">
+                    <strong>Check-In Instructions:</strong><br>
+                    When the member arrives, verify their booking reference: <strong>{{ booking.booking_reference }}</strong>
+                </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="#" class="button">View in Dashboard</a>
+            </div>
+            
+            <p style="color: #6c757d; font-size: 14px; margin-top: 25px;">
+                Need help? Contact Gold Privilege support at 
+                <a href="mailto:partners@goldprivilege.ng" style="color: #d4af37;">partners@goldprivilege.ng</a>
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p style="margin: 0 0 10px 0;"><strong>Gold Privilege Partner Portal</strong></p>
+            <p style="margin: 5px 0; color: #999;">
+                <a href="#">Dashboard</a> | 
+                <a href="#">Help Center</a> | 
+                <a href="#">Contact Support</a>
+            </p>
+            <p style="margin: 15px 0 0 0; font-size: 12px; color: #666;">
+                © 2025 Gold Privilege. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

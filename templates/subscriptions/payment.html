@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Complete Payment - {{ plan.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .payment-container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+    }
+    
+    .payment-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 30px;
+        margin-bottom: 20px;
+    }
+    
+    .payment-header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    
+    .payment-header h1 {
+        color: #333;
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+    
+    .payment-reference {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 6px;
+        margin: 15px 0;
+        font-family: monospace;
+        text-align: center;
+    }
+    
+    .payment-reference strong {
+        color: #d4af37;
+        font-size: 18px;
+    }
+    
+    .payment-details {
+        margin: 25px 0;
+    }
+    
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .detail-row:last-child {
+        border-bottom: none;
+        font-weight: bold;
+        font-size: 20px;
+        color: #d4af37;
+        padding-top: 20px;
+        margin-top: 10px;
+        border-top: 2px solid #d4af37;
+    }
+    
+    .pay-button {
+        width: 100%;
+        padding: 16px;
+        background: linear-gradient(135deg, #d4af37 0%, #f0d97d 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 20px;
+    }
+    
+    .pay-button:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
+    }
+    
+    .pay-button:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+    
+    .security-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+        padding: 15px;
+        background: #f0f9ff;
+        border-radius: 8px;
+        font-size: 14px;
+        color: #0066cc;
+    }
+    
+    .countdown-timer {
+        text-align: center;
+        margin: 20px 0;
+        padding: 15px;
+        background: #fff3cd;
+        border-radius: 8px;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .countdown-timer strong {
+        font-size: 24px;
+        color: #856404;
+    }
+    
+    .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .loading-overlay.active {
+        display: flex;
+    }
+    
+    .loading-content {
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        text-align: center;
+    }
+    
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #d4af37;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .cancel-link {
+        display: block;
+        text-align: center;
+        margin-top: 20px;
+        color: #666;
+        text-decoration: none;
+    }
+    
+    .cancel-link:hover {
+        color: #d4af37;
+    }
+    
+    .plan-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #d4af37 0%, #f0d97d 100%);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    @media (max-width: 768px) {
+        .payment-container {
+            padding: 10px;
+            margin: 20px auto;
+        }
+        
+        .payment-card {
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-container">
+    <div class="payment-card">
+        <div class="payment-header">
+            <h1>💳 Complete Your Payment</h1>
+            <span class="plan-badge">{{ plan.name }}</span>
+        </div>
+
+        <!-- Payment Reference -->
+        <div class="payment-reference">
+            <small>Payment Reference</small><br>
+            <strong>{{ payment.payment_id }}</strong>
+        </div>
+
+        <!-- Countdown Timer -->
+        <div class="countdown-timer" id="countdown-container">
+            <p>⏰ Complete payment within: <strong id="countdown-timer">15:00</strong></p>
+            <small>This payment link will expire for security</small>
+        </div>
+
+        <!-- Payment Details -->
+        <div class="payment-details">
+            <div class="detail-row">
+                <span>Plan:</span>
+                <span><strong>{{ plan.name }}</strong></span>
+            </div>
+            
+            <div class="detail-row">
+                <span>Billing Period:</span>
+                <span>{{ plan.get_billing_period_display }}</span>
+            </div>
+            
+            {% if subscription.is_trial %}
+            <div class="detail-row">
+                <span>Trial Period:</span>
+                <span>{{ plan.trial_period_days }} days FREE</span>
+            </div>
+            {% endif %}
+            
+            {% if subscription.discount_amount > 0 %}
+            <div class="detail-row">
+                <span>Original Price:</span>
+                <span>₦{{ plan.price|floatformat:2 }}</span>
+            </div>
+            <div class="detail-row" style="color: #28a745;">
+                <span>Discount ({{ subscription.promo_code_used.code }}):</span>
+                <span>-₦{{ subscription.discount_amount|floatformat:2 }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="detail-row">
+                <span>Total Amount:</span>
+                <span>₦{{ payment.amount|floatformat:2 }}</span>
+            </div>
+        </div>
+
+        <!-- Pay Button -->
+        <button type="button" class="pay-button" id="pay-button" onclick="payWithPaystack()">
+            🔒 Pay ₦{{ payment.amount|floatformat:2 }} Securely
+        </button>
+
+        <!-- Security Badge -->
+        <div class="security-badge">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            <span>Secured by Paystack - Your payment information is encrypted</span>
+        </div>
+
+        <!-- Cancel Link -->
+        <a href="{% url 'subscriptions:plans_list' %}" class="cancel-link">Cancel and go back</a>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loading-overlay">
+    <div class="loading-content">
+        <div class="spinner"></div>
+        <h3>Processing Payment...</h3>
+        <p>Please wait while we securely process your payment</p>
+        <p><small>Do not close this window</small></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.paystack.co/v1/inline.js"></script>
+
+
+<script src="https://js.paystack.co/v1/inline.js"></script>  <!-- Keep v1 for now to avoid bigger changes -->
+
+<script>
+    const PAYSTACK_PUBLIC_KEY = "{{ paystack_public_key }}";
+    const PAYMENT_REFERENCE = "{{ payment.gateway_reference }}";  // This is correct - you set it as gateway_reference
+    const PAYMENT_AMOUNT = {{ payment.amount|floatformat:2 }} * 100;
+    const USER_EMAIL = "{{ request.user.email }}";
+
+    const payButton = document.getElementById("pay-button");
+    const loadingOverlay = document.getElementById("loading-overlay");
+    let paymentInProgress = false;
+
+    function payWithPaystack() {
+        if (paymentInProgress) return;
+
+        paymentInProgress = true;
+        payButton.disabled = true;
+        loadingOverlay.classList.add("active");
+
+        const handler = PaystackPop.setup({
+            key: PAYSTACK_PUBLIC_KEY,
+            email: USER_EMAIL,
+            amount: PAYMENT_AMOUNT,
+            currency: "NGN",
+            ref: PAYMENT_REFERENCE,
+
+            // 🔥 CRITICAL: Success callback - redirect to your verification endpoint
+            callback: function(response) {
+                // response.reference will match PAYMENT_REFERENCE
+                window.location.href = "{% url 'subscriptions:payment_callback' %}?reference=" + response.reference;
+            },
+
+            // 🔥 CRITICAL: Close / error handler - clean up UI
+            onClose: function() {
+                paymentInProgress = false;
+                payButton.disabled = false;
+                loadingOverlay.classList.remove("active");
+                alert("Payment cancelled or closed. You have not been charged.");
+            }
+        });
+
+        // Add a timeout fallback in case the iframe never loads
+        setTimeout(function() {
+            if (loadingOverlay.classList.contains("active")) {
+                loadingOverlay.classList.remove("active");
+                payButton.disabled = false;
+                paymentInProgress = false;
+                alert("Payment popup failed to load. Try again or check your internet/adblocker.");
+            }
+        }, 15000);  // 15 seconds
+
+        handler.openIframe();
+    }
+
+    // ================================
+    // COUNTDOWN TIMER (15 MINUTES)
+    // ================================
+    let timeRemaining = 15 * 60; // seconds
+
+    function updateCountdown() {
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+
+        countdownElement.textContent =
+            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        if (timeRemaining <= 0) {
+            clearInterval(countdownInterval);
+            payButton.disabled = true;
+            payButton.textContent = "⏰ Payment Link Expired";
+            alert("Payment session expired. You will be redirected.");
+            window.location.href = "{% url 'subscriptions:plans_list' %}";
+        }
+
+        timeRemaining--;
+    }
+
+    const countdownInterval = setInterval(updateCountdown, 1000);
+    updateCountdown();
+
+    // Rest of your countdown code remains the same...
+</script>
+{% endblock %}

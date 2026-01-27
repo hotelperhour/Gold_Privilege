@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+
+{% block title %}Subscription Plans - Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pricing-header {
+        background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+        color: white;
+        padding: 80px 0;
+        text-align: center;
+        margin-bottom: 50px;
+    }
+    
+    .pricing-card {
+        border: 2px solid #e0e0e0;
+        border-radius: 20px;
+        padding: 40px 30px;
+        text-align: center;
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        background: white;
+    }
+    
+    .pricing-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    
+    .pricing-card.featured {
+        border-color: var(--primary-color);
+        border-width: 3px;
+        box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
+    }
+    
+    .featured-badge {
+        position: absolute;
+        top: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        color: #000;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+    
+    .plan-name {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 20px 0;
+        color: var(--secondary-color);
+    }
+    
+    .plan-price {
+        font-size: 3rem;
+        font-weight: bold;
+        color: var(--primary-color);
+        margin: 20px 0;
+    }
+    
+    .plan-price small {
+        font-size: 1.2rem;
+        color: #666;
+        font-weight: normal;
+    }
+    
+    .plan-description {
+        color: #666;
+        margin: 20px 0;
+        min-height: 60px;
+    }
+    
+    .features-list {
+        list-style: none;
+        padding: 0;
+        margin: 30px 0;
+        text-align: left;
+    }
+    
+    .features-list li {
+        padding: 12px 0;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+    }
+    
+    .features-list li i {
+        color: var(--primary-color);
+        margin-right: 10px;
+        font-size: 1.2rem;
+    }
+    
+    .trial-badge {
+        background: #007bff;
+        color: white;
+        padding: 5px 15px;
+        border-radius: 15px;
+        font-size: 0.9rem;
+        display: inline-block;
+        margin: 10px 0;
+    }
+    
+    .current-plan-badge {
+        background: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 10px;
+        font-weight: bold;
+        display: inline-block;
+        margin: 20px 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pricing-header">
+    <div class="container">
+        <h1 class="display-3 mb-4">
+            <i class="fas fa-crown" style="color: var(--primary-color);"></i>
+            Choose Your Plan
+        </h1>
+        <p class="lead" style="font-size: 1.5rem;">
+            Access premium venues, exclusive deals, and lifestyle experiences
+        </p>
+        {% if has_active_subscription %}
+            <div class="current-plan-badge">
+                <i class="fas fa-check-circle"></i> You have an active subscription
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container mb-5">
+    {% if not plans %}
+        <div class="text-center py-5">
+            <i class="fas fa-inbox fa-5x text-muted mb-4"></i>
+            <h3>No Plans Available</h3>
+            <p class="text-muted">Check back soon for our subscription plans!</p>
+        </div>
+    {% else %}
+        <div class="row g-4">
+            {% for plan in plans %}
+                <div class="col-md-4 mb-4">
+                    <div class="pricing-card {% if plan.is_featured %}featured{% endif %}">
+                        {% if plan.is_featured %}
+                            <div class="featured-badge">
+                                <i class="fas fa-star"></i> {{ plan.tagline|default:"MOST POPULAR" }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="plan-name">{{ plan.name }}</div>
+                        
+                        <div class="plan-price">
+                            ₦{{ plan.price|floatformat:0|intcomma }}
+                            <small>/{{ plan.get_billing_period_display }}</small>
+                        </div>
+                        
+                        {% if plan.trial_period_days > 0 %}
+                            <div class="trial-badge">
+                                <i class="fas fa-gift"></i> {{ plan.trial_period_days }} Days Free Trial
+                            </div>
+                        {% endif %}
+                        
+                        <p class="plan-description">{{ plan.description }}</p>
+                        
+                        <ul class="features-list">
+                            {% for assignment in plan.feature_assignments.all %}
+                                <li {% if assignment.is_highlighted %}style="font-weight: bold; color: var(--primary-color);"{% endif %}>
+                                    <i class="fas {{ assignment.feature.icon|default:'fa-check' }}"></i>
+                                    <span>
+                                        {{ assignment.feature.name }}
+                                        {% if assignment.custom_value %}
+                                            <br><small class="text-muted">{{ assignment.custom_value }}</small>
+                                        {% endif %}
+                                    </span>
+                                </li>
+                            {% empty %}
+                                <li>
+                                    <i class="fas fa-check"></i>
+                                    <span>Access to all venues</span>
+                                </li>
+                                <li>
+                                    <i class="fas fa-check"></i>
+                                    <span>Exclusive member benefits</span>
+                                </li>
+                            {% endfor %}
+                            
+                            {% if plan.max_bookings_per_month %}
+                                <li>
+                                    <i class="fas fa-calendar-check"></i>
+                                    <span>{{ plan.max_bookings_per_month }} bookings per month</span>
+                                </li>
+                            {% else %}
+                                <li>
+                                    <i class="fas fa-infinity"></i>
+                                    <span>Unlimited bookings</span>
+                                </li>
+                            {% endif %}
+                            
+                            <li>
+                                <i class="fas fa-users"></i>
+                                <span>Up to {{ plan.max_guests_per_booking }} guests per booking</span>
+                            </li>
+                        </ul>
+                        
+                        {% if current_subscription and current_subscription.plan == plan %}
+                            <button class="btn btn-secondary btn-lg w-100" disabled>
+                                <i class="fas fa-check"></i> Current Plan
+                            </button>
+                        {% elif has_active_subscription %}
+                            <a href="{% url 'subscriptions:plan_detail' plan.slug %}" class="btn btn-outline-secondary btn-lg w-100">
+                                View Details
+                            </a>
+                        {% else %}
+                            <a href="{% url 'subscriptions:subscribe' plan.slug %}" class="btn btn-gold btn-lg w-100">
+                                <i class="fas fa-shopping-cart"></i> Subscribe Now
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <h3 class="mb-4">Why Choose Gold Privilege?</h3>
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <i class="fas fa-shield-alt fa-3x mb-3" style="color: var(--primary-color);"></i>
+                    <h5>Secure Payments</h5>
+                    <p class="text-muted">Your payment information is always secure</p>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-sync-alt fa-3x mb-3" style="color: var(--primary-color);"></i>
+                    <h5>Cancel Anytime</h5>
+                    <p class="text-muted">No long-term commitments</p>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-headset fa-3x mb-3" style="color: var(--primary-color);"></i>
+                    <h5>24/7 Support</h5>
+                    <p class="text-muted">We're here to help anytime</p>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-star fa-3x mb-3" style="color: var(--primary-color);"></i>
+                    <h5>Premium Access</h5>
+                    <p class="text-muted">Exclusive venues and experiences</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

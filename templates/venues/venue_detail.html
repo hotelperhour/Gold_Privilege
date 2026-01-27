@@ -1,0 +1,540 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load math_filters %}
+
+{% block title %}{{ venue.name }} - Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    .venue-hero {
+        height: 500px;
+        background-size: cover;
+        background-position: center;
+        position: relative;
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 30px;
+    }
+    
+    .venue-hero-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+        padding: 40px;
+        color: white;
+    }
+    
+    .rating-summary {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+    }
+    
+    .rating-bar {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .rating-bar-fill {
+        height: 8px;
+        background: #ffc107;
+        border-radius: 4px;
+        transition: width 0.3s;
+    }
+    
+    .gallery-thumbnail {
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    
+    .gallery-thumbnail:hover {
+        transform: scale(1.05);
+    }
+    
+    .amenity-icon {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f8f9fa;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+        font-size: 1.5rem;
+        color: #d4af37;
+    }
+    
+    .review-card {
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+    }
+    
+    .access-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .access-granted {
+        background: #d4f4dd;
+        color: #0f5132;
+    }
+    
+    .access-denied {
+        background: #f8d7da;
+        color: #842029;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'venues:list' %}">Venues</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'venues:list' %}?category={{ venue.category }}">{{ venue.get_category_display }}</a></li>
+            <li class="breadcrumb-item active">{{ venue.name }}</li>
+        </ol>
+    </nav>
+    
+    <!-- Hero Section -->
+    <div class="venue-hero" style="background-image: url('{{ venue.cover_image.url }}');">
+        <div class="venue-hero-overlay">
+            <div class="d-flex justify-content-between align-items-end">
+                <div>
+                    <h1 class="display-4 mb-2">{{ venue.name }}</h1>
+                    {% if venue.tagline %}
+                    <p class="lead mb-3">{{ venue.tagline }}</p>
+                    {% endif %}
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-light text-dark me-2">
+                            {{ venue.get_category_display }}
+                        </span>
+                        <span class="badge bg-warning text-dark me-2">
+                            {{ venue.get_price_display }}
+                        </span>
+                        <span class="text-white">
+                            <i class="fas fa-star text-warning"></i>
+                            {{ venue.average_rating|floatformat:1 }} ({{ venue.total_reviews }} reviews)
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div>
+                    {% if user.is_authenticated and can_access %}
+                    <button class="btn btn-light me-2" 
+                            onclick="toggleFavorite('{{ venue.slug }}')"
+                            id="favoriteBtn">
+                        <i class="{% if is_favorited %}fas{% else %}far{% endif %} fa-heart"></i>
+                        <span id="favoriteText">{% if is_favorited %}Saved{% else %}Save{% endif %}</span>
+                    </button>
+                    {% endif %}
+                    <button class="btn btn-light" onclick="shareVenue()">
+                        <i class="fas fa-share-alt"></i> Share
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Access Status Banner -->
+    {% if not can_access %}
+    <div class="alert alert-warning mb-4">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-lock fa-2x me-3"></i>
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mb-1">{{ access_message }}</h5>
+                <p class="mb-0">
+                    {% if not user.is_authenticated %}
+                    <a href="{% url 'account:register' %}" class="alert-link">Sign up</a> or 
+                    <a href="{% url 'account:login' %}" class="alert-link">log in</a> to access this venue.
+                    {% else %}
+                    <a href="{% url 'subscriptions:plans_list' %}" class="alert-link">View subscription plans</a> to unlock access.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- Add this somewhere in your venue detail page, probably near the top or in a call-to-action section -->
+
+{% if user.is_authenticated and user.is_subscriber %}
+    <div class="card mb-4">
+        <div class="card-body text-center">
+            <h5 class="card-title">Ready to visit?</h5>
+            <a href="{% url 'bookings:create_for_venue' venue.slug %}" 
+               class="btn btn-primary btn-lg">
+                <i class="bi bi-calendar-plus me-2"></i>
+                Book This Venue
+            </a>
+        </div>
+    </div>
+{% elif user.is_authenticated %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Subscribe to book this venue!</strong>
+        <a href="{% url 'subscriptions:plans_list' %}" class="alert-link">View Plans</a>
+    </div>
+{% else %}
+    <div class="alert alert-warning">
+        <i class="bi bi-lock me-2"></i>
+        <strong>Login to book this venue</strong>
+        <a href="{% url 'account:login' %}" class="alert-link">Login</a>
+    </div>
+{% endif %}
+    <div class="alert alert-success mb-4">
+        <i class="fas fa-check-circle me-2"></i>
+        <strong>You have access to this venue!</strong> Enjoy exclusive benefits and amenities.
+    </div>
+    {% endif %}
+    
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- About Section -->
+            <section class="mb-5">
+                <h3 class="mb-3">About</h3>
+                <p class="text-muted" style="white-space: pre-line;">{{ venue.description }}</p>
+            </section>
+            
+            <!-- Amenities Section -->
+            {% if venue.amenities.all %}
+            <section class="mb-5">
+                <h3 class="mb-4">Amenities & Features</h3>
+                <div class="row g-3">
+                    {% for amenity in venue.amenities.all %}
+                    <div class="col-6 col-md-4 col-lg-3 text-center">
+                        <div class="amenity-icon">
+                            {% if amenity.icon_class %}
+                            <i class="{{ amenity.icon_class }}"></i>
+                            {% else %}
+                            <i class="fas fa-check"></i>
+                            {% endif %}
+                        </div>
+                        <p class="mb-0 small">{{ amenity.name }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+            
+            <!-- Gallery Section -->
+            {% if venue.images.all %}
+            <section class="mb-5">
+                <h3 class="mb-3">Gallery</h3>
+                <div class="row g-2">
+                    {% for image in venue.images.all|slice:":6" %}
+                    <div class="col-4">
+                        <img src="{{ image.image.url }}" 
+                             class="gallery-thumbnail w-100" 
+                             alt="{{ image.alt_text|default:venue.name }}"
+                             data-bs-toggle="modal" 
+                             data-bs-target="#galleryModal"
+                             data-image="{{ image.image.url }}">
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if venue.images.count > 6 %}
+                <p class="text-muted mt-2 mb-0">
+                    + {{ venue.images.count|add:"-6" }} more images
+                </p>
+                {% endif %}
+            </section>
+            {% endif %}
+            
+            <!-- Reviews Section -->
+            <section class="mb-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0">Reviews ({{ review_count }})</h3>
+                    {% if user.is_authenticated and can_access and not user_has_reviewed %}
+                    <a href="{% url 'venues:submit_review' venue.slug %}" class="btn btn-primary">
+                        <i class="fas fa-star me-2"></i>Write a Review
+                    </a>
+                    {% endif %}
+                </div>
+                
+                {% if review_count > 0 %}
+                <!-- Rating Summary -->
+                <div class="rating-summary mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-4 text-center">
+                            <h1 class="display-3 mb-0">{{ venue.average_rating|floatformat:1 }}</h1>
+                            <div class="text-warning mb-2">
+                                {% for i in "12345" %}
+                                {% if forloop.counter <= venue.average_rating %}
+                                <i class="fas fa-star"></i>
+                                {% else %}
+                                <i class="far fa-star"></i>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                            <p class="text-muted mb-0">{{ review_count }} review{{ review_count|pluralize }}</p>
+                        </div>
+                        <div class="col-md-8">
+                            {% for rating, count in rating_distribution.items %}
+                            <div class="rating-bar">
+                                <span class="me-2">{{ rating }}★</span>
+                                <div class="flex-grow-1 bg-light rounded" style="height: 8px;">
+                                    <div class="rating-bar-fill" 
+                                         style="width: {% if review_count > 0 %}{{ count|mul:100|div:review_count }}{% else %}0{% endif %}%;">
+                                    </div>
+                                </div>
+                                <span class="ms-2 text-muted small">{{ count }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Review List -->
+                {% for review in venue.reviews.all|slice:":5" %}
+                <div class="review-card">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h6 class="mb-0">{{ review.user.get_full_name }}</h6>
+                            <div class="text-warning small">
+                                {% for i in "12345" %}
+                                {% if forloop.counter <= review.rating %}
+                                <i class="fas fa-star"></i>
+                                {% else %}
+                                <i class="far fa-star"></i>
+                                {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                    </div>
+                    
+                    {% if review.title %}
+                    <h6 class="mb-2">{{ review.title }}</h6>
+                    {% endif %}
+                    
+                    <p class="text-muted mb-2">{{ review.review_text }}</p>
+                    
+                    {% if review.is_verified_visit %}
+                    <span class="badge bg-success small">
+                        <i class="fas fa-check-circle"></i> Verified Visit
+                    </span>
+                    {% endif %}
+                    
+                    <div class="mt-2">
+                        <button class="btn btn-sm btn-outline-secondary" 
+                                onclick="markHelpful({{ review.id }})">
+                            <i class="far fa-thumbs-up"></i> 
+                            Helpful <span id="helpful-{{ review.id }}">({{ review.helpful_count }})</span>
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if review_count > 5 %}
+                <button class="btn btn-outline-primary w-100">
+                    Load More Reviews
+                </button>
+                {% endif %}
+                
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="far fa-comment-dots fa-3x mb-3"></i>
+                    <p>No reviews yet. Be the first to review!</p>
+                    {% if user.is_authenticated and can_access %}
+                    <a href="{% url 'venues:submit_review' venue.slug %}" class="btn btn-primary">
+                        Write a Review
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </section>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Info Card -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Venue Information</h5>
+                    
+                    <!-- Location -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">
+                            <i class="fas fa-map-marker-alt me-2"></i>Location
+                        </h6>
+                        <p class="mb-0">
+                            {{ venue.address }}<br>
+                            {{ venue.city }}{% if venue.suburb %}, {{ venue.suburb }}{% endif %}<br>
+                            {{ venue.state }}
+                        </p>
+                        {% if venue.latitude and venue.longitude %}
+                        <a href="https://www.google.com/maps?q={{ venue.latitude }},{{ venue.longitude }}" 
+                           target="_blank" 
+                           class="btn btn-sm btn-outline-primary mt-2 w-100">
+                            <i class="fas fa-directions me-2"></i>Get Directions
+                        </a>
+                        {% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Contact -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">
+                            <i class="fas fa-phone me-2"></i>Contact
+                        </h6>
+                        <p class="mb-1">
+                            <a href="tel:{{ venue.phone }}">{{ venue.phone }}</a>
+                        </p>
+                        {% if venue.email %}
+                        <p class="mb-1">
+                            <a href="mailto:{{ venue.email }}">{{ venue.email }}</a>
+                        </p>
+                        {% endif %}
+                        {% if venue.website %}
+                        <p class="mb-0">
+                            <a href="{{ venue.website }}" target="_blank">Visit Website</a>
+                        </p>
+                        {% endif %}
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Operating Hours -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">
+                            <i class="fas fa-clock me-2"></i>Hours
+                        </h6>
+                        <p class="mb-0">{{ venue.get_operating_hours_display }}</p>
+                    </div>
+                    
+                    {% if venue.capacity %}
+                    <hr>
+                    <div class="mb-0">
+                        <h6 class="text-muted mb-2">
+                            <i class="fas fa-users me-2"></i>Capacity
+                        </h6>
+                        <p class="mb-0">Up to {{ venue.capacity }} guests</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Similar Venues -->
+            {% if similar_venues %}
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Similar Venues</h5>
+                    {% for similar in similar_venues %}
+                    <div class="d-flex mb-3">
+                        <img src="{{ similar.cover_image.url }}" 
+                             class="rounded me-3" 
+                             style="width: 80px; height: 80px; object-fit: cover;"
+                             alt="{{ similar.name }}">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">
+                                <a href="{% url 'venues:detail' similar.slug %}" 
+                                   class="text-decoration-none text-dark">
+                                    {{ similar.name }}
+                                </a>
+                            </h6>
+                            <p class="text-muted small mb-1">{{ similar.city }}</p>
+                            <div class="text-warning small">
+                                <i class="fas fa-star"></i> {{ similar.average_rating|floatformat:1 }}
+                            </div>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}<hr>{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Gallery Modal -->
+<div class="modal fade" id="galleryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body p-0">
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3" 
+                        data-bs-dismiss="modal" style="z-index: 1050;"></button>
+                <img id="modalImage" src="" class="w-100" alt="Gallery image">
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Gallery modal
+document.querySelectorAll('[data-bs-toggle="modal"]').forEach(img => {
+    img.addEventListener('click', function() {
+        document.getElementById('modalImage').src = this.dataset.image;
+    });
+});
+
+// Toggle favorite
+function toggleFavorite(slug) {
+    fetch(`/venues/${slug}/favorite/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        const btn = document.getElementById('favoriteBtn');
+        const icon = btn.querySelector('i');
+        const text = document.getElementById('favoriteText');
+        
+        if (data.action === 'added') {
+            icon.classList.replace('far', 'fas');
+            text.textContent = 'Saved';
+        } else {
+            icon.classList.replace('fas', 'far');
+            text.textContent = 'Save';
+        }
+    });
+}
+
+// Mark review helpful
+function markHelpful(reviewId) {
+    fetch(`/venues/api/review/${reviewId}/helpful/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById(`helpful-${reviewId}`).textContent = `(${data.helpful_count})`;
+    });
+}
+
+// Share venue
+function shareVenue() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ venue.name }}',
+            text: '{{ venue.tagline|default:venue.name }}',
+            url: window.location.href
+        });
+    } else {
+        navigator.clipboard.writeText(window.location.href);
+        alert('Link copied to clipboard!');
+    }
+}
+</script>
+{% endblock %}

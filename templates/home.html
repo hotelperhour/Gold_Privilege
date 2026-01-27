@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Welcome to Gold Privilege{% endblock %}
+
+{% block content %}
+<div class="text-center mt-5">
+    <div class="mb-5">
+        <i class="fas fa-crown" style="font-size: 100px; color: var(--primary-color);"></i>
+        <h1 class="display-3 mt-4" style="color: var(--secondary-color); font-weight: bold;">
+            Gold Privilege
+        </h1>
+        <p class="lead" style="color: var(--primary-color); font-size: 1.5rem;">
+            Premium Lifestyle Access Platform
+        </p>
+    </div>
+    
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8">
+            <p class="lead">
+                Access exclusive pools, gyms, restaurants, spas, and entertainment venues 
+                across Nigeria with one premium membership.
+            </p>
+        </div>
+    </div>
+    
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card card-custom h-100">
+                <div class="card-body text-center p-4">
+                    <i class="fas fa-swimming-pool" style="font-size: 50px; color: var(--primary-color);"></i>
+                    <h4 class="mt-3">Premium Pools & Gyms</h4>
+                    <p class="text-muted">Access to top-tier fitness centers, pools, and beach clubs</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card card-custom h-100">
+                <div class="card-body text-center p-4">
+                    <i class="fas fa-utensils" style="font-size: 50px; color: var(--primary-color);"></i>
+                    <h4 class="mt-3">Restaurant Discounts</h4>
+                    <p class="text-muted">Exclusive deals at premium restaurants and bars</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card card-custom h-100">
+                <div class="card-body text-center p-4">
+                    <i class="fas fa-spa" style="font-size: 50px; color: var(--primary-color);"></i>
+                    <h4 class="mt-3">Spa & Wellness</h4>
+                    <p class="text-muted">Rejuvenate at luxury spas and wellness centers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mb-5">
+        {% if not user.is_authenticated %}
+            <a href="{% url 'account:register_user' %}" class="btn btn-gold btn-lg me-3">
+                <i class="fas fa-user-plus"></i> Join as Member
+            </a>
+            <a href="{% url 'account:register_partner' %}" class="btn btn-outline-dark btn-lg">
+                <i class="fas fa-handshake"></i> Become a Partner
+            </a>
+        {% else %}
+            <a href="{% url 'account:dashboard' %}" class="btn btn-gold btn-lg">
+                <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+            </a>
+        {% endif %}
+    </div>
+    
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-10">
+            <div class="card card-custom" style="background: linear-gradient(135deg, var(--secondary-color) 0%, #333 100%);">
+                <div class="card-body p-5 text-center text-white">
+                    <h3 class="mb-4" style="color: var(--primary-color);">
+                        <i class="fas fa-building"></i> Are You a Venue Owner?
+                    </h3>
+                    <p class="lead mb-4">
+                        Join our network of premium venues and reach thousands of potential customers.
+                    </p>
+                    <ul class="list-unstyled text-start d-inline-block mb-4">
+                        <li class="mb-2"><i class="fas fa-check-circle" style="color: var(--accent-color);"></i> Increase your visibility</li>
+                        <li class="mb-2"><i class="fas fa-check-circle" style="color: var(--accent-color);"></i> Attract premium customers</li>
+                        <li class="mb-2"><i class="fas fa-check-circle" style="color: var(--accent-color);"></i> Grow your revenue</li>
+                        <li class="mb-2"><i class="fas fa-check-circle" style="color: var(--accent-color);"></i> Easy booking management</li>
+                    </ul>
+                    <br>
+                    <a href="{% url 'account:register_partner' %}" class="btn btn-gold btn-lg">
+                        <i class="fas fa-rocket"></i> Become a Partner Today
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-custom {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card-custom:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}

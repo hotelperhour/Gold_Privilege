@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Venue Rejected - Gold Privilege</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .header { background: linear-gradient(135deg, #8B0000 0%, #A52A2A 100%); color: #fff; padding: 40px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 32px; }
+        .content { padding: 40px 30px; color: #333; }
+        .info-box { background: #f8d7da; border-left-color: #dc3545; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .footer { background: #1a1a1a; color: #fff; padding: 30px; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+<div class="header" style="background: linear-gradient(135deg, #8B0000 0%, #A52A2A 100%);">
+    <h1>⚠️ Venue Update</h1>
+</div>
+<div class="content">
+    <p>We're sorry — your venue <strong>{{ venue.name }}</strong> could not be approved at this time.</p>
+    <div class="info-box" style="background: #f8d7da; border-left-color: #dc3545;">
+        <strong>Reason:</strong> {{ rejection_reason|default:"Not specified" }}
+    </div>
+    <p>You can edit and resubmit when ready.</p>
+</div>
+        <div class="footer">
+            <p><strong>Gold Privilege Partner Team</strong></p>
+            <p>© 2025 Gold Privilege. All rights reserved.</p>
+        </div>
+
+    </body>
+    </html>
+    

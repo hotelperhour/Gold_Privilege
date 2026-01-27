@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Successful!</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .header { background: linear-gradient(135deg, #1a4314 0%, #2d5a27 100%); color: #d4af37; padding: 40px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 32px; }
+        .content { padding: 40px 30px; color: #333; }
+        .button { display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%); color: #000; text-decoration: none; padding: 18px 45px; border-radius: 10px; font-weight: bold; font-size: 18px; margin: 25px 0; }
+        .success-box { background: #d4edda; border-left: 5px solid #28a745; padding: 20px; border-radius: 8px; margin: 25px 0; }
+        .receipt { background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .footer { background: #1a1a1a; color: #fff; padding: 30px; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Payment Successful!</h1>
+            <p>Your Gold Privilege membership is now active</p>
+        </div>
+        <div class="content">
+            <h2>Congratulations {{ user.get_full_name|default:user.email }}!</h2>
+            <p>We’ve successfully received your payment. Welcome to premium lifestyle access!</p>
+
+            <div class="success-box">
+                <h3>🎉 Membership Activated!</h3>
+                <p>Your {{ plan.name }} plan is now live.</p>
+            </div>
+
+            <div class="receipt">
+                <h4>Payment Receipt</h4>
+                <p>
+                    <strong>Amount Paid:</strong> ₦{{ payment.amount|floatformat:2 }}<br>
+                    <strong>Payment Method:</strong> {{ payment.get_payment_method_display }}<br>
+                    <strong>Date:</strong> {{ payment.paid_at|date:"F j, Y \ g:i A" }}<br>
+                    <strong>Transaction ID:</strong> {{ payment.payment_id }}
+                </p>
+            </div>
+
+            <p>You can now book swimming pools, spas, buffets, gyms, and more at exclusive rates.</p>
+
+            <div style="text-align: center;">
+                <a href="{{ protocol }}://{{ domain }}{% url 'subscriptions:my_subscription' %}" class="button">
+                    Go to My Dashboard
+                </a>
+            </div>
+
+            <p>Thank you for trusting Gold Privilege with your lifestyle upgrade!</p>
+        </div>
+        <div class="footer">
+            <p><strong>Gold Privilege Team</strong></p>
+            <p>Live Luxuriously • Pay Smartly</p>
+            <p>© 2025 Gold Privilege. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

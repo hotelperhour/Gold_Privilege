@@ -1,0 +1,21 @@
+# Django
+*.log
+*.pot
+*.pyc
+
+venv/
+.env
+__pycache__/
+*.pyc
+media/
+ # IDEs
+.idea/
+.vscode/
+.pytest_cache/
+
+# Other
+*.py[cod]
+*$py.class
+test_email.py
+test_sms.py
+test_smtp.py

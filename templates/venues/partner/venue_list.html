@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Venues - Partner Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">My Venues</h1>
+            <p class="text-muted mb-0">Manage your venue listings</p>
+        </div>
+        <a href="{% url 'venues:partner_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Add New Venue
+        </a>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3 class="mb-0">{{ stats.total }}</h3>
+                    <p class="mb-0">Total Venues</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3 class="mb-0">{{ stats.approved }}</h3>
+                    <p class="mb-0">Approved</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h3 class="mb-0">{{ stats.pending }}</h3>
+                    <p class="mb-0">Pending Review</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3 class="mb-0">{{ stats.total_views }}</h3>
+                    <p class="mb-0">Total Views</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Venue List -->
+    {% if venues %}
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Venue</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Rating</th>
+                        <th>Views</th>
+                        <th>Reviews</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for venue in venues %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="{{ venue.cover_image.url }}" 
+                                     class="rounded me-3" 
+                                     style="width: 60px; height: 60px; object-fit: cover;"
+                                     alt="{{ venue.name }}">
+                                <div>
+                                    <h6 class="mb-0">{{ venue.name }}</h6>
+                                    <small class="text-muted">{{ venue.city }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ venue.get_category_display }}</td>
+                        <td>
+                            {% if venue.status == 'APPROVED' %}
+                            <span class="badge bg-success">Approved</span>
+                            {% elif venue.status == 'PENDING' %}
+                            <span class="badge bg-warning">Pending</span>
+                            {% elif venue.status == 'DRAFT' %}
+                            <span class="badge bg-secondary">Draft</span>
+                            {% elif venue.status == 'REJECTED' %}
+                            <span class="badge bg-danger">Rejected</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="text-warning">
+                                <i class="fas fa-star"></i> {{ venue.average_rating|floatformat:1 }}
+                            </span>
+                        </td>
+                        <td>{{ venue.view_count }}</td>
+                        <td>{{ venue.total_reviews }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'venues:partner_detail' venue.slug %}" 
+                                   class="btn btn-outline-primary" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'venues:partner_edit' venue.slug %}" 
+                                   class="btn btn-outline-secondary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if venue.status == 'DRAFT' %}
+                                <form method="post" 
+                                      action="{% url 'venues:partner_submit_for_approval' venue.slug %}" 
+                                      style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            class="btn btn-outline-success btn-sm" 
+                                            title="Submit for Approval">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+            </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-building fa-4x text-muted mb-3"></i>
+            <h4>No venues yet</h4>
+            <p class="text-muted mb-4">Start by adding your first venue to the platform</p>
+            <a href="{% url 'venues:partner_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add Your First Venue
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

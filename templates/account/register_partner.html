@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Register as Partner - Gold Privilege{% endblock %}
+
+{% block content %}
+<style>
+    :root{
+        --gold-color: #E5AD04;
+        --gold-hover:#cd9b06;
+    }
+</style>
+<div class="row justify-content-center mt-4">
+    <div class="col-md-10 col-lg-8">
+        <div class="card card-custom">
+            <div class="card-header-custom text-center">
+                <h3 class="mb-0">
+                    <i class="fas fa-handshake"></i> Become a Partner
+                </h3>
+                <p class="mb-0 mt-2" style="color: #fff; font-size: 0.9rem;">Join our network of premium venues</p>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Business Registration Only</strong> - We only need your business details, not personal names.
+                </div>
+                
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <h5 class="mb-3"><i class="fas fa-envelope"></i> Login Credentials</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Business/Admin Email <span class="text-danger">*</span></label>
+                            {{ form.email }}
+                            <small class="form-text text-muted">This email will be used to login</small>
+                            {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+                        </div>
+                        
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="mb-3"><i class="fas fa-building"></i> Business Information</h5>
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Business Name <span class="text-danger">*</span></label>
+                            {{ form.business_name }}
+                            {% if form.business_name.errors %}<div class="text-danger small">{{ form.business_name.errors }}</div>{% endif %}
+                        </div>
+                        
+                    </div>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                
+                    
+                    <hr class="my-4">
+                    
+                    <h5 class="mb-3"><i class="fas fa-lock"></i> Account Security</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Password <span class="text-danger">*</span></label>
+                            {{ form.password1 }}
+                            <small class="form-text text-muted">At least 8 characters</small>
+                            {% if form.password1.errors %}<div class="text-danger small">{{ form.password1.errors }}</div>{% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}<div class="text-danger small">{{ form.password2.errors }}</div>{% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 form-check">
+                        {{ form.terms_accepted }}
+                        <label class="form-check-label">
+                            I agree to the <a href="#" target="_blank">Partner Terms and Conditions</a> <span class="text-danger">*</span>
+                        </label>
+                        {% if form.terms_accepted.errors %}<div class="text-danger small">{{ form.terms_accepted.errors }}</div>{% endif %}
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i> Your application will be reviewed by our team within 48 hours.
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-gold">
+                            <i class="fas fa-paper-plane"></i> Submit Partner Application
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer bg-light text-center">
+                <p class="mb-0">Already have an account? 
+                    <a href="{% url 'account:login' %}">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

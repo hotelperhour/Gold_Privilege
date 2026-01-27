@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Explore Venues - Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    .venue-card {
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+        height: 100%;
+    }
+    
+    .venue-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    
+    .venue-image {
+        height: 220px;
+        object-fit: cover;
+        width: 100%;
+    }
+    
+    .venue-category-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: rgba(255,255,255,0.95);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .price-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #d4af37;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .rating-stars {
+        color: #ffc107;
+        font-size: 0.9rem;
+    }
+    
+    .filter-sidebar {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 20px;
+        position: sticky;
+        top: 20px;
+    }
+    
+    .amenity-checkbox {
+        margin-bottom: 10px;
+    }
+    
+    .search-header {
+        background: linear-gradient(135deg, #d4af37 0%, #c19a2b 100%);
+        color: white;
+        padding: 60px 0;
+        margin-bottom: 30px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Search Header -->
+<div class="search-header">
+    <div class="container">
+        <h1 class="display-4 mb-3">Discover Premium Venues</h1>
+        <p class="lead mb-4">Explore exclusive restaurants, gyms, spas, and entertainment venues</p>
+        
+        <!-- Search Form -->
+        <form method="get" class="row g-3">
+            <div class="col-md-6">
+                <input type="text" 
+                       name="q" 
+                       class="form-control form-control-lg" 
+                       placeholder="Search venues, locations..." 
+                       value="{{ search_query }}"
+                       autocomplete="off">
+            </div>
+            <div class="col-md-3">
+                <select name="category" class="form-select form-select-lg">
+                    <option value="">All Categories</option>
+                    {% for code, label in categories %}
+                    <option value="{{ code }}" {% if code == current_category %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-light btn-lg w-100">
+                    <i class="fas fa-search me-2"></i>Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="filter-sidebar">
+                <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filters</h5>
+                
+                <form method="get" id="filterForm">
+                    <!-- Preserve search query -->
+                    {% if search_query %}
+                    <input type="hidden" name="q" value="{{ search_query }}">
+                    {% endif %}
+                    
+                    <!-- City Filter -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">City</label>
+                        <select name="city" class="form-select">
+                            <option value="">All Cities</option>
+                            {% for city in cities %}
+                            <option value="{{ city }}" {% if city == current_city %}selected{% endif %}>
+                                {{ city }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Price Range Filter -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Price Range</label>
+                        <select name="price_range" class="form-select">
+                            <option value="">Any Price</option>
+                            <option value="BUDGET" {% if current_price_range == 'BUDGET' %}selected{% endif %}>₦ Budget</option>
+                            <option value="MODERATE" {% if current_price_range == 'MODERATE' %}selected{% endif %}>₦₦ Moderate</option>
+                            <option value="UPSCALE" {% if current_price_range == 'UPSCALE' %}selected{% endif %}>₦₦₦ Upscale</option>
+                            <option value="LUXURY" {% if current_price_range == 'LUXURY' %}selected{% endif %}>₦₦₦₦ Luxury</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Amenities Filter -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Amenities</label>
+                        <div style="max-height: 250px; overflow-y: auto;">
+                            {% for amenity in amenities %}
+                            <div class="form-check amenity-checkbox">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       name="amenities" 
+                                       value="{{ amenity.id }}" 
+                                       id="amenity_{{ amenity.id }}">
+                                <label class="form-check-label" for="amenity_{{ amenity.id }}">
+                                    {% if amenity.icon_class %}
+                                    <i class="{{ amenity.icon_class }} me-1"></i>
+                                    {% endif %}
+                                    {{ amenity.name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100 mb-2">
+                        Apply Filters
+                    </button>
+                    <a href="{% url 'venues:list' %}" class="btn btn-outline-secondary w-100">
+                        Clear All
+                    </a>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Venue Results -->
+        <div class="col-lg-9">
+            <!-- Results Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="mb-0">
+                        {% if search_query %}
+                        Search Results for "{{ search_query }}"
+                        {% else %}
+                        All Venues
+                        {% endif %}
+                    </h4>
+                    <p class="text-muted mb-0">{{ page_obj.paginator.count }} venue{{ page_obj.paginator.count|pluralize }} found</p>
+                </div>
+                
+                <!-- Sort Options -->
+                <div class="d-flex align-items-center">
+                    <label class="me-2 text-nowrap">Sort by:</label>
+                    <form method="get" class="d-flex">
+                        {% for key, value in request.GET.items %}
+                        {% if key != 'sort' %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endif %}
+                        {% endfor %}
+                        <select name="sort" class="form-select" onchange="this.form.submit()">
+                            <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Highest Rated</option>
+                            <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>Most Popular</option>
+                            <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest</option>
+                            <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name (A-Z)</option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Subscription Warning -->
+            {% if not user.is_authenticated or not has_active_subscription %}
+            <div class="alert alert-warning mb-4">
+                <i class="fas fa-lock me-2"></i>
+                <strong>Unlock Full Access!</strong>
+                {% if not user.is_authenticated %}
+                <a href="{% url 'account:register_user' %}" class="alert-link">Sign up</a> to get exclusive access to premium venues.
+                {% else %}
+                <a href="{% url 'subscriptions:plans_list' %}" class="alert-link">Subscribe now</a> to unlock exclusive venue access and benefits.
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Venue Grid -->
+            {% if venues %}
+            <div class="row g-4 mb-4">
+                {% for venue in venues %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card venue-card">
+                        <div class="position-relative">
+                            <img src="{{ venue.cover_image.url }}" 
+                                 class="venue-image" 
+                                 alt="{{ venue.name }}">
+                            <span class="venue-category-badge">
+                                {{ venue.get_category_display }}
+                            </span>
+                            <span class="price-badge">
+                                {{ venue.get_price_display }}
+                            </span>
+                        </div>
+                        
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">
+                                <a href="{% url 'venues:detail' venue.slug %}" 
+                                   class="text-decoration-none text-dark">
+                                    {{ venue.name }}
+                                </a>
+                            </h5>
+                            
+                            {% if venue.tagline %}
+                            <p class="text-muted small mb-2">{{ venue.tagline }}</p>
+                            {% endif %}
+                            
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="rating-stars me-2">
+                                    {% for i in "12345" %}
+                                    {% if forloop.counter <= venue.average_rating %}
+                                    <i class="fas fa-star"></i>
+                                    {% else %}
+                                    <i class="far fa-star"></i>
+                                    {% endif %}
+                                    {% endfor %}
+                                </span>
+                                <span class="text-muted small">
+                                    {{ venue.average_rating|floatformat:1 }} ({{ venue.total_reviews }})
+                                </span>
+                            </div>
+                            
+                            <p class="text-muted small mb-3">
+                                <i class="fas fa-map-marker-alt me-1"></i>
+                                {{ venue.city }}{% if venue.suburb %}, {{ venue.suburb }}{% endif %}
+                            </p>
+                            
+                            <!-- Quick Amenities -->
+                            {% if venue.amenities.all|slice:":3" %}
+                            <div class="mb-3">
+                                {% for amenity in venue.amenities.all|slice:":3" %}
+                                <span class="badge bg-light text-dark me-1">
+                                    {% if amenity.icon_class %}
+                                    <i class="{{ amenity.icon_class }} me-1"></i>
+                                    {% endif %}
+                                    {{ amenity.name }}
+                                </span>
+                                {% endfor %}
+                                {% if venue.amenities.count > 3 %}
+                                <span class="badge bg-light text-dark">
+                                    +{{ venue.amenities.count|add:"-3" }} more
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <a href="{% url 'venues:detail' venue.slug %}" 
+                               class="btn btn-outline-primary btn-sm w-100">
+                                View Details <i class="fas fa-arrow-right ms-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Venue pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Last</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <!-- No Results -->
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                <h4>No venues found</h4>
+                <p class="text-muted">Try adjusting your filters or search terms</p>
+                <a href="{% url 'venues:list' %}" class="btn btn-primary">View All Venues</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

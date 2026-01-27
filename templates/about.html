@@ -1,0 +1,1035 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}About Us - Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ==================== ABOUT PAGE STYLES ==================== */
+    
+   
+
+    /* Hero Section */
+    .about-hero {
+        padding: 80px 0 40px;
+        text-align: center;
+    }
+
+    .about-hero h1 {
+        font-size: 40px;
+        font-weight: 700;
+        margin-bottom: 40px;
+    }
+
+    .about-hero h1 .about {
+        color: #000000;
+    }
+
+    .about-hero h1 .us {
+        color: #E5AD04;
+    }
+
+    /* Introduction Section */
+    .intro-section {
+        padding: 30px 0 60px;
+    }
+
+    .intro-content {
+        display: grid;
+        grid-template-columns: 45% 55%;
+        gap: 30px;
+        align-items: center;
+    }
+
+    .intro-image {
+        width: 100%;
+        height: 380px;
+        object-fit: cover;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .intro-text {
+        font-size: 16px;
+        line-height: 1.7;
+        color: #000000;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    /* Mission, Vision, Customers Section */
+    .mvc-section {
+        padding: 20px 0;
+        background: #8E6B02;
+        margin: 0 30px;
+        border-radius: 15px;
+    }
+
+    .mvc-container {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        padding: 0 20px;
+    }
+
+    .mvc-card {
+        text-align: center;
+        padding: 10px 10px;
+    }
+
+    .mvc-number {
+        width: 65px;
+        height: 65px;
+        border-radius: 50%;
+        background: #FFFFFF;
+        color: #8E6B02;
+        font-size: 26px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 25px;
+        border: 3px solid #FFFFFF;
+        margin-bottom: 20px;
+    }
+
+    .mvc-card h3 {
+        color: #FFFFFF;
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+
+    .mvc-card p {
+        color: #FFFFFF;
+        font-size: 15px;
+        line-height: 1.6;
+        opacity: 0.95;
+        text-align: center;
+    }
+
+    /* Partners Section */
+    .partners-section {
+        padding: 80px 0;
+        overflow: hidden;
+    }
+
+    .partners-section h2 {
+        text-align: center;
+        font-size: 36px;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 50px;
+    }
+
+    .logo-ticker {
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+        padding: 30px 0;
+    }
+
+    .logo-track {
+        display: flex;
+        gap: 60px;
+        animation: scroll 30s linear infinite;
+    }
+
+    .logo-item {
+        flex-shrink: 0;
+        width: 150px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #F5F5F5;
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    .logo-item img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        opacity: 0.7;
+        transition: opacity 0.3s;
+    }
+
+    .logo-item:hover img {
+        opacity: 1;
+    }
+
+    @keyframes scroll {
+        0% {
+            transform: translateX(0);
+        }
+        100% {
+            transform: translateX(-50%);
+        }
+    }
+
+    /* Premium Services Section */
+    .services-section {
+        padding: 80px 0;
+        background: #F9F9F9;
+    }
+
+    .services-section h2 {
+        text-align: center;
+        font-size: 36px;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 50px;
+    }
+
+    .services-scroll {
+        display: flex;
+        gap: 30px;
+        overflow-x: auto;
+        padding: 20px 0;
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: #E5AD04 #f0f0f0;
+    }
+
+    .services-scroll::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .services-scroll::-webkit-scrollbar-track {
+        background: #f0f0f0;
+        border-radius: 10px;
+    }
+
+    .services-scroll::-webkit-scrollbar-thumb {
+        background: #E5AD04;
+        border-radius: 10px;
+    }
+
+    .service-card {
+        flex: 0 0 350px;
+        height: 500px;
+        position: relative;
+        border-radius: 15px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .service-card:hover {
+        transform: translateY(-10px);
+    }
+
+    .service-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .service-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%);
+    }
+
+    .service-content {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 30px;
+        color: #FFFFFF;
+    }
+
+    .service-content h3 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        text-transform: capitalize;
+    }
+
+    .service-content p {
+        font-size: 14px;
+        line-height: 1.6;
+        opacity: 0.95;
+    }
+
+    /* Newsletter Section */
+    .newsletter-section {
+        padding: 60px 0px;
+    }
+
+    .newsletter-card {
+        background: #8E6B02;
+        border-radius: 20px;
+        padding: 20px 30px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    }
+    .newsletter-card::before {
+    content: '';
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    border: 25px solid rgba(255, 255, 255, 0.15);
+    top: -80px;
+    left: -80px;
+}
+.newsletter-card::after {
+    content: '';
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 5px solid rgba(255, 255, 255, 0.9);
+    bottom: -60px;
+    right: -60px;
+}
+
+
+
+    .newsletter-card h2 {
+        color: #FFFFFF;
+        font-size: 36px;
+        font-weight: 600;
+        margin-bottom: 40px;
+    }
+
+    .newsletter-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+
+    .newsletter-form input {
+        height: 55px;
+        border: none;
+        background: #8E6B02;
+        border: 1.5px solid #FFFFFF;
+        color: #FFFFFF;
+        border-radius: 8px;
+        padding: 0 16px;
+        font-size: 15px;
+        font-family: 'Poppins', sans-serif;
+    }
+    .newsletter-form input:focus {
+    outline: none;
+    border-color: #E5AD04;
+    box-shadow: 0 0 0 3px rgba(229, 173, 4, 0.2);
+}
+
+
+    .newsletter-form input::placeholder {
+        color: #FFFFFF;
+    }
+
+    .newsletter-form button {
+        background: #FFFFFF;
+        color: #000000;
+        border: none;
+        border-radius: 8px;
+        height: 55px;
+        font-size: 15px;
+        font-weight: 600;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .newsletter-form button:hover {
+        background: #F5F5F5;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    /* FAQ Section */
+    .faq-section {
+        padding: 80px 0;
+    }
+
+    .faq-header {
+        text-align: center;
+        margin-bottom: 60px;
+    }
+
+    .faq-header h2 {
+        font-size: 36px;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 15px;
+    }
+
+    .faq-header p {
+        font-size: 18px;
+        color: #6B7280;
+    }
+
+    .faq-list {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .faq-item {
+        border-bottom: 1px solid #E5E7EB;
+        padding: 25px 0;
+    }
+
+    .faq-question {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        gap: 20px;
+    }
+
+    .faq-question h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #000000;
+        margin: 0;
+    }
+
+    .faq-toggle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 2px solid #E5AD04;
+        background: #FFFFFF;
+        color: #E5AD04;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        font-weight: 700;
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+    }
+
+    .faq-question:hover .faq-toggle {
+        background: #E5AD04;
+        color: #FFFFFF;
+    }
+
+    .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+    .faq-answer p {
+        padding-top: 15px;
+        font-size: 16px;
+        line-height: 1.6;
+        color: #000000;
+    }
+
+    .faq-item.active .faq-answer {
+        max-height: 500px;
+    }
+
+    /* Contact CTA Section */
+    .contact-cta {
+        padding: 80px 0;
+    }
+
+    .cta-card {
+        background: #F5F7F9;
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .team-avatars {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 30px;
+        position: relative;
+        height: 80px;
+    }
+
+    .avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: 3px solid #F5F7F9;
+        object-fit: cover;
+    }
+
+    .avatar:nth-child(1) {
+        position: absolute;
+        left: calc(50% - 70px);
+        z-index: 1;
+    }
+
+    .avatar:nth-child(2) {
+        position: absolute;
+        left: calc(50% - 30px);
+        z-index: 3;
+        width: 70px;
+        height: 70px;
+        border-width: 4px;
+    }
+
+    .avatar:nth-child(3) {
+        position: absolute;
+        left: calc(50% + 10px);
+        z-index: 1;
+    }
+
+    .cta-card h2 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #000000;
+        margin-bottom: 15px;
+    }
+
+    .cta-card p {
+        font-size: 16px;
+        color: #6B7280;
+        margin-bottom: 30px;
+    }
+
+    .cta-button {
+        background: #E5AD04;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 8px;
+        padding: 15px 40px;
+        font-size: 16px;
+        font-weight: 600;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .cta-button:hover {
+        background: #F9B036;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+    }
+
+    /* ==================== RESPONSIVE DESIGN ==================== */
+
+    /* Tablet (768px - 991px) */
+    @media (max-width: 991px) {
+        .about-hero h1 {
+            font-size: 40px;
+        }
+
+        .intro-content {
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .intro-image {
+            height: 350px;
+        }
+
+        .mvc-container {
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .newsletter-card {
+            padding: 50px 40px;
+        }
+
+        .newsletter-form {
+            grid-template-columns: 1fr;
+        }
+
+        .cta-card {
+            padding: 50px 40px;
+        }
+
+        .team-avatars {
+            margin-bottom: 25px;
+        }
+
+        .avatar:nth-child(1) {
+            left: calc(50% - 65px);
+        }
+
+        .avatar:nth-child(3) {
+            left: calc(50% + 5px);
+        }
+    }
+
+    /* Mobile (below 768px) */
+    @media (max-width: 767px) {
+        .about-hero {
+            padding: 60px 0 40px;
+        }
+
+        .about-hero h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .intro-section {
+            padding: 30px 0 60px;
+        }
+
+        .intro-image {
+            height: 280px;
+        }
+
+        .intro-text {
+            font-size: 16px;
+        }
+
+        .mvc-section {
+            padding: 20px 0;
+        }
+
+        .mvc-card {
+            padding: 10px 10px;
+        }
+
+        .mvc-number {
+            width: 70px;
+            height: 70px;
+            font-size: 28px;
+        }
+
+        .mvc-card h3 {
+            font-size: 20px;
+        }
+
+        .mvc-card p {
+            font-size: 15px;
+        }
+
+        .partners-section,
+        .services-section,
+        .newsletter-section,
+        
+        .contact-cta {
+            padding: 60px 0;
+        }
+        .faq-section {
+        padding: 40px 20px;
+    }
+
+        .partners-section h2,
+        .services-section h2,
+        .newsletter-card h2,
+        .faq-header h2 {
+            font-size: 28px;
+            margin-bottom: 40px;
+        }
+        .faq-section h2 {
+        font-size: 22px;
+    }
+
+    .faq-question {
+        font-size: 15px;
+    }
+
+    .faq-answer {
+        font-size: 13px;
+    }
+
+        .logo-track {
+            gap: 40px;
+        }
+
+        .logo-item {
+            width: 120px;
+            height: 70px;
+        }
+
+        .service-card {
+            flex: 0 0 280px;
+            height: 400px;
+        }
+
+        .service-content {
+            padding: 25px;
+        }
+
+        .service-content h3 {
+            font-size: 20px;
+        }
+
+        .service-content p {
+            font-size: 13px;
+        }
+
+        .newsletter-card {
+            padding: 40px 20px;
+            border-radius: 15px;
+        }
+
+        .newsletter-card h2 {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        .newsletter-form input,
+        .newsletter-form button {
+            height: 48px;
+            font-size: 14px;
+        }
+
+        .faq-header p {
+            font-size: 16px;
+        }
+
+        .faq-item {
+            padding: 20px 0;
+        }
+
+        .faq-question h3 {
+            font-size: 16px;
+        }
+
+        .faq-toggle {
+            width: 28px;
+            height: 28px;
+            font-size: 18px;
+        }
+
+        .faq-answer p {
+            font-size: 15px;
+        }
+
+        .cta-card {
+            padding: 40px 20px;
+            border-radius: 15px;
+        }
+
+        .team-avatars {
+            height: 70px;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+        }
+
+        .avatar:nth-child(1) {
+            left: calc(50% - 60px);
+        }
+
+        .avatar:nth-child(2) {
+            width: 60px;
+            height: 60px;
+        }
+
+        .avatar:nth-child(3) {
+            left: calc(50% + 0px);
+        }
+
+        .cta-card h2 {
+            font-size: 24px;
+        }
+
+        .cta-card p {
+            font-size: 15px;
+        }
+
+        .cta-button {
+            padding: 12px 30px;
+            font-size: 15px;
+            width: 100%;
+        }
+    }
+
+    /* Small Mobile (below 480px) */
+    @media (max-width: 480px) {
+        .about-hero h1 {
+            font-size: 28px;
+        }
+
+        .intro-image {
+            height: 250px;
+            border-radius: 15px;
+        }
+
+        .mvc-card {
+            padding: 25px 15px;
+        }
+
+        .newsletter-card {
+            padding: 30px 15px;
+        }
+
+        .cta-card {
+            padding: 30px 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="about-page">
+    
+    <!-- Hero Section -->
+    <section class="about-hero">
+        <div class="container">
+            <h1><span class="about">About</span> <span class="us">Us</span></h1>
+        </div>
+    </section>
+
+    <!-- Introduction Section -->
+    <section class="intro-section">
+        <div class="container">
+            <div class="intro-content">
+                <div>
+                    <img src="{% static 'images/about-hero.png' %}" alt="About Gold Privilege" class="intro-image">
+                </div>
+                <div class="intro-text">
+                    <p>A membership network that accords members exclusive privileges in lifestyle, entertainment, leisure, healthcare and hospitality spheres of life as well financial empowerment. A membership network that accords members exclusive privileges in lifestyle, entertainment, leisure, healthcare and hospitality spheres of life as well financial empowerment.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mission, Vision, Customers Section -->
+    <section class="mvc-section">
+        <div class="container">
+            <div class="mvc-container">
+                <!-- Our Mission -->
+                <div class="mvc-card">
+                    <div class="mvc-number">01</div>
+                    <h3>Our Mission</h3>
+                    <p>To provide unparalleled access to premium lifestyle experiences and financial empowerment opportunities for our members, creating lasting value through exclusive partnerships and exceptional service.</p>
+                </div>
+
+                <!-- Our Vision -->
+                <div class="mvc-card">
+                    <div class="mvc-number">02</div>
+                    <h3>Our Vision</h3>
+                    <p>To become the leading lifestyle membership network globally, transforming how people experience luxury, leisure, and financial growth through innovative privileges and strategic partnerships.</p>
+                </div>
+
+                <!-- Our Customers -->
+                <div class="mvc-card">
+                    <div class="mvc-number">03</div>
+                    <h3>Our Customers</h3>
+                    <p>Discerning individuals who value exclusive experiences, seamless convenience, and premium services across lifestyle, entertainment, healthcare, and hospitality sectors worldwide.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Partners Section -->
+    <section class="partners-section">
+        <div class="container">
+            <h2>Some of our Trusted Partners</h2>
+        </div>
+        <div class="logo-ticker">
+            <div class="logo-track">
+                <!-- Duplicate logos for seamless loop -->
+                <div class="logo-item"><img src="{% static 'images/partners/partner1.png' %}" alt="Partner 1"></div>
+                <div class="logo-item"><img src="{% static 'images/partners/partner2.png' %}" alt="Partner 2"></div>
+                <div class="logo-item"><img src="{% static 'images/partners/partner3.png' %}" alt="Partner 3"></div>
+                <div class="logo-item"><img src="{% static 'images/partners/partner4.png' %}" alt="Partner 4"></div>
+                <div class="logo-item"><img src="{% static 'images/partners/partner5.png' %}" alt="Partner 5"></div>
+                <div class="logo-item"><img src="{% static 'images/partners/partner6.png' %}" alt="Partner 6"></div>
+                <!-- Duplicate for seamless loop -->
+                <div class="logo-item"><img src="{% static 'images/partners/partner1.png' %}" alt="Partner 1"></div>
+                <div class="logo-item"><img src="{% static 'images/partners/partner2.png' %}" alt="Partner 2"></div>
+                <div class="logo-item"><img src="{% static 'images/partners/partner3.png' %}" alt="Partner 3"></div>
+                <div class="logo-item"><img src="{% static 'images/partners/partner4.png' %}" alt="Partner 4"></div>
+                <div class="logo-item"><img src="{% static 'images/partners/partner5.png' %}" alt="Partner 5"></div>
+                <div class="logo-item"><img src="{% static 'images/partners/partner6.png' %}" alt="Partner 6"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Premium Services Section -->
+    <section class="services-section">
+        <div class="container">
+            <h2>"Premium Services At Great Discounts"</h2>
+            <div class="services-scroll">
+                <div class="service-card">
+                    <img src="{% static 'images/services/resorts.jpg' %}" alt="Resorts & Parks" class="service-image">
+                    <div class="service-overlay"></div>
+                    <div class="service-content">
+                        <h3>Resorts & Parks</h3>
+                        <p>Grabbing a coffee? Add some cashback. When in Japan? Spend in Yen. Big life change? Try a Joint Account.</p>
+                    </div>
+                </div>
+
+                <div class="service-card">
+                    <img src="{% static 'images/services/family-fun.jpg' %}" alt="Family Fun Venues" class="service-image">
+                    <div class="service-overlay"></div>
+                    <div class="service-content">
+                        <h3>Family Fun Venues</h3>
+                        <p>Create unforgettable memories with exclusive access to premium family entertainment destinations and activities.</p>
+                    </div>
+                </div>
+
+                <div class="service-card">
+                    <img src="{% static 'images/services/restaurants.jpg' %}" alt="Restaurants" class="service-image">
+                    <div class="service-overlay"></div>
+                    <div class="service-content">
+                        <h3>Restaurants</h3>
+                        <p>Experience fine dining at the best restaurants with special discounts and priority reservations for our members.</p>
+                    </div>
+                </div>
+
+                <div class="service-card">
+                    <img src="{% static 'images/services/hotels.jpg' %}" alt="Hotels" class="service-image">
+                    <div class="service-overlay"></div>
+                    <div class="service-content">
+                        <h3>Hotels & Accommodation</h3>
+                        <p>Enjoy luxury stays at premium hotels worldwide with exclusive member rates and complimentary upgrades.</p>
+                    </div>
+                </div>
+
+                <div class="service-card">
+                    <img src="{% static 'images/services/healthcare.jpg' %}" alt="Healthcare" class="service-image">
+                    <div class="service-overlay"></div>
+                    <div class="service-content">
+                        <h3>Healthcare Services</h3>
+                        <p>Access premium healthcare facilities and wellness centers with exclusive member benefits and priority care.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="newsletter-section">
+        <div class="container">
+            <div class="newsletter-card">
+                <h2>Subscribe to our Newsletter</h2>
+                <form class="newsletter-form" method="post">
+                    {% csrf_token %}
+                    <input type="text" name="first_name" placeholder="First Name" required>
+                    <input type="email" name="email" placeholder="Email Address" required>
+                    <button type="submit">Subscribe Now</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section">
+        <div class="container">
+            <div class="faq-header">
+                <h2>FAQ</h2>
+                <p>Everything you need to know about the product and billing.</p>
+            </div>
+
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>What is Gold Privilege membership?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Gold Privilege is an exclusive membership network that provides access to premium lifestyle experiences, entertainment venues, healthcare facilities, and hospitality services with special discounts and privileges.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>How do I become a member?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Simply register on our platform, choose a membership plan that suits your needs, and complete the payment process. You'll get instant access to all member benefits and exclusive privileges.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>What are the membership benefits?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Members enjoy exclusive discounts at partner venues, priority bookings, complimentary upgrades, cashback rewards, and access to premium events and experiences across multiple lifestyle categories.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Can I cancel my membership?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, you can cancel your membership at any time from your account dashboard. Your benefits will remain active until the end of your current billing cycle.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>How do I use my membership benefits?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Simply present your digital membership card or booking reference at any partner venue. You can also book directly through our platform to automatically apply your member discounts and benefits.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Are there different membership tiers?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, we offer multiple membership tiers including Silver, Gold, and Platinum, each with increasing levels of benefits, discounts, and exclusive access to premium services.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact CTA Section -->
+    <section class="contact-cta">
+        <div class="container">
+            <div class="cta-card">
+                <div class="team-avatars">
+                    <img src="{% static 'images/headshot.webp' %}" alt="Team Member" class="avatar">
+                    <img src="{% static 'images/headshot2.webp' %}" alt="Team Member" class="avatar">
+                    <img src="{% static 'images/headshot3.webp' %}" alt="Team Member" class="avatar">
+                </div>
+                <h2>Still Have Questions?</h2>
+                <p>Can't find the answer you're looking for? Please chat to our friendly team.</p>
+                <button class="cta-button" onclick="window.location.href='#contact'">Get in Touch</button>
+            </div>
+        </div>
+    </section>
+
+</div>
+<script>
+function toggleFaq(element) {
+    const faqItem = element.closest('.faq-item');
+    const toggleIcon = element.querySelector('.faq-toggle');
+    const isActive = faqItem.classList.contains('active');
+
+    // Close all FAQs
+    document.querySelectorAll('.faq-item').forEach(item => {
+        item.classList.remove('active');
+        const icon = item.querySelector('.faq-toggle');
+        if (icon) {
+            icon.textContent = '+';
+        }
+    });
+
+    // If it was not active, open it
+    if (!isActive) {
+        faqItem.classList.add('active');
+        toggleIcon.textContent = '−';
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Activate Your Partner Account</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
+        .header { background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); color: #d4af37; padding: 40px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 32px; }
+        .content { padding: 40px 30px; }
+        .button { display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%); color: #000; text-decoration: none; padding: 18px 45px; border-radius: 10px; font-weight: bold; font-size: 18px; margin: 25px 0; }
+        .business-info { background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0; border-left: 5px solid #d4af37; }
+        .footer { background: #1a1a1a; color: #fff; padding: 30px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Gold Privilege</h1>
+            <p>Partner Application Confirmation</p>
+        </div>
+        <div class="content">
+            <h2>Welcome to Gold Privilege Partners!</h2>
+            <p>Thank you for applying to become a partner venue with Gold Privilege.</p>
+            
+            <div class="business-info">
+                <h4>Application Details:</h4>
+                <p><strong>Business:</strong> {{ user.partner_profile.business_name }}<br>
+                <strong>Type:</strong> {{ user.partner_profile.get_business_type_display }}<br>
+                <strong>Contact:</strong> {{ user.get_full_name }}</p>
+            </div>
+            
+            <p>To continue with your partnership application, please activate your account:</p>
+            <div style="text-align: center;">
+                <a href="{{ protocol }}://{{ domain }}{% url 'account:activate' uid token %}" class="button">
+                    Activate Partner Account
+                </a>
+            </div>
+            
+            <p><strong>What happens next:</strong></p>
+            <ol>
+                <li>Activate your account using the button above</li>
+                <li>Our team will review your application (24-48 hours)</li>
+                <li>Once approved, you'll get full dashboard access</li>
+                <li>Start adding your venues and attracting members!</li>
+            </ol>
+            
+            <p style="font-size: 12px; color: #666;">This activation link expires in 24 hours.</p>
+        </div>
+        <div class="footer">
+            <p><strong>Gold Privilege Team</strong></p>
+            <p>© 2025 Gold Privilege. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

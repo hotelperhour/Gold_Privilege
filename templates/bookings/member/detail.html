@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Booking {{ booking.booking_reference }} - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Booking Header -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">Booking Details</h4>
+                            <small class="text-muted">{{ booking.booking_reference }}</small>
+                        </div>
+                        <span class="badge bg-{{ booking.get_status_badge_color }} fs-6">
+                            {{ booking.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Venue Information</h6>
+                            <p class="mb-2">
+                                <strong>{{ booking.venue.name }}</strong><br>
+                                {{ booking.venue.address }}<br>
+                                {{ booking.venue.city }}
+                            </p>
+                            {% if booking.venue.phone %}
+                            <p class="mb-2">
+                                <i class="bi bi-telephone me-1"></i>
+                                {{ booking.venue.phone }}
+                            </p>
+                            {% endif %}
+                            {% if booking.venue.email %}
+                            <p class="mb-2">
+                                <i class="bi bi-envelope me-1"></i>
+                                {{ booking.venue.email }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Visit Details</h6>
+                            <p class="mb-2">
+                                <i class="bi bi-calendar me-1"></i>
+                                <strong>Date:</strong> {{ booking.visit_date|date:"l, F j, Y" }}
+                            </p>
+                            {% if booking.venue.opening_time and booking.venue.closing_time %}
+                            <p class="mb-2">
+                                <i class="bi bi-clock me-1"></i>
+                                <strong>Time:</strong> {{ booking.venue.opening_time|time:"g:i A" }} - 
+                                {{ booking.venue.closing_time|time:"g:i A" }}
+                            </p>
+                            {% endif %}
+                            <p class="mb-2">
+                                <i class="bi bi-people me-1"></i>
+                                <strong>Guests:</strong> {{ booking.guests_count }} person{{ booking.guests_count|pluralize }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if booking.special_requests %}
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <h6><i class="bi bi-chat-text me-1"></i>Special Requests</h6>
+                        <p class="mb-0">{{ booking.special_requests }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if booking.check_in_notes %}
+                    <div class="mt-3 p-3 bg-info bg-opacity-10 rounded">
+                        <h6><i class="bi bi-info-circle me-1"></i>Check-in Notes</h6>
+                        <p class="mb-0">{{ booking.check_in_notes }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if booking.cancellation_reason %}
+                    <div class="mt-3 p-3 bg-danger bg-opacity-10 rounded">
+                        <h6><i class="bi bi-x-circle me-1"></i>Cancellation Reason</h6>
+                        <p class="mb-0">{{ booking.cancellation_reason }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- FIXED: Simplified Timeline (Removed "Visit Completed") -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Booking Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-0">Booking Confirmed</h6>
+                                <small class="text-muted">{{ booking.created_at|date:"M j, Y g:i A" }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item {% if booking.checked_in_at %}completed{% endif %}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-0">Checked In at Venue</h6>
+                                {% if booking.checked_in_at %}
+                                <small class="text-success">✓ {{ booking.checked_in_at|date:"M j, Y g:i A" }}</small>
+                                {% else %}
+                                <small class="text-muted">Present QR code at venue on {{ booking.visit_date|date:"M j, Y" }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- FIXED: QR Code with Proper Canvas -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">QR Code for Check-in</h6>
+                </div>
+                <div class="card-body text-center">
+                    <!-- FIXED: Canvas element for QR code -->
+                    <div id="qrcode" style="margin: 0 auto; display: block;"></div>
+                    <p class="small text-muted mb-3 mt-3">
+                        Show this QR code at the venue for check-in
+                    </p>
+                    <div class="d-grid gap-2">
+                        <button onclick="downloadQRCode()" class="btn btn-outline-primary">
+                            <i class="bi bi-download me-1"></i>Download QR Code
+                        </button>
+                        <button onclick="shareBooking()" class="btn btn-outline-secondary">
+                            <i class="bi bi-share me-1"></i>Share Booking
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if map_url %}
+                        <a href="{{ map_url }}" target="_blank" class="btn btn-primary">
+                            <i class="bi bi-geo-alt me-1"></i>Get Directions
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'venues:detail' booking.venue.slug %}" class="btn btn-outline-primary">
+                            <i class="bi bi-building me-1"></i>View Venue Details
+                        </a>
+                        
+                        {% if can_cancel %}
+                        <button type="button" class="btn btn-outline-danger" 
+                                data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="bi bi-x-circle me-1"></i>Cancel Booking
+                        </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'bookings:list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Back to My Bookings
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Need Help?</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small">
+                        <li class="mb-2">
+                            <i class="bi bi-question-circle text-primary me-1"></i>
+                            <strong>Check-in:</strong> Present QR code at venue
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-clock text-primary me-1"></i>
+                            <strong>Arrival:</strong> During venue opening hours
+                        </li>
+                        <li>
+                            <i class="bi bi-telephone text-primary me-1"></i>
+                            <strong>Changes:</strong> Contact venue directly
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Modal -->
+{% if can_cancel %}
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Booking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'bookings:cancel' booking.booking_reference %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Are you sure you want to cancel this booking?</p>
+                    <div class="alert alert-info">
+                        <strong>Booking Details:</strong><br>
+                        Venue: {{ booking.venue.name }}<br>
+                        Date: {{ booking.visit_date|date:"F j, Y" }}<br>
+                        Guests: {{ booking.guests_count }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="cancellation_reason" class="form-label">Reason (optional):</label>
+                        <textarea class="form-control" id="cancellation_reason" 
+                                  name="cancellation_reason" rows="3" 
+                                  placeholder="Let us know why you're cancelling..."></textarea>
+                    </div>
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <small>Cancellations less than 24 hours before the visit may affect future booking privileges.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        Keep Booking
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle me-1"></i>Confirm Cancellation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- FIXED: Use QRCode.js from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// FIXED: Generate QR Code properly
+document.addEventListener('DOMContentLoaded', function() {
+    const qrData = "{{ qr_data|escapejs }}";
+    const canvas = document.getElementById('qrcode');
+    
+    // Clear any existing QR code
+    canvas.innerHTML = '';
+    
+    // Generate QR code using qrcode.js
+    try {
+        new QRCode(canvas, {
+            text: qrData,
+            width: 200,
+            height: 200,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+        
+        console.log('QR Code generated successfully');
+    } catch (error) {
+        console.error('QR Code generation failed:', error);
+        canvas.innerHTML = '<p class="text-danger">Failed to generate QR code</p>';
+    }
+});
+
+function downloadQRCode() {
+    try {
+        // Find the QR code image (generated by qrcode.js)
+        const img = document.querySelector('#qrcode img');
+        
+        if (!img) {
+            alert('QR code not ready yet. Please wait a moment and try again.');
+            return;
+        }
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.download = 'booking-qr-{{ booking.booking_reference }}.png';
+        link.href = img.src;
+        link.click();
+        
+        console.log('QR Code download initiated');
+    } catch (error) {
+        console.error('Download failed:', error);
+        alert('Failed to download QR code. Please try again.');
+    }
+}
+
+function shareBooking() {
+    const shareData = {
+        title: 'My Booking: {{ booking.venue.name }}',
+        text: 'Join me at {{ booking.venue.name }} on {{ booking.visit_date|date:"F j, Y" }}! Booking ref: {{ booking.booking_reference }}',
+        url: window.location.href
+    };
+    
+    if (navigator.share) {
+        navigator.share(shareData)
+            .then(() => console.log('Booking shared successfully'))
+            .catch(err => console.error('Share failed:', err));
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(window.location.href)
+            .then(() => alert('Booking link copied to clipboard!'))
+            .catch(() => alert('Failed to copy link'));
+    }
+}
+</script>
+
+<style>
+/* FIXED: Improved Timeline Styling */
+.timeline {
+    position: relative;
+    padding-left: 40px;
+}
+
+.timeline-item {
+    position: relative;
+    padding-bottom: 30px;
+}
+
+.timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.timeline-item:before {
+    content: '';
+    position: absolute;
+    left: -33px;
+    top: 8px;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item:last-child:before {
+    bottom: auto;
+    height: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -40px;
+    top: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #dee2e6;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-item.completed .timeline-marker {
+    background: #28a745;
+    box-shadow: 0 0 0 2px #28a745;
+}
+
+.timeline-item.completed:before {
+    background: #28a745;
+}
+
+.timeline-content {
+    padding-left: 15px;
+}
+
+.timeline-content h6 {
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.timeline-content small {
+    display: block;
+    font-size: 0.875rem;
+}
+
+/* QR Code Container */
+#qrcode {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#qrcode img {
+    max-width: 100%;
+    height: auto;
+}
+</style>
+{% endblock %}

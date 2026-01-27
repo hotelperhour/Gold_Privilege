@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Dashboard - Gold Privilege{% endblock %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-tachometer-alt"></i> Welcome, {{ user.profile.first_name|default:user.get_short_name }}!
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Profile Card -->
+    <div class="col-md-4 mb-4">
+        <div class="card card-custom">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    {% if user.profile.profile_picture %}
+                        <img src="{{ user.profile.profile_picture.url }}" 
+                             alt="Profile" 
+                             class="rounded-circle" 
+                             style="width: 100px; height: 100px; object-fit: cover;">
+                    {% else %}
+                        <i class="fas fa-user-circle" style="font-size: 80px; color: var(--primary-color);"></i>
+                    {% endif %}
+                </div>
+                <h5>{{ user.profile.get_full_name }}</h5>
+                <p class="text-muted mb-2">{{ user.email }}</p>
+                {% if user.profile.phone_number %}
+                <p class="text-muted mb-3">
+                    <i class="fas fa-phone"></i> {{ user.profile.phone_number }}
+                </p>
+                {% endif %}
+                <a href="{% url 'account:profile' %}" class="btn btn-gold btn-sm">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Subscription Status -->
+    <div class="col-md-8 mb-4">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="mb-0"><i class="fas fa-crown"></i> Membership Status</h5>
+            </div>
+            <div class="card-body">
+                {% if active_subscription %}
+                    <!-- Active Subscription -->
+                    <div class="alert alert-success">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <i class="fas fa-check-circle"></i> 
+                                <strong>{{ active_subscription.plan.name }} Membership Active</strong>
+                                <p class="mb-1 mt-2">
+                                    <strong>Expires:</strong> {{ active_subscription.end_date|date:"F j, Y" }}
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Days Remaining:</strong> {{ active_subscription.days_remaining }} days
+                                </p>
+                            </div>
+                            <span class="badge bg-success">ACTIVE</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Usage Stats -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 mb-2">
+                                <small class="text-muted">Bookings This Month</small>
+                                <h4 class="mb-0">
+                                    {{ bookings_used|default:0 }} 
+                                    {% if active_subscription.plan.max_bookings_per_month %}
+                                        / {{ active_subscription.plan.max_bookings_per_month }}
+                                    {% endif %}
+                                </h4>
+                                {% if active_subscription.plan.max_bookings_per_month %}
+                                <small class="text-muted">
+                                    {{ bookings_remaining }} remaining
+                                </small>
+                                {% else %}
+                                <small class="text-success">Unlimited</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="border rounded p-3 mb-2">
+                                <small class="text-muted">Plan Price</small>
+                                <h4 class="mb-0">₦{{ active_subscription.price_paid|floatformat:0 }}</h4>
+                                <small class="text-muted">{{ active_subscription.plan.get_billing_period_display }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 d-flex flex-wrap gap-2">
+                        <a href="{% url 'subscriptions:my_subscription' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-crown"></i> Manage Subscription
+                        </a>
+                        <a href="{% url 'bookings:list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-calendar-alt"></i> My Bookings
+                        </a>
+                        <a href="{% url 'venues:list' %}" class="btn btn-gold">
+                            <i class="fas fa-search"></i> Book a Venue
+                        </a>
+                    </div>
+                {% else %}
+                    <!-- No Subscription -->
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>No Active Subscription</strong>
+                        <p class="mb-0 mt-2">You don't have an active membership yet. Subscribe now to access exclusive venues and benefits!</p>
+                    </div>
+                    <a href="{% url 'subscriptions:plans_list' %}" class="btn btn-gold">
+                        <i class="fas fa-shopping-cart"></i> Choose a Plan
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Quick Stats -->
+    <div class="col-md-3 mb-3">
+        <div class="card card-custom text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar-check" style="font-size: 40px; color: var(--primary-color);"></i>
+                <h3 class="mt-3 mb-0">{{ total_bookings|default:0 }}</h3>
+                <p class="text-muted">Total Bookings</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card card-custom text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle" style="font-size: 40px; color: var(--primary-color);"></i>
+                <h3 class="mt-3 mb-0">{{ completed_visits|default:0 }}</h3>
+                <p class="text-muted">Completed Visits</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card card-custom text-center">
+            <div class="card-body">
+                <i class="fas fa-heart" style="font-size: 40px; color: var(--primary-color);"></i>
+                <h3 class="mt-3 mb-0">{{ favorite_venues_count|default:0 }}</h3>
+                <p class="text-muted">Favorite Venues</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card card-custom text-center">
+            <div class="card-body">
+                <i class="fas fa-calendar-alt" style="font-size: 40px; color: var(--primary-color);"></i>
+                <h3 class="mt-3 mb-0">{{ upcoming_bookings_count|default:0 }}</h3>
+                <p class="text-muted">Upcoming</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Bookings -->
+{% if upcoming_bookings %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card card-custom">
+            <div class="card-header-custom d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Upcoming Bookings</h5>
+                <a href="{% url 'bookings:list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for booking in upcoming_bookings|slice:":3" %}
+                    <div class="list-group-item px-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="mb-1">{{ booking.venue.name }}</h6>
+                                <p class="mb-1 text-muted">
+                                    <i class="fas fa-calendar"></i> {{ booking.visit_date|date:"l, F j, Y" }}
+                                </p>
+                                <p class="mb-0 text-muted">
+                                    <i class="fas fa-users"></i> {{ booking.guests_count }} guest{{ booking.guests_count|pluralize }}
+                                </p>
+                            </div>
+                            <div class="text-end">
+                                {% if booking.status == 'CONFIRMED' %}
+                                    <span class="badge bg-success">Confirmed</span>
+                                {% elif booking.status == 'CHECKED_IN' %}
+                                    <span class="badge bg-info">Checked In</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">{{ booking.booking_reference }}</small>
+                                <br>
+                                <a href="{% url 'bookings:detail' booking.booking_reference %}" 
+                                   class="btn btn-sm btn-outline-primary mt-2">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Recent Activity -->
+    <div class="col-md-12">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_bookings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Venue</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in recent_bookings|slice:":5" %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ booking.venue.name }}</strong><br>
+                                        <small class="text-muted">{{ booking.venue.city }}</small>
+                                    </td>
+                                    <td>{{ booking.visit_date|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if booking.status == 'CONFIRMED' %}
+                                            <span class="badge bg-success">Confirmed</span>
+                                        {% elif booking.status == 'CHECKED_IN' %}
+                                            <span class="badge bg-info">Checked In</span>
+                                        {% elif booking.status == 'COMPLETED' %}
+                                            <span class="badge bg-secondary">Completed</span>
+                                        {% elif booking.status == 'CANCELLED' %}
+                                            <span class="badge bg-danger">Cancelled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'bookings:detail' booking.booking_reference %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-inbox" style="font-size: 60px; color: #ccc;"></i>
+                        <p class="text-muted mt-3 mb-2">No recent activity yet</p>
+                        {% if active_subscription %}
+                            <p class="text-muted mb-3">Start booking venues to see your activity here</p>
+                            <a href="{% url 'venues:list' %}" class="btn btn-gold">
+                                <i class="fas fa-search"></i> Browse Venues
+                            </a>
+                        {% else %}
+                            <p class="text-muted mb-3">Subscribe to start booking venues</p>
+                            <a href="{% url 'subscriptions:plans_list' %}" class="btn btn-gold">
+                                <i class="fas fa-crown"></i> View Plans
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

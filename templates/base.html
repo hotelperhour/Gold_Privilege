@@ -1,0 +1,716 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gold Privilege{% endblock %}</title>
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --gold-primary: #E5AD04;
+            --gold-secondary: #F9B036;
+            --dark-bg: #020202;
+            --white: #FFFFFF;
+            --black: #000000;
+            --black-soft: rgba(0, 0, 0, 0.71);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ==================== CAPSULE NAVBAR ==================== */
+        .navbar-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 20px 50px;
+            pointer-events: none;
+        }
+
+        .navbar-capsule {
+            background: rgba(2, 2, 2, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            padding: 15px 35px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 1400px;
+            margin: 0 auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            pointer-events: all;
+        }
+
+        /* Brand Logo & Name */
+        .navbar-brand-custom {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            gap: 10px;
+        }
+
+        .brand-logo {
+            width: 35px;
+            height: 35px;
+        }
+
+        .brand-text {
+            font-size: 22px;
+            font-weight: 600;
+            line-height: 1;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .brand-text .gold {
+            color: var(--gold-primary);
+        }
+
+        .brand-text .privilege {
+            color: var(--white);
+        }
+
+        /* Center Nav Links */
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 65px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links li {
+            position: relative;
+        }
+
+        .nav-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            padding-bottom: 5px;
+            display: inline-block;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--gold-primary);
+        }
+
+        .nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gold-primary);
+        }
+
+        /* Right Auth Buttons */
+        .auth-buttons {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .login-link {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .login-link:hover {
+            color: var(--gold-primary);
+        }
+
+        .auth-divider {
+            width: 2px;
+            height: 37px;
+            background: var(--gold-primary);
+            opacity: 0.9;
+            padding-top: 0px;
+            padding-bottom: 0px;
+        }
+
+        .register-btn {
+            background: var(--gold-primary);
+            color: var(--black);
+            padding: 8px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .register-btn:hover {
+            background: var(--gold-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+            color: var(--black);
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* Mobile Offcanvas Menu */
+        .offcanvas-custom {
+            background: rgba(2, 2, 2, 0.98);
+            backdrop-filter: blur(20px);
+        }
+
+        .offcanvas-header-custom {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px;
+        }
+
+        .offcanvas-body-custom {
+            padding: 30px 20px;
+        }
+
+        .mobile-nav-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .mobile-nav-links li {
+            margin-bottom: 20px;
+        }
+
+        .mobile-nav-links a {
+            color: var(--white);
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: 500;
+            display: block;
+            padding: 10px 0;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-nav-links a:hover,
+        .mobile-nav-links a.active {
+            color: var(--gold-primary);
+        }
+
+        .mobile-auth-buttons {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mobile-auth-buttons .login-link {
+            display: block;
+            text-align: center;
+            margin-bottom: 15px;
+            padding: 12px;
+        }
+
+        .mobile-auth-buttons .register-btn {
+            display: block;
+            text-align: center;
+            width: 100%;
+            padding: 12px;
+        }
+
+        /* ==================== MAIN CONTENT AREA ==================== */
+        .main-content {
+            padding-top: 100px;
+            min-height: calc(100vh - 400px);
+        }
+
+        /* Messages/Alerts */
+        .messages-container {
+            position: fixed;
+            top: 120px;
+            right: 20px;
+            z-index: 999;
+            max-width: 400px;
+        }
+
+        .alert-custom {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ==================== FOOTER ==================== */
+        footer {
+            /* background: var(--gold-secondary); */
+            background: #8E6B02;
+            position: relative;
+            overflow: hidden;
+            margin-top: 80px;
+        }
+
+        .footer-content {
+            position: relative;
+            z-index: 2;
+            padding: 60px 0 40px;
+        }
+
+        /* Footer Brand */
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .footer-brand-text {
+            font-size: 24px;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .footer-brand-text .gold {
+            color: var(--white);
+        }
+
+        .footer-brand-text .privilege {
+            color: var(--black);
+        }
+
+        /* Footer Columns */
+        .footer-columns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 60px;
+            text-align: left;
+        }
+
+        .footer-column h4 {
+            color: var(--white);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+
+        .footer-column ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-column ul li {
+            margin-bottom: 12px;
+        }
+
+        .footer-column ul li a {
+            color: var(--black-soft);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .footer-column ul li a:hover {
+            color: var(--white);
+            transform: translateX(5px);
+        }
+
+        
+
+        .footer-bottom {
+            text-align: center;
+            padding: 20px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--black);
+            font-size: 14px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* ==================== RESPONSIVE DESIGN ==================== */
+        
+        /* Tablet (768px - 991px) */
+        @media (max-width: 991px) {
+            .navbar-wrapper {
+                padding: 15px 20px;
+            }
+
+            .navbar-capsule {
+                padding: 12px 20px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .auth-buttons {
+                display: none;
+            }
+
+            .mobile-menu-toggle {
+                display: block;
+            }
+
+            .footer-columns {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 40px;
+            }
+        }
+
+        /* Mobile (below 768px) */
+        @media (max-width: 767px) {
+            .navbar-wrapper {
+                padding: 12px 15px;
+            }
+
+            .navbar-capsule {
+                padding: 10px 15px;
+            }
+
+            .brand-text {
+                font-size: 18px;
+            }
+
+            .brand-logo {
+                width: 28px;
+                height: 28px;
+            }
+
+            .main-content {
+                padding-top: 80px;
+            }
+
+            .messages-container {
+                top: 90px;
+                left: 15px;
+                right: 15px;
+                max-width: none;
+            }
+
+            .footer-content {
+                padding: 40px 0 30px;
+            }
+
+            .footer-columns {
+                grid-template-columns: 1fr;
+                gap: 30px;
+                text-align: center;
+            }
+
+            .footer-brand {
+                justify-content: center;
+            }
+
+            .footer-column {
+                text-align: center;
+            }
+
+            .footer-column ul li a:hover {
+                transform: none;
+            }
+        }
+
+        /* Small Mobile (below 480px) */
+        @media (max-width: 480px) {
+            .navbar-wrapper {
+                padding: 10px;
+            }
+
+            .navbar-capsule {
+                padding: 8px 12px;
+            }
+
+            .brand-text {
+                font-size: 16px;
+            }
+
+            .brand-logo {
+                width: 25px;
+                height: 25px;
+            }
+
+            .footer-brand-text {
+                font-size: 20px;
+            }
+        }
+
+        /* Extra styling for consistency */
+        .btn-gold {
+            background: var(--gold-primary);
+            color: var(--black);
+            border: none;
+            font-weight: 600;
+            padding: 10px 25px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-gold:hover {
+            background: var(--gold-secondary);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(229, 173, 4, 0.4);
+            color: var(--black);
+        }
+
+        .card-custom {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    
+    <!-- Capsule Navbar -->
+    <div class="navbar-wrapper">
+        <nav class="navbar-capsule">
+            <!-- Brand -->
+            <a href="{% url 'account:home' %}" class="navbar-brand-custom">
+                <svg class="brand-logo" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M25 5L29 15L40 12L35 22L45 25L35 28L40 38L29 35L25 45L21 35L10 38L15 28L5 25L15 22L10 12L21 15L25 5Z" fill="#E5AD04" stroke="#FFFFFF" stroke-width="2"/>
+                    <circle cx="25" cy="25" r="5" fill="#FFFFFF"/>
+                </svg>
+                <div class="brand-text">
+                    <span class="gold">Gold</span><span class="privilege"> Privilege</span>
+                </div>
+            </a>
+
+            <!-- Center Nav Links (Desktop) -->
+            <ul class="nav-links">
+                <li><a href="{% url 'account:home' %}" class="{% if request.path == '/' %}active{% endif %}">HOME</a></li>
+                <li><a href="{% url 'account:about' %}" class="{% if 'about' in request.path %}active{% endif %}">ABOUT</a></li>
+                <li><a href="{% url 'subscriptions:plans_list' %}" class="{% if 'plans_list' in request.path %}active{% endif %}">SUBSCRIPTION</a></li>
+                <li><a href="{% url 'venues:list' %}" class="{% if 'venues' in request.path %}active{% endif %}">VENUES</a></li>
+            </ul>
+
+            <!-- Auth Buttons (Desktop) -->
+            <div class="auth-buttons">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'account:dashboard' %}" class="login-link">Dashboard</a>
+                    <div class="auth-divider"></div>
+                    <a href="{% url 'account:logout' %}" class="register-btn">Logout</a>
+                {% else %}
+                    <a href="{% url 'account:login' %}" class="login-link">Login</a>
+                    <div class="auth-divider"></div>
+                    <a href="{% url 'account:register_user' %}" class="register-btn">Register</a>
+                {% endif %}
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Mobile Offcanvas Menu -->
+    <div class="offcanvas offcanvas-end offcanvas-custom" tabindex="-1" id="mobileMenu">
+        <div class="offcanvas-header offcanvas-header-custom">
+            <div class="footer-brand">
+                <svg class="brand-logo" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M25 5L29 15L40 12L35 22L45 25L35 28L40 38L29 35L25 45L21 35L10 38L15 28L5 25L15 22L10 12L21 15L25 5Z" fill="#E5AD04" stroke="#FFFFFF" stroke-width="2"/>
+                    <circle cx="25" cy="25" r="5" fill="#FFFFFF"/>
+                </svg>
+                <div class="footer-brand-text">
+                    <span class="gold">Gold</span><span class="privilege">Privilege</span>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body offcanvas-body-custom">
+            <ul class="mobile-nav-links">
+                <li><a href="{% url 'account:home' %}" class="{% if request.path == '/' %}active{% endif %}">HOME</a></li>
+                <li><a href="{% url 'account:about' %}" class="{% if 'about' in request.path %}active{% endif %}">ABOUT</a></li>
+                <li><a href="{% url 'subscriptions:plans_list' %}" class="{% if 'plans_list' in request.path %}active{% endif %}">SUBSCRIPTION</a></li>
+                <li><a href="{% url 'venues:list' %}" class="{% if 'venues' in request.path %}active{% endif %}">VENUES</a></li>
+            </ul>
+
+            <div class="mobile-auth-buttons">
+                {% if user.is_authenticated %}
+                    <a href="{% url 'account:dashboard' %}" class="login-link">Dashboard</a>
+                    <a href="{% url 'account:profile' %}" class="login-link">Profile</a>
+                    <a href="{% url 'account:logout' %}" class="register-btn">Logout</a>
+                {% else %}
+                    <a href="{% url 'account:login' %}" class="login-link">Login</a>
+                    <a href="{% url 'account:register_user' %}" class="register-btn">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-custom alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <!-- Wave Pattern Background -->
+        <div class="wave-pattern">
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+            <div class="wave-line"></div>
+        </div>
+
+        <div class="footer-content">
+            <div class="container">
+                <div class="row">
+                    <!-- Left: Brand -->
+                    <div class="col-lg-3 col-md-12 mb-4 mb-lg-0">
+                        <div class="footer-brand">
+                            <svg class="brand-logo" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M25 5L29 15L40 12L35 22L45 25L35 28L40 38L29 35L25 45L21 35L10 38L15 28L5 25L15 22L10 12L21 15L25 5Z" fill="#E5AD04" stroke="#FFFFFF" stroke-width="2"/>
+                                <circle cx="25" cy="25" r="5" fill="#FFFFFF"/>
+                            </svg>
+                            <div class="footer-brand-text">
+                                <span class="gold">Gold</span><span class="privilege"> Privilege</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Three Columns -->
+                    <div class="col-lg-9 col-md-12">
+                        <div class="footer-columns">
+                            <!-- Company Column -->
+                            <div class="footer-column">
+                                <h4>Company</h4>
+                                <h4><ul>
+                                    <li><a href="{% url 'account:about' %}">About Us</a></li>
+                                    <li><a href="#careers">Careers</a></li>
+                                    <li><a href="#press">Press</a></li>
+                                    <li><a href="#blog">Blog</a></li>
+                                </ul></h4>
+                            </div>
+
+                            <!-- Support Column -->
+                            <div class="footer-column">
+                                <h4>Support</h4>
+                                <h4><ul>
+                                    <li><a href="#help">Help Center</a></li>
+                                    <li><a href="#contact">Contact Us</a></li>
+                                    <li><a href="#faq">FAQ</a></li>
+                                    <li><a href="#terms">Terms of Service</a></li>
+                                </ul></h4>
+                            </div>
+
+                            <!-- Legal Column -->
+                            <div class="footer-column">
+                                <h4>Legal</h4>
+                                <h4><ul>
+                                    <li><a href="#privacy">Privacy Policy</a></li>
+                                    <li><a href="#cookies">Cookie Policy</a></li>
+                                    <li><a href="#disclaimer">Disclaimer</a></li>
+                                    <li><a href="#licenses">Licenses</a></li>
+                                </ul></h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="container">
+                &copy; 2026 Gold Privilege. All rights reserved. | Premium Lifestyle Access Platform
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script>
+        // Auto-hide alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            const alerts = document.querySelectorAll('.alert-custom');
+            alerts.forEach(alert => {
+                setTimeout(() => {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }, 5000);
+            });
+
+            // Close mobile menu when clicking a link
+            const mobileLinks = document.querySelectorAll('.mobile-nav-links a, .mobile-auth-buttons a');
+            const offcanvas = document.getElementById('mobileMenu');
+            
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvas);
+                    if (bsOffcanvas) {
+                        bsOffcanvas.hide();
+                    }
+                });
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

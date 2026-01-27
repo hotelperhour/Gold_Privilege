@@ -1,0 +1,835 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Gold Privilege</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #F2F2F2;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Navbar */
+        .custom-navbar {
+            background-color: #E5AD04;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+        
+        .navbar-logo {
+            height: 45px;
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .navbar-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1;
+        }
+        
+        .navbar-text .gold {
+            color: #FFFFFF;
+        }
+        
+        .navbar-text .privilege {
+            color: #000000;
+        }
+        
+        /* Main Container */
+        .registration-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .registration-wrapper {
+    display: flex;
+    align-items: stretch;  /* KEY LINE */
+    background: #FFFFFF;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    min-height: 480px;
+}
+
+        
+        /* Image Section - Fixed */
+        .image-section {
+    flex: 0 0 58%;
+    background: 
+                url("{% static 'images/sign_up.png' %}") center/cover;
+    display: flex;
+    align-items: flex-end;
+    padding: 30px;
+    min-height: 480px;
+}
+
+        
+        .image-text {
+            width: 100%;
+            text-align: left;
+        }
+        
+        .image-text .welcome {
+            color: #E5AD04;
+            font-size: 32px;
+            font-weight: 300;
+            margin-bottom: 5px;
+        }
+        
+        .image-text .brand {
+            color: #FFFFFF;
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        /* Form Section */
+        .form-section {
+            flex: 0 0 42%;
+            padding: 35px 30px;
+            display: flex;
+            flex-direction: column;
+            background: #FFFFFF;
+            min-height: 480px;
+            justify-content: center;
+            
+        }
+        
+        .form-header {
+            margin-bottom: 30px;
+
+        }
+        
+        .form-title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #3F3D56;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        /* Tab Switcher (Capsule) */
+        .tab-switcher {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid #E5AD04;
+    border-radius: 50px;
+    padding: 4px;
+    background: #FFFFFF;
+    max-width: 320px;
+    margin: 0 auto;   /* CENTER IT */
+    width: 100%;
+}
+
+        
+        .tab-button {
+            padding: 10px 20px;
+            flex: 1;
+            text-align: center;
+            border: none;
+            background: transparent;
+            color: #E5AD04;
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            
+        }
+        
+        .tab-button.active {
+            background: #E5AD04;
+            color: #FFFFFF;
+        }
+        
+        /* Form Styles */
+        .registration-form {
+            display: none;
+        }
+        
+        .registration-form.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .form-label {
+            display: block;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #3F3D56;
+            margin-bottom: 8px;
+            opacity: 0.75;
+        }
+        
+        .form-control {
+            width: 100%;
+            height: 42px;
+            padding: 0 15px;
+            border: 2px solid #E5E5E5;
+            border-radius: 5px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            color: #3F3D56;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #E5AD04;
+        }
+        
+        .form-control.error {
+            border-color: #dc3545;
+        }
+        
+        /* Password Field with Eye Icon */
+        .password-wrapper {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #3F3D56;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            opacity: 1;
+            color: #E5AD04;
+        }
+
+        .password-toggle i {
+            font-size: 16px;
+        }
+        
+        /* Terms Checkbox */
+        .checkbox-wrapper {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .custom-checkbox {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            border: 2px solid #E5AD04;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            appearance: none;
+            -webkit-appearance: none;
+            transition: all 0.3s ease;
+        }
+        
+        .custom-checkbox:checked {
+            background: #E5AD04;
+        }
+        
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #FFFFFF;
+            font-size: 12px;
+        }
+        
+        .checkbox-label {
+            font-size: 12px;
+            color: #3F3D56;
+            line-height: 1.5;
+        }
+        
+        .checkbox-label a {
+            color: #E5AD04;
+            text-decoration: none;
+        }
+        
+        .checkbox-label a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Submit Button */
+        .submit-button {
+            width: 100%;
+            height: 45px;
+            background: #E5AD04;
+            border: none;
+            border-radius: 5px;
+            color: #FFFFFF;
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .submit-button:hover {
+            background: #cd9b06;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+        }
+        
+        /* Sign In Link */
+        .signin-link {
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .signin-link .text {
+            color: #3F3D56;
+        }
+        
+        .signin-link a {
+            color: #E5AD04;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+        
+        .signin-link a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .registration-wrapper {
+                flex-direction: column;
+            }
+            
+            .image-section {
+                flex: 0 0 300px;
+                min-height: 300px;
+            }
+            
+            .image-text .welcome {
+                font-size: 24px;
+            }
+            
+            .image-text .brand {
+                font-size: 36px;
+            }
+            
+            .form-section {
+                flex: 1;
+                padding: 40px 30px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .custom-navbar {
+                padding: 12px 20px;
+            }
+            
+            .navbar-logo {
+                height: 35px;
+            }
+            
+            .navbar-text {
+                font-size: 20px;
+            }
+            
+            .registration-container {
+                padding: 20px 15px;
+            }
+            
+            .image-section {
+                flex: 0 0 250px;
+                min-height: 250px;
+                padding: 30px 20px;
+            }
+            
+            .image-text .welcome {
+                font-size: 20px;
+            }
+            
+            .image-text .brand {
+                font-size: 28px;
+            }
+            
+            .form-section {
+                padding: 25px 20px;
+            }
+            
+            .form-title {
+                font-size: 24px;
+            }
+            
+            .tab-button {
+                padding: 8px 20px;
+                font-size: 14px;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+            .tab-switcher {
+                max-width: 300px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .navbar-text {
+                font-size: 18px;
+            }
+            
+            .navbar-logo {
+                height: 30px;
+            }
+            
+            .form-section {
+                padding: 25px 15px;
+            }
+            
+            .tab-switcher {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .tab-button {
+                flex: 1;
+            }
+        }
+
+        /* Desktop Margins */
+        @media (min-width: 993px) {
+            .custom-navbar {
+                padding: 15px calc((100vw - 1400px) / 2);
+            }
+            
+            .registration-container {
+                padding: 40px calc((100vw - 1400px) / 2);
+            }
+        }
+
+        /* For screens larger than 1400px */
+        @media (min-width: 1401px) {
+            .custom-navbar {
+                padding: 15px 40px;
+            }
+            
+            .registration-container {
+                padding: 40px 40px;
+            }
+        }
+
+        /* For screens between 993px and 1400px */
+        @media (min-width: 993px) and (max-width: 1400px) {
+            .custom-navbar {
+                padding: 15px 5%;
+            }
+            
+            .registration-container {
+                padding: 40px 5%;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Custom Navbar -->
+    <nav class="custom-navbar">
+        <a href="{% url 'account:home' %}" class="navbar-brand">
+           <!-- <img src="{% static 'images/logo.png' %}" alt="Logo" class="navbar-logo"> -->
+            <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Gold Crown Symbol -->
+            <path d="M25 5L29 15L40 12L35 22L45 25L35 28L40 38L29 35L25 45L21 35L10 38L15 28L5 25L15 22L10 12L21 15L25 5Z" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+            <circle cx="25" cy="25" r="5" fill="#FFFFFF"/>
+            </svg>
+            <div class="navbar-text">
+                <span class="gold">Gold</span><span class="privilege"> Privilege</span>
+            </div>
+        </a>
+    </nav>
+
+    <!-- Main Registration Container -->
+    <div class="registration-container">
+        <div class="registration-wrapper">
+            <!-- Image Section -->
+            <div class="image-section">
+                <div class="image-text">
+                    <div class="welcome">Welcome to</div>
+                    <div class="brand">Gold Privilege</div>
+                </div>
+            </div>
+
+            <!-- Form Section -->
+            <div class="form-section">
+                <div class="form-header">
+                    <h1 class="form-title">Registration</h1>
+                    
+                    <!-- Tab Switcher -->
+                    <div class="tab-switcher">
+                        <button type="button" class="tab-button active" onclick="switchTab('customer')">
+                            Customers
+                        </button>
+                        <button type="button" class="tab-button" onclick="switchTab('partner')">
+                            Partners
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Customer Registration Form -->
+                <form method="post" action="{% url 'account:register_user' %}" class="registration-form active" id="customerForm">
+                    {% csrf_token %}
+                    
+                    <!-- Non-field errors (general form errors) -->
+                    {% if customer_form.non_field_errors %}
+                        <div style="background: #fee; border: 1px solid #dc3545; padding: 10px; border-radius: 5px; margin-bottom: 15px; color: #dc3545; font-size: 13px;">
+                            {{ customer_form.non_field_errors.0 }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            <input 
+                                type="text" 
+                                name="first_name" 
+                                class="form-control {% if customer_form.first_name.errors %}error{% endif %}" 
+                                value="{{ customer_form.first_name.value|default:'' }}"
+                                required>
+                            {% if customer_form.first_name.errors %}
+                                <span class="error-message">{{ customer_form.first_name.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            <input 
+                                type="text" 
+                                name="last_name" 
+                                class="form-control {% if customer_form.last_name.errors %}error{% endif %}"
+                                value="{{ customer_form.last_name.value|default:'' }}"
+                                required>
+                            {% if customer_form.last_name.errors %}
+                                <span class="error-message">{{ customer_form.last_name.errors.0 }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            class="form-control {% if customer_form.email.errors %}error{% endif %}"
+                            value="{{ customer_form.email.value|default:'' }}"
+                            required>
+                        {% if customer_form.email.errors %}
+                            <span class="error-message">{{ customer_form.email.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input 
+                            type="tel" 
+                            name="phone_number" 
+                            class="form-control {% if customer_form.phone_number.errors %}error{% endif %}"
+                            value="{{ customer_form.phone_number.value|default:'' }}">
+                        {% if customer_form.phone_number.errors %}
+                            <span class="error-message">{{ customer_form.phone_number.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="password-wrapper">
+                            <input 
+                                type="password" 
+                                name="password1" 
+                                class="form-control {% if customer_form.password1.errors %}error{% endif %}" 
+                                id="customerPassword1" 
+                                required>
+                            <span class="password-toggle" onclick="togglePassword('customerPassword1')">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                        {% if customer_form.password1.errors %}
+                            <span class="error-message">{{ customer_form.password1.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <div class="password-wrapper">
+                            <input 
+                                type="password" 
+                                name="password2" 
+                                class="form-control {% if customer_form.password2.errors %}error{% endif %}" 
+                                id="customerPassword2" 
+                                required>
+                            <span class="password-toggle" onclick="togglePassword('customerPassword2')">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                        {% if customer_form.password2.errors %}
+                            <span class="error-message">{{ customer_form.password2.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" name="terms_accepted" class="custom-checkbox" id="customerTerms" 
+                            {% if customer_form.terms_accepted.value %}checked{% endif %} required>
+                        <label for="customerTerms" class="checkbox-label">
+                            I agree to the <a href="#" target="_blank">Terms and Conditions</a>
+                        </label>
+                        {% if customer_form.terms_accepted.errors %}
+                            <span class="error-message" style="margin-left: 30px;">{{ customer_form.terms_accepted.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="submit-button">Create an Account</button>
+                    
+                    <div class="signin-link">
+                        <span class="text">Do you have an account?</span>
+                        <a href="{% url 'account:login' %}">Sign In</a>
+                    </div>
+                </form>
+
+                <!-- Partner Registration Form -->
+                <form method="post" action="{% url 'account:register_partner' %}" class="registration-form" id="partnerForm">
+                    {% csrf_token %}
+                    
+                    <!-- Non-field errors -->
+                    {% if partner_form.non_field_errors %}
+                        <div style="background: #fee; border: 1px solid #dc3545; padding: 10px; border-radius: 5px; margin-bottom: 15px; color: #dc3545; font-size: 13px;">
+                            {{ partner_form.non_field_errors.0 }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-group">
+                        <label class="form-label">Business Email</label>
+                        <input 
+                            type="email" 
+                            name="email" 
+                            class="form-control {% if partner_form.email.errors %}error{% endif %}"
+                            value="{{ partner_form.email.value|default:'' }}"
+                            required>
+                        {% if partner_form.email.errors %}
+                            <span class="error-message">{{ partner_form.email.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Business Name</label>
+                        <input 
+                            type="text" 
+                            name="business_name" 
+                            class="form-control {% if partner_form.business_name.errors %}error{% endif %}"
+                            value="{{ partner_form.business_name.value|default:'' }}"
+                            required>
+                        {% if partner_form.business_name.errors %}
+                            <span class="error-message">{{ partner_form.business_name.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="password-wrapper">
+                            <input 
+                                type="password" 
+                                name="password1" 
+                                class="form-control {% if partner_form.password1.errors %}error{% endif %}" 
+                                id="partnerPassword1" 
+                                required>
+                            <span class="password-toggle" onclick="togglePassword('partnerPassword1')">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                        {% if partner_form.password1.errors %}
+                            <span class="error-message">{{ partner_form.password1.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <div class="password-wrapper">
+                            <input 
+                                type="password" 
+                                name="password2" 
+                                class="form-control {% if partner_form.password2.errors %}error{% endif %}" 
+                                id="partnerPassword2" 
+                                required>
+                            <span class="password-toggle" onclick="togglePassword('partnerPassword2')">
+                                <i class="fas fa-eye"></i>
+                            </span>
+                        </div>
+                        {% if partner_form.password2.errors %}
+                            <span class="error-message">{{ partner_form.password2.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" name="terms_accepted" class="custom-checkbox" id="partnerTerms"
+                            {% if partner_form.terms_accepted.value %}checked{% endif %} required>
+                        <label for="partnerTerms" class="checkbox-label">
+                            I agree to the <a href="#" target="_blank">Partner Terms and Conditions</a>
+                        </label>
+                        {% if partner_form.terms_accepted.errors %}
+                            <span class="error-message" style="margin-left: 30px;">{{ partner_form.terms_accepted.errors.0 }}</span>
+                        {% endif %}
+                    </div>
+                    
+                    <button type="submit" class="submit-button">Create an Account</button>
+                    
+                    <div class="signin-link">
+                        <span class="text">Do you have an account?</span>
+                        <a href="{% url 'account:login' %}">Sign In</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // Tab Switching
+    function switchTab(type) {
+        const buttons = document.querySelectorAll('.tab-button');
+        const forms = document.querySelectorAll('.registration-form');
+        
+        buttons.forEach(btn => btn.classList.remove('active'));
+        forms.forEach(form => form.classList.remove('active'));
+        
+        if (type === 'customer') {
+            buttons[0].classList.add('active');
+            document.getElementById('customerForm').classList.add('active');
+        } else {
+            buttons[1].classList.add('active');
+            document.getElementById('partnerForm').classList.add('active');
+        }
+    }
+    
+    // Auto-switch to correct tab on page load (if there are errors)
+    document.addEventListener('DOMContentLoaded', function() {
+        {% if active_tab == 'partner' %}
+            switchTab('partner');
+        {% endif %}
+        
+        // Set all eye icons to default state
+        document.querySelectorAll('.password-toggle i').forEach(icon => {
+            icon.classList.add('fa-eye');
+        });
+    });
+    
+    // Password Toggle with Font Awesome Icons
+    function togglePassword(fieldId) {
+        const field = document.getElementById(fieldId);
+        const icon = field.parentElement.querySelector('.password-toggle i');
+        
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            field.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+    
+    // Client-side validation (complementary to Django validation)
+    document.querySelectorAll('.registration-form').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Password matching validation
+            const password1 = form.querySelector('[name="password1"]');
+            const password2 = form.querySelector('[name="password2"]');
+            
+            if (password1 && password2) {
+                if (password1.value !== password2.value) {
+                    alert('Passwords do not match');
+                    isValid = false;
+                }
+                
+                if (password1.value.length < 8) {
+                    alert('Password must be at least 8 characters');
+                    isValid = false;
+                }
+            }
+            
+            // Terms checkbox
+            const termsCheckbox = form.querySelector('[name="terms_accepted"]');
+            if (termsCheckbox && !termsCheckbox.checked) {
+                alert('Please accept the Terms and Conditions');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+    });
+    
+    // Clear error styling on input
+    document.querySelectorAll('.form-control').forEach(input => {
+        input.addEventListener('input', function() {
+            this.classList.remove('error');
+        });
+    });
+</script>
+</body>
+</html>

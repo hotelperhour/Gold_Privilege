@@ -1,0 +1,349 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Bookings - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Booking Statistics -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h5 class="card-title">Booking Summary</h5>
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="bi bi-calendar-check fs-1 text-primary"></i>
+                                </div>
+                                <div>
+                                    <p class="mb-0">Active bookings this month:</p>
+                                    <h3 class="mb-0">{{ monthly_stats.confirmed|add:monthly_stats.checked_in }}</h3>
+                                    <small class="text-muted">
+                                        {{ monthly_stats.confirmed }} upcoming, {{ monthly_stats.checked_in }} checked in
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h5 class="card-title">Remaining Quota</h5>
+                            {% if active_subscription %}
+                                {% if remaining > 0 %}
+                                    <div class="alert alert-success">
+                                        <i class="bi bi-check-circle me-2"></i>
+                                        {{ remaining }} booking{{ remaining|pluralize }} remaining this month
+                                    </div>
+                                {% else %}
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-exclamation-triangle me-2"></i>
+                                        Monthly limit reached
+                                    </div>
+                                {% endif %}
+                                <small class="text-muted">
+                                    Plan: {{ active_subscription.plan.name }}
+                                </small>
+                            {% else %}
+                                <div class="alert alert-danger">
+                                    <i class="bi bi-x-circle me-2"></i>
+                                    No active subscription
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Today's Bookings -->
+            {% if today_bookings.exists %}
+            <div class="card mb-4 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-day me-2"></i>
+                        Today's Visits
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for booking in today_bookings %}
+                    <div class="booking-card {% if booking.status == 'CHECKED_IN' %}border-start border-info border-4{% endif %} mb-3 p-3 rounded shadow-sm">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="mb-1">{{ booking.venue.name }}</h6>
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <span class="badge bg-{{ booking.get_status_badge_color }}">
+                                        {{ booking.get_status_display }}
+                                    </span>
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-people me-1"></i>
+                                        {{ booking.guests_count }} guest{{ booking.guests_count|pluralize }}
+                                    </span>
+                                    {% if booking.status == 'CHECKED_IN' %}
+                                    <span class="badge bg-info">
+                                        <i class="bi bi-clock me-1"></i>
+                                        Checked in at {{ booking.checked_in_at|time:"g:i A" }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                <p class="text-muted mb-1">
+                                    <i class="bi bi-geo-alt me-1"></i>
+                                    {{ booking.venue.address }}, {{ booking.venue.city }}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-md-end">
+                                <div class="btn-group">
+                                    <a href="{% url 'bookings:detail' booking.booking_reference %}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye me-1"></i>View
+                                    </a>
+                                    {% if booking.status == 'CONFIRMED' %}
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#cancelModal{{ booking.id }}">
+                                        <i class="bi bi-x-circle me-1"></i>Cancel
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Upcoming Bookings -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-calendar-week me-2"></i>
+                        Upcoming Bookings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_bookings.exists %}
+                        {% for booking in upcoming_bookings %}
+                        <div class="booking-card mb-3 p-3 rounded shadow-sm">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h6 class="mb-1">{{ booking.venue.name }}</h6>
+                                    <p class="text-muted mb-1">
+                                        <i class="bi bi-calendar me-1"></i>
+                                        {{ booking.visit_date|date:"l, F j, Y" }}
+                                        (in {{ booking.days_until_visit }} day{{ booking.days_until_visit|pluralize }})
+                                    </p>
+                                    <div class="d-flex flex-wrap gap-2 mb-2">
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-people me-1"></i>
+                                            {{ booking.guests_count }} guest{{ booking.guests_count|pluralize }}
+                                        </span>
+                                        {% if booking.special_requests %}
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-chat-text me-1"></i>
+                                            Special requests
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-md-end">
+                                    <div class="btn-group">
+                                        <a href="{% url 'bookings:detail' booking.booking_reference %}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="bi bi-eye me-1"></i>View Details
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger btn-sm"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#cancelModal{{ booking.id }}">
+                                            <i class="bi bi-x-circle me-1"></i>Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
+                            <h5>No upcoming bookings</h5>
+                            <p class="text-muted">Ready to explore? Book your next visit!</p>
+                            <a href="{% url 'venues:list' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i>Book a Venue
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Past Bookings -->
+            {% if past_bookings.exists %}
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Past Visits
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Venue</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Guests</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in past_bookings|slice:":10" %}
+                                <tr>
+                                    <td>{{ booking.venue.name }}</td>
+                                    <td>{{ booking.visit_date|date:"M j, Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ booking.get_status_badge_color }}">
+                                            {{ booking.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ booking.guests_count }}</td>
+                                    <td>
+                                        <a href="{% url 'bookings:detail' booking.booking_reference %}" 
+                                           class="btn btn-sm btn-outline-secondary">
+                                            View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'venues:list' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-2"></i>Book New Venue
+                        </a>
+                        {% if active_subscription and active_subscription.plan %}
+                        <a href="{% url 'subscriptions:plan_detail' active_subscription.plan.slug %}"
+                        class="btn btn-outline-primary">
+                            View My Plan
+                        </a>
+                        {% endif %}
+
+                        {% if today_bookings.exists %}
+                        <button class="btn btn-outline-success" onclick="downloadAllQRCodes()">
+                            <i class="bi bi-qr-code-scan me-2"></i>Download Today's QR Codes
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subscription Info -->
+            {% if active_subscription %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Subscription Details</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">{{ active_subscription.plan.name }}</h6>
+                    <p class="card-text">
+                        <small class="text-muted">
+                            Renews on {{ active_subscription.end_date|date:"F j, Y" }}
+                        </small>
+                    </p>
+                    {% if active_subscription.plan.max_bookings_per_month %}
+<div class="progress mb-3" style="height: 10px;">
+    <div class="progress-bar" role="progressbar" 
+         style="width: {% widthratio monthly_stats.confirmed|add:monthly_stats.checked_in active_subscription.plan.max_bookings_per_month 100 %}%">
+    </div>
+</div>
+<p class="mb-0">
+    {{ monthly_stats.confirmed|add:monthly_stats.checked_in }} of {{ active_subscription.plan.max_bookings_per_month }} 
+    active bookings this month
+</p>
+{% else %}
+<p class="mb-0 text-success">
+    <i class="fas fa-infinity"></i> Unlimited bookings available
+</p>
+{% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Help Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Need Help?</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="bi bi-question-circle text-primary me-2"></i>
+                            <a href="#" class="text-decoration-none">Booking FAQ</a>
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-telephone text-primary me-2"></i>
+                            <a href="#" class="text-decoration-none">Contact Support</a>
+                        </li>
+                        <li>
+                            <i class="bi bi-shield-check text-primary me-2"></i>
+                            <a href="#" class="text-decoration-none">Cancellation Policy</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Modals -->
+{% for booking in upcoming_bookings %}
+<div class="modal fade" id="cancelModal{{ booking.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cancel Booking</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel your booking at <strong>{{ booking.venue.name }}</strong> 
+                on {{ booking.visit_date|date:"F j, Y" }}?</p>
+                
+                <form method="post" action="{% url 'bookings:cancel' booking.booking_reference %}" 
+                      id="cancelForm{{ booking.id }}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="reason{{ booking.id }}" class="form-label">Reason for cancellation (optional):</label>
+                        <textarea class="form-control" id="reason{{ booking.id }}" 
+                                  name="cancellation_reason" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Booking</button>
+                <button type="submit" form="cancelForm{{ booking.id }}" class="btn btn-danger">
+                    Confirm Cancellation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+function downloadAllQRCodes() {
+    // Implement QR code download functionality
+    alert('This feature will download QR codes for all today\'s bookings.');
+}
+</script>
+{% endblock %}

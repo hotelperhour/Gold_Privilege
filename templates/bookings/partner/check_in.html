@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Check-in Guest - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-qr-code-scan me-2"></i>
+                        Guest Check-in
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- QR Scanner Section -->
+                        <div class="col-lg-6 mb-4 mb-lg-0">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-camera me-1"></i>
+                                        Scan QR Code
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="scanner-container" class="text-center">
+                                        <div id="reader" style="width: 300px; height: 300px; margin: 0 auto;"></div>
+                                        <p class="text-muted mt-3">
+                                            Point camera at guest's QR code to scan
+                                        </p>
+                                    </div>
+                                    
+                                    <div id="scanner-result" class="d-none">
+                                        <div class="alert alert-success">
+                                            <h6>QR Code Scanned Successfully!</h6>
+                                            <p id="scan-details" class="mb-0"></p>
+                                        </div>
+                                        <button onclick="processScannedCode()" class="btn btn-success w-100">
+                                            <i class="bi bi-check-circle me-1"></i>
+                                            Process Check-in
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manual Entry Section -->
+                        <div class="col-lg-6">
+                            <div class="card h-100">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="bi bi-keyboard me-1"></i>
+                                        Manual Entry
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        
+                                        <div class="mb-3">
+                                            <label for="{{ form.booking_reference.id_for_label }}" 
+                                                   class="form-label">
+                                                Booking Reference
+                                            </label>
+                                            <input type="text" 
+                                                   name="{{ form.booking_reference.name }}"
+                                                   id="{{ form.booking_reference.id_for_label }}"
+                                                   class="form-control text-uppercase"
+                                                   placeholder="GP-BKABCD12"
+                                                   required>
+                                            {% if form.booking_reference.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.booking_reference.errors|join:", " }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="{{ form.check_in_notes.id_for_label }}" 
+                                                   class="form-label">
+                                                Notes (Optional)
+                                            </label>
+                                            <textarea name="{{ form.check_in_notes.name }}"
+                                                      id="{{ form.check_in_notes.id_for_label }}"
+                                                      class="form-control"
+                                                      rows="2"
+                                                      placeholder="Any special notes for this check-in..."></textarea>
+                                        </div>
+                                        
+                                        <div class="d-grid">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="bi bi-check-circle me-1"></i>
+                                                Check In Guest
+                                            </button>
+                                        </div>
+                                    </form>
+                                    
+                                    <!-- Recent Check-ins -->
+                                    <hr class="my-4">
+                                    <h6>Recent Check-ins</h6>
+                                    {% if today_bookings %}
+                                    <div class="list-group">
+                                        {% for booking in today_bookings|slice:":3" %}
+                                        <div class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1">{{ booking.user.get_full_name }}</h6>
+                                                    <small class="text-muted">{{ booking.booking_reference }}</small>
+                                                </div>
+                                                {% if booking.status == 'CHECKED_IN' %}
+                                                <span class="badge bg-success">
+                                                    <i class="bi bi-check-circle me-1"></i>
+                                                    Checked In
+                                                </span>
+                                                {% else %}
+                                                <form method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="booking_reference" 
+                                                           value="{{ booking.booking_reference }}">
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        Check In
+                                                    </button>
+                                                </form>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted">No bookings scheduled for today.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Bookings Table -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="bi bi-calendar-day me-1"></i>
+                                Today's Bookings ({{ today|date:"F j, Y" }})
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            {% if today_bookings %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Reference</th>
+                                            <th>Member</th>
+                                            <th>Guests</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for booking in today_bookings %}
+                                        <tr>
+                                            <td>{{ booking.created_at|time:"g:i A" }}</td>
+                                            <td>
+                                                <code>{{ booking.booking_reference }}</code>
+                                            </td>
+                                            <td>
+                                                {{ booking.user.get_full_name }}<br>
+                                                <small class="text-muted">{{ booking.user.email }}</small>
+                                            </td>
+                                            <td>{{ booking.guests_count }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ booking.get_status_badge_color }}">
+                                                    {{ booking.get_status_display }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if booking.status == 'CONFIRMED' %}
+                                                <form method="post" class="d-inline">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="booking_reference" 
+                                                           value="{{ booking.booking_reference }}">
+                                                    <button type="submit" class="btn btn-sm btn-success">
+                                                        <i class="bi bi-check-circle me-1"></i>Check In
+                                                    </button>
+                                                </form>
+                                                {% elif booking.status == 'CHECKED_IN' %}
+                                                <button class="btn btn-sm btn-secondary" disabled>
+                                                    <i class="bi bi-check2-all me-1"></i>Checked In
+                                                </button>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4">
+                                <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
+                                <h5>No bookings scheduled for today</h5>
+                                <p class="text-muted">Check your bookings for other dates.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- QR Code Scanner Library -->
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script>
+let html5QrcodeScanner;
+let scannedData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize QR scanner
+    html5QrcodeScanner = new Html5QrcodeScanner(
+        "reader", 
+        { 
+            fps: 10, 
+            qrbox: { width: 250, height: 250 } 
+        },
+        /* verbose= */ false
+    );
+    
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+});
+
+function onScanSuccess(decodedText, decodedResult) {
+    // Stop scanner
+    html5QrcodeScanner.clear();
+    
+    // Parse QR data (format: GP-BKABCD12|VenueID|Date)
+    const parts = decodedText.split('|');
+    
+    if (parts.length === 3) {
+        scannedData = {
+            reference: parts[0],
+            venueId: parts[1],
+            date: parts[2]
+        };
+        
+        // Show result
+        document.getElementById('scanner-container').classList.add('d-none');
+        document.getElementById('scanner-result').classList.remove('d-none');
+        
+        document.getElementById('scan-details').innerHTML = `
+            <strong>Reference:</strong> ${parts[0]}<br>
+            <strong>Date:</strong> ${new Date(parts[2]).toLocaleDateString()}
+        `;
+    } else {
+        alert('Invalid QR code format. Please scan a valid booking QR code.');
+        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    }
+}
+
+function onScanFailure(error) {
+    // Handle scan failure, ignore if it's just "not found"
+    console.warn(`QR scan failed: ${error}`);
+}
+
+function processScannedCode() {
+    if (!scannedData) return;
+    
+    // Auto-fill manual form
+    document.getElementById('{{ form.booking_reference.id_for_label }}').value = scannedData.reference;
+    
+    // Validate date
+    const today = new Date().toISOString().split('T')[0];
+    if (scannedData.date !== today) {
+        alert('This booking is not for today. Please check the date.');
+        return;
+    }
+    
+    // Validate venue
+    const partnerVenueIds = [{% for venue in partner_venues %}{{ venue.id }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    if (!partnerVenueIds.includes(parseInt(scannedData.venueId))) {
+        alert('This booking is not for one of your venues.');
+        return;
+    }
+    
+    // Submit form
+    document.querySelector('form').submit();
+}
+
+// Restart scanner
+function restartScanner() {
+    document.getElementById('scanner-container').classList.remove('d-none');
+    document.getElementById('scanner-result').classList.add('d-none');
+    scannedData = null;
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+}
+</script>
+{% endblock %}

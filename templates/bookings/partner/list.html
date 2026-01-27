@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Partner Dashboard - {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Quick Stats</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h1 class="display-6">{{ booking_stats.today }}</h1>
+                        <small class="text-muted">Today's Bookings</small>
+                    </div>
+                    <div class="mb-3">
+                        <h1 class="display-6">{{ booking_stats.checked_in_today }}</h1>
+                        <small class="text-muted">Checked In Today</small>
+                    </div>
+                    <div class="mb-3">
+                        <h1 class="display-6">{{ booking_stats.upcoming }}</h1>
+                        <small class="text-muted">Upcoming Bookings</small>
+                    </div>
+                    <div>
+                        <h1 class="display-6">{{ booking_stats.total_month }}</h1>
+                        <small class="text-muted">This Month</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'bookings:partner_check_in' %}" class="btn btn-primary">
+                            <i class="bi bi-qr-code-scan me-1"></i>Check-in Guest
+                        </a>
+                        <button class="btn btn-outline-primary" onclick="printTodayList()">
+                            <i class="bi bi-printer me-1"></i>Print Today's List
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Filter Bookings</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" id="filterForm">
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">All Status</option>
+                                {% for status_code, status_name in status_choices %}
+                                <option value="{{ status_code }}" 
+                                        {% if filter_status == status_code %}selected{% endif %}>
+                                    {{ status_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Venue</label>
+                            <select name="venue" class="form-select">
+                                <option value="">All Venues</option>
+                                {% for venue in partner_venues %}
+                                <option value="{{ venue.id }}" 
+                                        {% if filter_venue == venue.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ venue.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Date From</label>
+                            <input type="date" name="date_from" class="form-control" 
+                                   value="{{ filter_date_from }}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Date To</label>
+                            <input type="date" name="date_to" class="form-control" 
+                                   value="{{ filter_date_to }}">
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-funnel me-1"></i>Apply Filters
+                            </button>
+                            <a href="{% url 'bookings:partner_list' %}" class="btn btn-outline-secondary">
+                                Clear Filters
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-0">Bookings</h5>
+                            <small class="text-muted">Showing {{ bookings.count }} bookings</small>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-secondary btn-sm" onclick="exportBookings()">
+                                <i class="bi bi-download me-1"></i>Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if bookings %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Reference</th>
+                                    <th>Member</th>
+                                    <th>Venue</th>
+                                    <th>Date</th>
+                                    <th>Guests</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in bookings %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ booking.booking_reference }}</strong>
+                                        {% if booking.visit_date == today %}
+                                        <span class="badge bg-warning ms-1">Today</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>{{ booking.user.get_full_name }}</div>
+                                        <small class="text-muted">{{ booking.user.email }}</small>
+                                    </td>
+                                    <td>{{ booking.venue.name }}</td>
+                                    <td>{{ booking.visit_date|date:"M j, Y" }}</td>
+                                    <td>{{ booking.guests_count }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ booking.get_status_badge_color }}">
+                                            {{ booking.get_status_display }}
+                                        </span>
+                                        {% if booking.checked_in_at %}
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ booking.checked_in_at|time:"g:i A" }}
+                                        </small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'bookings:partner_detail' booking.booking_reference %}" 
+                                               class="btn btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            {% if booking.status == 'CONFIRMED' and booking.visit_date == today %}
+                                            <button class="btn btn-outline-success quick-checkin-btn" 
+                                                    data-booking="{{ booking.booking_reference }}">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if is_paginated %}
+                    <nav aria-label="Booking pagination">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_venue %}&venue={{ filter_venue }}{% endif %}">
+                                    First
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_venue %}&venue={{ filter_venue }}{% endif %}">
+                                    Previous
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_venue %}&venue={{ filter_venue }}{% endif %}">
+                                    Next
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_venue %}&venue={{ filter_venue }}{% endif %}">
+                                    Last
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
+                        <h5>No bookings found</h5>
+                        <p class="text-muted">Try adjusting your filters or check back later.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Today's Summary -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Today's Schedule</h6>
+                        </div>
+                        <div class="card-body">
+                            {% with todays_bookings=bookings|slice:":5" %}
+                                {% if todays_bookings %}
+                                    {% for booking in todays_bookings %}
+                                        {% if booking.visit_date == today %}
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="me-3">
+                                                {% if booking.status == 'CHECKED_IN' %}
+                                                <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                                                {% else %}
+                                                <i class="bi bi-clock text-warning fs-4"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-0">{{ booking.user.get_full_name }}</h6>
+                                                <small class="text-muted">
+                                                    {{ booking.guests_count }} guest{{ booking.guests_count|pluralize }}
+                                                    • {{ booking.booking_reference }}
+                                                </small>
+                                            </div>
+                                            <div>
+                                                {% if booking.status == 'CONFIRMED' %}
+                                                <button class="btn btn-sm btn-success quick-checkin-btn" 
+                                                        data-booking="{{ booking.booking_reference }}">
+                                                    Check In
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted mb-0">No bookings for today</p>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Quick Check-in</h6>
+                        </div>
+                        <div class="card-body">
+                            <form id="quickCheckinForm">
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control" 
+                                           placeholder="Enter booking reference" 
+                                           id="quickCheckinRef"
+                                           style="text-transform: uppercase;">
+                                    <button class="btn btn-primary" type="button" 
+                                            onclick="quickCheckin()">
+                                        Check In
+                                    </button>
+                                </div>
+                                <div id="quickCheckinResult"></div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function printTodayList() {
+    window.print();
+}
+
+function exportBookings() {
+    // This would typically make an API call to generate an export
+    alert('Export functionality would generate a CSV file of filtered bookings.');
+}
+
+function quickCheckin() {
+    const ref = document.getElementById('quickCheckinRef').value.trim().toUpperCase();
+    const resultDiv = document.getElementById('quickCheckinResult');
+    
+    if (!ref) {
+        resultDiv.innerHTML = '<div class="alert alert-warning">Please enter a booking reference</div>';
+        return;
+    }
+    
+    resultDiv.innerHTML = '<div class="alert alert-info">Processing...</div>';
+    
+    // AJAX call to quick check-in endpoint
+    fetch('{% url "bookings:quick_check_in" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            booking_reference: ref
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Successfully checked in ${data.member_name}<br>
+                    <small>Reference: ${data.booking_reference} • Time: ${data.checked_in_at}</small>
+                </div>
+            `;
+            document.getElementById('quickCheckinRef').value = '';
+            
+            // Refresh page after 2 seconds to update status
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-x-circle me-2"></i>
+                    ${data.error}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-x-circle me-2"></i>
+                Error processing check-in
+            </div>
+        `;
+    });
+}
+
+// Quick check-in button handlers
+document.querySelectorAll('.quick-checkin-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const ref = this.dataset.booking;
+        
+        if (confirm(`Check in booking ${ref}?`)) {
+            // Similar AJAX call as above
+            fetch('{% url "bookings:quick_check_in" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    booking_reference: ref
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Successfully checked in ${data.member_name}`);
+                    location.reload();
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            });
+        }
+    });
+});
+</script>
+
+<style>
+@media print {
+    .card-header, .btn, .sidebar, .quick-actions {
+        display: none !important;
+    }
+    
+    .table {
+        font-size: 12px;
+    }
+}
+</style>
+{% endblock %}

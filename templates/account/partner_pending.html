@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Partner Application Pending - Gold Privilege{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="card card-custom text-center">
+            <div class="card-body p-5">
+                <div class="mb-4">
+                    <i class="fas fa-hourglass-half" style="font-size: 80px; color: var(--accent-color); animation: pulse 2s infinite;"></i>
+                </div>
+                <h2 class="mb-3">Application Under Review</h2>
+                <p class="lead">Thank you for applying to become a Gold Privilege partner!</p>
+                <p class="text-muted">
+                    Your partnership application is currently being reviewed by our team. 
+                    This process typically takes 24-48 hours.
+                </p>
+                
+                <div class="my-4 p-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;">
+                    <h5><i class="fas fa-building"></i> {{ user.partner_profile.business_name }}</h5>
+                    <p class="text-muted mb-0">{{ user.partner_profile.get_business_type_display }}</p>
+                </div>
+                
+                <div class="alert alert-info text-start">
+                    <h6><i class="fas fa-info-circle"></i> What happens next?</h6>
+                    <ol class="mb-0">
+                        <li>Our team reviews your application and documents</li>
+                        <li>We may contact you for additional information</li>
+                        <li>Once approved, you'll receive an email notification</li>
+                        <li>You'll get full access to your partner dashboard</li>
+                    </ol>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-envelope"></i> 
+                    We'll send you an email at <strong>{{ user.email }}</strong> once your application is reviewed.
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{% url 'account:profile' %}" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-user"></i> View Profile
+                    </a>
+                    <a href="{% url 'account:logout' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+</style>
+{% endblock %}

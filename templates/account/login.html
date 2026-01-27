@@ -1,0 +1,614 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Gold Privilege</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #F2F2F2;
+            overflow-x: hidden;
+        }
+        
+        /* Custom Navbar */
+        .custom-navbar {
+            background-color: #E5AD04;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+        }
+        
+        .navbar-logo {
+            height: 45px;
+            width: auto;
+            margin-right: 10px;
+        }
+        
+        .navbar-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1;
+        }
+        
+        .navbar-text .gold {
+            color: #FFFFFF;
+        }
+        
+        .navbar-text .privilege {
+            color: #000000;
+        }
+        
+        /* Main Container */
+        .login-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        
+        .login-wrapper {
+            display: flex;
+            align-items: stretch;
+            background: #FFFFFF;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            min-height: 480px;
+        }
+        
+        /* Image Section */
+        .image-section {
+            flex: 0 0 65%;
+            background: url("{% static 'images/sign_in.webp' %}") center/cover;
+            display: flex;
+            align-items: flex-end;
+            padding: 40px;
+            min-height: 480px;
+        }
+        
+        .image-text {
+            width: 100%;
+            text-align: left;
+        }
+        
+        .image-text .welcome {
+            color: #E5AD04;
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .image-text .brand {
+            color: #FFFFFF;
+            font-size: 48px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        /* Form Section */
+        .form-section {
+            flex: 0 0 35%;
+            padding: 35px 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #FFFFFF;
+            min-height: 480px;
+        }
+        
+        .form-container {
+            width: 100%;
+            max-width: 100%;
+        }
+        
+        .form-title {
+            font-size: 28px;
+            font-weight: 600;
+            font-family: 'Montserrat', sans-serif;
+            color: #3F3D56;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            color: #3F3D56;
+            margin-bottom: 8px;
+            opacity: 0.75;
+        }
+        
+        .form-control {
+            width: 100%;
+            height: 45px;
+            padding: 0 15px;
+            border: 2px solid #E5E5E5;
+            border-radius: 5px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            color: #3F3D56;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #E5AD04;
+        }
+        
+        .form-control.error {
+            border-color: #dc3545;
+        }
+        
+        /* Password Field with Eye Icon */
+        .password-wrapper {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #3F3D56;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-toggle:hover {
+            opacity: 1;
+            color: #E5AD04;
+        }
+
+        .password-toggle i {
+            font-size: 16px;
+        }
+        
+        /* Remember Me & Forgot Password Row */
+        .remember-forgot-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .custom-checkbox {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            border: 2px solid #E5AD04;
+            border-radius: 0%;
+            cursor: pointer;
+            position: relative;
+            appearance: none;
+            -webkit-appearance: none;
+            transition: all 0.3s ease;
+        }
+        
+        .custom-checkbox:checked {
+            background: #E5AD04;
+        }
+        
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #FFFFFF;
+            font-size: 12px;
+        }
+        
+        .checkbox-label {
+            font-size: 12px;
+            color: #3F3D56;
+            line-height: 1;
+            margin: 0;
+        }
+        
+        .forgot-link {
+            font-size: 12px;
+            color: #E5AD04;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .forgot-link:hover {
+            text-decoration: underline;
+            color: #cd9b06;
+        }
+        
+        /* Submit Button */
+        .submit-button {
+            width: 100%;
+            height: 45px;
+            background: #E5AD04;
+            border: none;
+            border-radius: 5px;
+            color: #FFFFFF;
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+        
+        .submit-button:hover {
+            background: #cd9b06;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+        }
+        
+        /* Sign Up Link */
+        .signup-link {
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .signup-link .text {
+            color: #3F3D56;
+        }
+        
+        .signup-link a {
+            color: #E5AD04;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+        
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Error Messages */
+        .error-message {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+        
+        .alert-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c2c7;
+            color: #842029;
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .login-wrapper {
+                flex-direction: column;
+                min-height: auto;
+            }
+            
+            .image-section {
+                flex: 0 0 300px;
+                min-height: 300px;
+            }
+            
+            .image-text .welcome {
+                font-size: 24px;
+            }
+            
+            .image-text .brand {
+                font-size: 36px;
+            }
+            
+            .form-section {
+                flex: 1;
+                min-height: auto;
+                padding: 40px 30px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .custom-navbar {
+                padding: 12px 20px;
+            }
+            
+            .navbar-logo {
+                height: 35px;
+            }
+            
+            .navbar-text {
+                font-size: 20px;
+            }
+            
+            .login-container {
+                padding: 20px 15px;
+            }
+            
+            .image-section {
+                flex: 0 0 250px;
+                min-height: 250px;
+                padding: 30px 20px;
+            }
+            
+            .image-text .welcome {
+                font-size: 20px;
+            }
+            
+            .image-text .brand {
+                font-size: 28px;
+            }
+            
+            .form-section {
+                padding: 30px 20px;
+            }
+            
+            .form-title {
+                font-size: 24px;
+            }
+            
+            @media (max-width: 768px) {
+            .remember-forgot-row {
+                flex-direction: row;        /* KEEP SAME ROW */
+                justify-content: space-between;
+                align-items: center;
+                gap: 10px;
+                width: 100%;
+            }
+        }
+        }
+        
+        @media (max-width: 480px) {
+            .navbar-text {
+                font-size: 18px;
+            }
+            
+            .navbar-logo {
+                height: 30px;
+            }
+            
+            .form-section {
+                padding: 25px 15px;
+            }
+        }
+
+        /* Desktop Margins */
+        @media (min-width: 993px) {
+            .custom-navbar {
+                padding: 15px calc((100vw - 1400px) / 2);
+            }
+            
+            .login-container {
+                padding: 40px calc((100vw - 1400px) / 2);
+            }
+        }
+
+        @media (min-width: 1401px) {
+            .custom-navbar {
+                padding: 15px 40px;
+            }
+            
+            .login-container {
+                padding: 40px 40px;
+            }
+        }
+
+        @media (min-width: 993px) and (max-width: 1400px) {
+            .custom-navbar {
+                padding: 15px 5%;
+            }
+            
+            .login-container {
+                padding: 40px 5%;
+            }
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- Custom Navbar -->
+    <nav class="custom-navbar">
+        <a href="{% url 'account:home' %}" class="navbar-brand">
+            <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M25 5L29 15L40 12L35 22L45 25L35 28L40 38L29 35L25 45L21 35L10 38L15 28L5 25L15 22L10 12L21 15L25 5Z" fill="#FFFFFF" stroke="#000000" stroke-width="2"/>
+                <circle cx="25" cy="25" r="5" fill="#FFFFFF"/>
+            </svg>
+            <div class="navbar-text">
+                <span class="gold">Gold</span><span class="privilege"> Privilege</span>
+            </div>
+        </a>
+    </nav>
+
+    <!-- Main Login Container -->
+    <div class="login-container">
+        <div class="login-wrapper">
+            <!-- Image Section -->
+            <div class="image-section">
+                <div class="image-text">
+                    <div class="welcome"><span style="color: #FFFFFF;">Hello,</span> Welcome Back!</div>
+                    
+                </div>
+            </div>
+
+            <!-- Form Section -->
+            <div class="form-section">
+                <div class="form-container">
+                    <h1 class="form-title">Sign In</h1>
+                    
+                    <!-- Login Form -->
+                    <form method="post" id="loginForm">
+                        {% csrf_token %}
+                        
+                        <!-- Error Messages -->
+                        {% if form.non_field_errors %}
+                        <div class="alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Email Field -->
+                        <div class="form-group">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" 
+                                   name="username" 
+                                   class="form-control" 
+                                   value="{{ form.username.value|default:'' }}"
+                                   required>
+                            {% if form.username.errors %}
+                            <span class="error-message">{{ form.username.errors|join:", " }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Password Field -->
+                        <div class="form-group">
+                            <label class="form-label">Password</label>
+                            <div class="password-wrapper">
+                                <input type="password" 
+                                       name="password" 
+                                       class="form-control" 
+                                       id="loginPassword"
+                                       required>
+                                <span class="password-toggle" onclick="togglePassword()">
+                                    <i class="fas fa-eye"></i>
+                                </span>
+                            </div>
+                            {% if form.password.errors %}
+                            <span class="error-message">{{ form.password.errors|join:", " }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Remember Me & Forgot Password Row -->
+                        <div class="remember-forgot-row">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" 
+                                       name="remember_me" 
+                                       class="custom-checkbox" 
+                                       id="rememberMe">
+                                <label for="rememberMe" class="checkbox-label">
+                                    Remember me
+                                </label>
+                            </div>
+                            <a href="{% url 'account:password_reset' %}" class="forgot-link">
+                                Forgot Password?
+                            </a>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <button type="submit" class="submit-button">Sign In</button>
+                        
+                        <!-- Sign Up Link -->
+                        <div class="signup-link">
+                            <span class="text">Don't have an account?</span>
+                            <a href="{% url 'account:register_user' %}">Sign Up</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Password Toggle
+        function togglePassword() {
+            const field = document.getElementById('loginPassword');
+            const icon = document.querySelector('.password-toggle i');
+            
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                field.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+        
+        // Form Validation
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            let isValid = true;
+            const email = document.querySelector('[name="username"]');
+            const password = document.querySelector('[name="password"]');
+            
+            // Clear previous errors
+            document.querySelectorAll('.error-message').forEach(msg => msg.textContent = '');
+            document.querySelectorAll('.form-control').forEach(input => input.classList.remove('error'));
+            
+            // Validate email
+            if (!email.value.trim()) {
+                email.classList.add('error');
+                const errorSpan = email.parentElement.querySelector('.error-message');
+                if (errorSpan) errorSpan.textContent = 'Email is required';
+                isValid = false;
+            } else if (!email.value.includes('@')) {
+                email.classList.add('error');
+                const errorSpan = email.parentElement.querySelector('.error-message');
+                if (errorSpan) errorSpan.textContent = 'Please enter a valid email';
+                isValid = false;
+            }
+            
+            // Validate password
+            if (!password.value.trim()) {
+                password.classList.add('error');
+                const errorSpan = password.closest('.form-group').querySelector('.error-message');
+                if (errorSpan) errorSpan.textContent = 'Password is required';
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+            }
+        });
+        
+        // Clear error on input
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('input', function() {
+                this.classList.remove('error');
+                const errorSpan = this.parentElement.querySelector('.error-message') || 
+                                 this.closest('.form-group').querySelector('.error-message');
+                if (errorSpan) {
+                    errorSpan.textContent = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

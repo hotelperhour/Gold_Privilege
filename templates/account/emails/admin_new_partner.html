@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Partner Notification</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .content h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .partner-details {
+            background-color: #f9f9f9;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .label {
+            font-weight: bold;
+            color: #667eea;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #667eea;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .cta-button:hover {
+            background-color: #764ba2;
+        }
+        .footer {
+            background-color: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #eee;
+        }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>🎉 New Partner Registration</h1>
+            <p>A new partner has joined your network</p>
+        </div>
+        
+        <div class="content">
+            <h2>Hello Admin,</h2>
+            <p>A new partner has successfully registered and requires your review.</p>
+            
+            <div class="partner-details">
+                <div class="detail-row">
+                    <span class="label">Partner Name:</span>
+                    <span>{{ partner_name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Email:</span>
+                    <span>{{ partner_email }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Company:</span>
+                    <span>{{ company_name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Registration Date:</span>
+                    <span>{{ registration_date }}</span>
+                </div>
+            </div>
+            
+            <p>Please review the partner details and take appropriate action.</p>
+            
+            <a href="{{ admin_dashboard_url }}" class="cta-button">Review Partner</a>
+        </div>
+        
+        <div class="footer">
+            <p>&copy; 2024 Gold Privilege. All rights reserved.</p>
+            <p><a href="{{ contact_url }}">Contact Support</a></p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>Booking Confirmed!</h2>
+    <p>Hi {{ user.get_full_name }},</p>
+    <p><strong>Venue:</strong> {{ booking.venue.name }}</p>
+    <p><strong>Date:</strong> {{ booking.visit_date }}</p>
+    <p><strong>Reference:</strong> {{ booking.booking_reference }}</p>
+    <p>Show this reference at the venue entrance.</p>
+</body>
+</html>
