@@ -1,0 +1,1458 @@
+<!-- venues/partner/multistep_venue_form.html -->
+{% extends 'base_partner.html' %}
+
+{% block title %}Create New Venue - Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Multistep Form Styles */
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-secondary: #F9B036;
+        --dark-bg: #020202;
+        --white: #FFFFFF;
+        --black: #000000;
+        --border-color: #E5E5E5;
+        --step-complete: #28a745;
+        --step-active: var(--gold-primary);
+        --step-pending: #6c757d;
+    }
+    
+    .multistep-container {
+        display: flex;
+        min-height: calc(100vh - 120px);
+        background: #FFFFFF;
+    }
+    
+    /* Progress Tracker - Desktop */
+    .progress-tracker-desktop {
+        width: 280px;
+        background: #F8F9FA;
+        border-right: 1px solid var(--border-color);
+        padding: 30px 20px;
+        position: relative;
+        display: none;
+    }
+    
+    @media (min-width: 992px) {
+        .progress-tracker-desktop {
+            display: block;
+        }
+    }
+    
+    .progress-tracker-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--dark-bg);
+        margin-bottom: 30px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--border-color);
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    
+    .step-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 18px;
+        top: 42px;
+        width: 2px;
+        height: 30px;
+        background: var(--border-color);
+    }
+    
+    .step-item.completed:not(:last-child)::after {
+        background: var(--step-complete);
+    }
+    
+    .step-item.active:not(:last-child)::after {
+        background: var(--step-active);
+    }
+    
+    .step-number {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        font-weight: 600;
+        font-size: 14px;
+        z-index: 1;
+        flex-shrink: 0;
+    }
+    
+    .step-item.pending .step-number {
+        background: #FFFFFF;
+        border: 2px solid var(--border-color);
+        color: var(--step-pending);
+    }
+    
+    .step-item.active .step-number {
+        background: var(--step-active);
+        border: 2px solid var(--step-active);
+        color: var(--black);
+    }
+    
+    .step-item.completed .step-number {
+        background: var(--step-complete);
+        border: 2px solid var(--step-complete);
+        color: var(--white);
+    }
+    
+    .step-info {
+        flex: 1;
+    }
+    
+    .step-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--dark-bg);
+        margin-bottom: 4px;
+    }
+    
+    .step-item.active .step-title {
+        color: var(--step-active);
+    }
+    
+    .step-item.completed .step-title {
+        color: var(--step-complete);
+    }
+    
+    .step-item.pending .step-title {
+        color: var(--step-pending);
+    }
+    
+    .step-description {
+        font-size: 12px;
+        color: var(--step-pending);
+    }
+    
+    /* Progress Tracker - Mobile */
+    .progress-tracker-mobile {
+        display: block;
+        padding: 15px;
+        background: #FFFFFF;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    @media (min-width: 992px) {
+        .progress-tracker-mobile {
+            display: none;
+        }
+    }
+    
+    .mobile-steps {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        padding: 0 20px;
+    }
+    
+    .mobile-steps::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 20px;
+        right: 20px;
+        height: 2px;
+        background: var(--border-color);
+        z-index: 0;
+    }
+    
+    .mobile-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        z-index: 1;
+        width: 60px;
+    }
+    
+    .mobile-step-circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        background: #FFFFFF;
+        border: 2px solid var(--border-color);
+        color: var(--step-pending);
+    }
+    
+    .mobile-step.active .mobile-step-circle {
+        background: var(--step-active);
+        border-color: var(--step-active);
+        color: var(--black);
+    }
+    
+    .mobile-step.completed .mobile-step-circle {
+        background: var(--step-complete);
+        border-color: var(--step-complete);
+        color: var(--white);
+    }
+    
+    .mobile-step-label {
+        font-size: 11px;
+        text-align: center;
+        color: var(--step-pending);
+        font-weight: 500;
+        line-height: 1.2;
+    }
+    
+    .mobile-step.active .mobile-step-label {
+        color: var(--step-active);
+        font-weight: 600;
+    }
+    
+    .mobile-step.completed .mobile-step-label {
+        color: var(--step-complete);
+    }
+    
+    /* Form Content Area */
+    .form-content {
+        flex: 1;
+        padding: 30px;
+        overflow-y: auto;
+    }
+    
+    /* Fix Mobile Layout */
+@media (max-width: 991px) {
+    .multistep-container {
+        flex-direction: column;
+    }
+    
+    .progress-tracker-mobile {
+        position: sticky;
+        top: 80px; /* Below navbar */
+        z-index: 999;
+        background: #FFFFFF;
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        padding: 10px 5px;
+    }
+    
+    .mobile-steps {
+        padding: 0 10px;
+        gap: 5px;
+    }
+    
+    .mobile-steps::before {
+        left: 30px;
+        right: 30px;
+        top: 20px;
+    }
+    
+    .mobile-step {
+        width: auto;
+        flex: 1;
+        min-width: 50px;
+    }
+    
+    .mobile-step-circle {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+    
+    .mobile-step-label {
+        font-size: 10px;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .form-content {
+        padding: 20px 15px;
+        margin-top: 0;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .step-content {
+        max-width: 100%;
+        padding: 0 5px;
+    }
+    
+    /* Ensure forms don't shift right */
+    .form-step.active {
+        width: 100%;
+        margin-left: 0;
+        padding: 0;
+    }
+    
+    /* Fix form elements width */
+    .form-control, .form-select, .form-textarea {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Fix grid layouts on mobile */
+    .amenities-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+    }
+    
+    .image-preview-container {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+    }
+    
+    /* Fix form actions on mobile */
+    .form-actions {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .form-actions > div {
+        width: 100%;
+    }
+    
+    .btn-previous, .btn-next, .btn-save, .btn-cancel {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .btn-cancel {
+        margin-bottom: 10px;
+    }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+    .progress-tracker-mobile {
+        padding: 8px 5px;
+    }
+    
+    .mobile-step-label {
+        font-size: 9px;
+    }
+    
+    .form-content {
+        padding: 15px 10px;
+    }
+    
+    .form-header h1 {
+        font-size: 22px;
+    }
+    
+    .form-header p {
+        font-size: 14px;
+    }
+    
+    .amenities-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .image-preview-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* Adjust step content padding */
+    .step-content {
+        padding: 0;
+    }
+}
+    
+    .form-header {
+        margin-bottom: 30px;
+    }
+    
+    .form-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--dark-bg);
+        margin-bottom: 10px;
+    }
+    
+    .form-header p {
+        color: #6c757d;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+    
+    /* Form Steps */
+    .form-step {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+    
+    .form-step.active {
+        display: block;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .step-content {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    /* Form Controls */
+    .form-label {
+        font-weight: 600;
+        color: var(--dark-bg);
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+    
+    .form-label.required::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .form-control, .form-select, .form-textarea {
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 10px 12px;
+        font-size: 14px;
+        color: var(--dark-bg);
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    .form-control:focus, .form-select:focus, .form-textarea:focus {
+        border-color: var(--gold-primary);
+        box-shadow: 0 0 0 0.2rem rgba(229, 173, 4, 0.25);
+        outline: none;
+    }
+    
+    .form-control.is-invalid, .form-select.is-invalid, .form-textarea.is-invalid {
+        border-color: #dc3545;
+    }
+    
+    .invalid-feedback {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+    
+    .form-text {
+        color: #6c757d;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+    
+    /* Amenities Grid */
+    .amenities-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 10px;
+    }
+    
+    .amenity-checkbox {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .amenity-checkbox:hover {
+        border-color: var(--gold-primary);
+        background-color: rgba(229, 173, 4, 0.05);
+    }
+    
+    .amenity-checkbox input {
+        margin-right: 10px;
+    }
+    
+    .amenity-checkbox label {
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--dark-bg);
+        margin: 0;
+    }
+    
+    /* Image Upload */
+    .image-upload-container {
+        margin-top: 20px;
+    }
+    
+    .cover-image-upload {
+        border: 2px dashed var(--border-color);
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+    }
+    
+    .cover-image-upload:hover {
+        border-color: var(--gold-primary);
+        background-color: rgba(229, 173, 4, 0.05);
+    }
+    
+    .cover-image-preview {
+        max-width: 200px;
+        max-height: 150px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin-top: 15px;
+        display: none;
+    }
+    
+    .gallery-images {
+        margin-top: 30px;
+    }
+    
+    .gallery-images h6 {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: var(--dark-bg);
+    }
+    
+    .gallery-upload-area {
+        border: 2px dashed var(--border-color);
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        margin-bottom: 20px;
+    }
+    
+    .image-preview-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .image-preview-item {
+        position: relative;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+    }
+    
+    .image-preview-item img {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+    }
+    
+    .image-remove-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Time Inputs */
+    .time-inputs {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+    }
+    
+    .time-inputs .form-check {
+        margin-bottom: 0;
+    }
+    
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid var(--border-color);
+    }
+    
+    @media (max-width: 768px) {
+        .form-actions {
+            flex-direction: column;
+            gap: 15px;
+            align-items: stretch;
+        }
+        
+        .form-actions .btn {
+            width: 100%;
+        }
+    }
+    
+    .btn-cancel {
+        background: transparent;
+        color: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        padding: 10px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        text-decoration: none;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cancel:hover {
+        background-color: rgba(229, 173, 4, 0.1);
+        color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+    }
+    
+    .btn-next, .btn-save {
+        background-color: var(--gold-primary);
+        color: var(--black);
+        border: none;
+        padding: 10px 32px;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        min-width: 120px;
+    }
+    
+    .btn-next:hover, .btn-save:hover {
+        background-color: var(--gold-secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+    }
+    
+    .btn-previous {
+        background: transparent;
+        color: #6c757d;
+        border: 1px solid var(--border-color);
+        padding: 10px 24px;
+        border-radius: 6px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-previous:hover {
+        background-color: #f8f9fa;
+        border-color: #6c757d;
+    }
+    
+    /* Loading State */
+    .btn-loading {
+        position: relative;
+        color: transparent !important;
+    }
+    
+    .btn-loading::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        top: 50%;
+        left: 50%;
+        margin-left: -10px;
+        margin-top: -10px;
+        border: 2px solid currentColor;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block partner_content %}
+<div class="multistep-container">
+    <!-- Desktop Progress Tracker -->
+    <div class="progress-tracker-desktop">
+        <div class="progress-tracker-title">Create a Venue</div>
+        
+        {% for i in "123456" %}
+        {% with step_num=i|add:"0" %}
+        <div class="step-item {% if step_num < current_step %}completed{% elif step_num == current_step %}active{% else %}pending{% endif %}"
+             data-step="{{ step_num }}">
+            <div class="step-number">
+                {% if step_num < current_step %}
+                    <i class="fas fa-check"></i>
+                {% else %}
+                    {{ step_num }}
+                {% endif %}
+            </div>
+            <div class="step-info">
+                <div class="step-title">
+                    {% if step_num == 1 %}Basic Information
+                    {% elif step_num == 2 %}Contact Information
+                    {% elif step_num == 3 %}Location Details
+                    {% elif step_num == 4 %}Amenities & Features
+                    {% elif step_num == 5 %}Operating Hours
+                    {% elif step_num == 6 %}Media & Images
+                    {% endif %}
+                </div>
+                <div class="step-description">
+                    {% if step_num == 1 %}Name, category, description
+                    {% elif step_num == 2 %}Phone, email, website
+                    {% elif step_num == 3 %}Address, city, coordinates
+                    {% elif step_num == 4 %}Features & facilities
+                    {% elif step_num == 5 %}Hours, SEO settings
+                    {% elif step_num == 6 %}Photos & gallery
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endwith %}
+        {% endfor %}
+    </div>
+    
+    <!-- Mobile Progress Tracker -->
+    <div class="progress-tracker-mobile">
+        <div class="mobile-steps">
+            {% for i in "123456" %}
+            {% with step_num=i|add:"0" %}
+            <div class="mobile-step {% if step_num < current_step %}completed{% elif step_num == current_step %}active{% else %}pending{% endif %}"
+                 data-step="{{ step_num }}">
+                <div class="mobile-step-circle">
+                    {% if step_num < current_step %}
+                        <i class="fas fa-check"></i>
+                    {% else %}
+                        {{ step_num }}
+                    {% endif %}
+                </div>
+                <div class="mobile-step-label">
+                    {% if step_num == 1 %}Basic
+                    {% elif step_num == 2 %}Contact
+                    {% elif step_num == 3 %}Location
+                    {% elif step_num == 4 %}Amenities
+                    {% elif step_num == 5 %}Hours
+                    {% elif step_num == 6 %}Media
+                    {% endif %}
+                </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Form Content -->
+    <div class="form-content">
+        <div class="form-header">
+            <h1>
+                {% if is_editing %}
+                    Edit {{ venue.name }}
+                {% else %}
+                    Create a Venue
+                {% endif %}
+            </h1>
+            <p>Step {{ current_step }} of {{ total_steps }}: 
+                {% if current_step == 1 %}Basic Information
+                {% elif current_step == 2 %}Contact Information
+                {% elif current_step == 3 %}Location Details
+                {% elif current_step == 4 %}Amenities & Features
+                {% elif current_step == 5 %}Operating Hours
+                {% elif current_step == 6 %}Media & Images
+                {% endif %}
+            </p>
+            {% if is_editing %}
+                <span class="badge bg-warning text-dark mt-2">
+                    <i class="fas fa-edit"></i> You are editing – changes will be saved to this venue.
+                </span>
+            {% endif %}
+        </div>
+        
+        <form method="post" enctype="multipart/form-data" id="venue-multistep-form">
+            {% csrf_token %}
+            <input type="hidden" name="current_step" value="{{ current_step }}" id="current-step">
+            <input type="hidden" name="action" value="next" id="form-action">
+            
+            <!-- Step 1: Basic Information -->
+            <div class="form-step {% if current_step == 1 %}active{% endif %}" data-step="1">
+                <div class="step-content">
+                    <div class="mb-4">
+                        <label for="id_name" class="form-label required">Venue Name</label>
+                        <input type="text" name="name" id="id_name" class="form-control" 
+                               value="{{ form.name.value|default:'' }}"
+                               placeholder="Enter venue name" required>
+                        <div class="form-text">The official name of your business or venue</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="id_category" class="form-label required">Category</label>
+                        <select name="category" id="id_category" class="form-select" required>
+                            <option value="">Select a category</option>
+                            {% for value, label in form.fields.category.choices %}
+                            <option value="{{ value }}" {% if form.category.value == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="id_tagline" class="form-label">Tagline</label>
+                        <input type="text" name="tagline" id="id_tagline" class="form-control"
+                               value="{{ form.tagline.value|default:'' }}"
+                               placeholder="e.g., 'Lagos' Premier Rooftop Bar'">
+                        <div class="form-text">A short, catchy description that appears in listings</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="id_description" class="form-label required">Description</label>
+                        <textarea name="description" id="id_description" class="form-textarea" 
+                                  rows="6" placeholder="Describe your venue in detail. What makes it special?" required>{{ form.description.value|default:'' }}</textarea>
+                        <div class="form-text">Detailed description of your venue</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 2: Contact Information -->
+            <div class="form-step {% if current_step == 2 %}active{% endif %}" data-step="2">
+                <div class="step-content">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="id_phone" class="form-label required">Phone Number</label>
+                            <input type="text" name="phone" id="id_phone" class="form-control"
+                                   value="{{ form.phone.value|default:'' }}"
+                                   placeholder="+234 XXX XXX XXXX" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_email" class="form-label">Email Address</label>
+                            <input type="email" name="email" id="id_email" class="form-control"
+                                   value="{{ form.email.value|default:'' }}"
+                                   placeholder="venue@example.com">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="id_website" class="form-label">Website</label>
+                            <input type="url" name="website" id="id_website" class="form-control"
+                                   value="{{ form.website.value|default:'' }}"
+                                   placeholder="https://yourwebsite.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_capacity" class="form-label">Capacity</label>
+                            <input type="number" name="capacity" id="id_capacity" class="form-control"
+                                   value="{{ form.capacity.value|default:'' }}"
+                                   placeholder="Maximum number of guests">
+                            <div class="form-text">Optional</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 3: Location Details -->
+            <div class="form-step {% if current_step == 3 %}active{% endif %}" data-step="3">
+                <div class="step-content">
+                    <div class="mb-4">
+                        <label for="id_address" class="form-label required">Address</label>
+                        <input type="text" name="address" id="id_address" class="form-control"
+                               value="{{ form.address.value|default:'' }}"
+                               placeholder="Street address" required>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="id_suburb" class="form-label">Suburb/Area</label>
+                            <input type="text" name="suburb" id="id_suburb" class="form-control"
+                                   value="{{ form.suburb.value|default:'' }}"
+                                   placeholder="Suburb or area (optional)">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_city" class="form-label required">City</label>
+                            <input type="text" name="city" id="id_city" class="form-control"
+                                   value="{{ form.city.value|default:'' }}"
+                                   placeholder="City" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="id_state" class="form-label required">State</label>
+                            <input type="text" name="state" id="id_state" class="form-control"
+                                   value="{{ form.state.value|default:'' }}"
+                                   placeholder="State" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_postal_code" class="form-label">Postal Code</label>
+                            <input type="text" name="postal_code" id="id_postal_code" class="form-control"
+                                   value="{{ form.postal_code.value|default:'' }}"
+                                   placeholder="Postal code (optional)">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="id_latitude" class="form-label">Latitude</label>
+                            <input type="number" step="any" name="latitude" id="id_latitude" class="form-control"
+                                   value="{{ form.latitude.value|default:'' }}"
+                                   placeholder="e.g., 6.5244">
+                            <div class="form-text">Optional: For map display</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="id_longitude" class="form-label">Longitude</label>
+                            <input type="number" step="any" name="longitude" id="id_longitude" class="form-control"
+                                   value="{{ form.longitude.value|default:'' }}"
+                                   placeholder="e.g., 3.3792">
+                            <div class="form-text">Optional: For map display</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <!-- Step 4: Amenities & Features -->
+            <div class="form-step {% if current_step == 4 %}active{% endif %}" data-step="4">
+                <div class="step-content">
+                    <div class="mb-4">
+                        <label class="form-label mb-3">Select Amenities</label>
+                        <div class="amenities-grid" id="amenities-grid">
+                            {% for amenity in amenities %}
+                            <div class="amenity-checkbox">
+                                <input type="checkbox" name="amenities" value="{{ amenity.id }}" 
+                                       id="amenity_{{ amenity.id }}" class="d-none"
+                                       {% if amenity.id|stringformat:"i" in form.amenities.value %}checked{% endif %}>
+                                <label for="amenity_{{ amenity.id }}">
+                                    <i class="fas fa-check-circle me-2 text-success d-none"></i>
+                                    {{ amenity.name }}
+                                </label>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted">No amenities available.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Step 5: Operating Hours & SEO -->
+            <div class="form-step {% if current_step == 5 %}active{% endif %}" data-step="5">
+                <div class="step-content">
+                    <div class="mb-5">
+                        <label class="form-label mb-3">Operating Hours</label>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="open_24_hours" id="id_open_24_hours" 
+                                   class="form-check-input" 
+                                   {% if form.open_24_hours.value %}checked{% endif %}>
+                            <label class="form-check-label" for="id_open_24_hours">
+                                Open 24 Hours
+                            </label>
+                        </div>
+                        
+                        <div id="hours-container" {% if form.open_24_hours.value %}style="display: none;"{% endif %}>
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <label for="id_opening_time" class="form-label">Opening Time</label>
+                                    <input type="time" name="opening_time" id="id_opening_time" 
+                                           class="form-control" value="{{ form.opening_time.value|default:'' }}">
+                                </div>
+                                <div class="col-md-6 mb-4">
+                                    <label for="id_closing_time" class="form-label">Closing Time</label>
+                                    <input type="time" name="closing_time" id="id_closing_time" 
+                                           class="form-control" value="{{ form.closing_time.value|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+
+            <!-- Step 6: Media & Images -->
+<div class="form-step {% if current_step == 6 %}active{% endif %}" data-step="6">
+    <div class="step-content">
+        <div class="image-upload-container">
+            
+            <!-- ========== COVER IMAGE ========== -->
+            <!-- ========== COVER IMAGE ========== -->
+<div class="mb-5">
+    <label class="form-label {% if not is_editing or not venue.cover_image %}required{% endif %}">
+        Cover Image
+    </label>
+    
+    <!-- Current cover (edit mode) - shown only if exists -->
+    {% if is_editing and venue.cover_image %}
+    <div class="current-cover mb-4 p-3 border rounded bg-light">
+        <div class="d-flex align-items-start gap-4">
+            <img src="{{ venue.cover_image.url }}" 
+                 alt="Current cover" 
+                 style="width: 120px; height: 90px; object-fit: cover; border-radius: 6px;">
+            <div>
+                <p class="mb-2"><strong>Current cover image</strong></p>
+                <p class="small text-muted mb-2">
+                    Upload a new image below to replace it.
+                </p>
+                <!-- No "Remove" button – keep it simple -->
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Upload area -->
+    <div class="cover-image-upload" id="cover-image-upload">
+        <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color: #6c757d;"></i>
+        <p class="mb-2">
+            {% if is_editing and venue.cover_image %}
+                Click to replace cover image
+            {% else %}
+                Click to upload cover image
+            {% endif %}
+        </p>
+        <p class="small text-muted">Recommended: 1200x800px, max 2MB</p>
+        <input type="file" name="cover_image" id="id_cover_image" 
+               accept="image/*" class="d-none"
+               {% if not is_editing or not venue.cover_image %}required{% endif %}>
+    </div>
+    
+    <!-- Preview for newly selected cover -->
+    <img id="cover-image-preview" class="cover-image-preview" src="#" alt="New cover preview">
+</div>
+            
+
+            <!-- ========== GALLERY IMAGES ========== -->
+            <div class="gallery-images">
+                <h6>Gallery Images</h6>
+                <p class="text-muted small mb-3">
+                    {% if is_editing %}
+                        Existing images are shown below. Upload new images to add more.
+                    {% else %}
+                        Add up to 10 images to showcase your venue.
+                    {% endif %}
+                </p>
+                
+                <!-- Existing gallery images (edit mode) -->
+                {% if is_editing and venue.images.exists %}
+                <div class="existing-gallery mb-4">
+                    <p class="fw-bold small mb-2">Existing gallery images:</p>
+                    <div class="d-flex flex-wrap gap-3" id="existing-gallery-container">
+                        {% for image in venue.images.all %}
+                        <div class="existing-image-item" data-image-id="{{ image.id }}">
+                            <div class="position-relative">
+                                <img src="{{ image.image.url }}" 
+                                     alt="{{ image.caption|default:'Gallery' }}" 
+                                     style="width: 100px; height: 80px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color);">
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 delete-gallery-image"
+                                        style="width: 28px; height: 28px; border-radius: 50%; padding: 0;"
+                                        data-image-id="{{ image.id }}"
+                                        data-image-url="{% url 'venues:delete_gallery_image' image.id %}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Upload area for new gallery images -->
+                <div class="gallery-upload-area" id="gallery-upload-area">
+                    <i class="fas fa-images fa-2x mb-2" style="color: #6c757d;"></i>
+                    <p class="mb-2">Click or drag to upload multiple images</p>
+                    <p class="small text-muted">You can select multiple files</p>
+                    <input type="file" name="gallery_images" id="id_gallery_images" 
+                           multiple accept="image/*" class="d-none">
+                </div>
+                
+                <!-- Preview container for newly selected images -->
+                <div id="image-preview-container" class="image-preview-container"></div>
+                <input type="hidden" name="gallery_count" id="gallery-count" value="0">
+                
+                <!-- Hidden input to track deleted gallery images -->
+                
+            </div>
+        </div>
+    </div>
+</div>
+            
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <div>
+                    {% if current_step > 1 %}
+                    <button type="button" class="btn-previous" id="btn-previous">
+                        <i class="fas fa-arrow-left me-2"></i>Previous
+                    </button>
+                    {% else %}
+                    <a href="{% url 'venues:partner_list' %}" class="btn-cancel">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <div>
+                    {% if current_step < 6 %}
+                    <button type="submit" class="btn-next" id="btn-next">
+                        Next <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                    {% else %}
+                    <button type="submit" class="btn-save" id="btn-save">
+                        <i class="fas fa-check me-2"></i>Save Venue
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Success Modal Template -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle" style="font-size: 80px; color: var(--gold-primary);"></i>
+                </div>
+                <h3 class="mb-3">Congratulations!</h3>
+                <p class="text-muted mb-4">You have successfully added a venue</p>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'venues:partner_list' %}" class="btn btn-outline-primary">
+                        View All Venues
+                    </a>
+                    <a href="#" class="btn-gold-primary" id="add-another-btn">
+                        Add Another Venue
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const currentStep = parseInt(document.getElementById('current-step').value);
+    const form = document.getElementById('venue-multistep-form');
+    const btnPrevious = document.getElementById('btn-previous');
+    const btnNext = document.getElementById('btn-next');
+    const btnSave = document.getElementById('btn-save');
+    const formAction = document.getElementById('form-action');
+    
+    // Image upload handling
+    const coverImageUpload = document.getElementById('cover-image-upload');
+    const coverImageInput = document.getElementById('id_cover_image');
+    const coverImagePreview = document.getElementById('cover-image-preview');
+    
+    const galleryUploadArea = document.getElementById('gallery-upload-area');
+    const galleryImagesInput = document.getElementById('id_gallery_images');
+    const previewContainer = document.getElementById('image-preview-container');
+    const galleryCountInput = document.getElementById('gallery-count');
+    
+    // Track uploaded files
+    let uploadedFiles = [];
+    
+    // Cover image upload
+    coverImageUpload.addEventListener('click', () => coverImageInput.click());
+    
+    coverImageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                coverImagePreview.src = e.target.result;
+                coverImagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Gallery images upload
+    galleryUploadArea.addEventListener('click', () => galleryImagesInput.click());
+
+    galleryImagesInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        handleGalleryFiles(files);
+    });
+
+    function handleGalleryFiles(files) {
+        // Clear previous previews
+        previewContainer.innerHTML = '';
+        
+        files.forEach((file, index) => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'image-preview-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'image-remove-btn';
+                    removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    removeBtn.onclick = function() {
+                        previewItem.remove();
+                        // Note: This only removes preview, actual file handling is on submit
+                    };
+                    
+                    previewItem.appendChild(img);
+                    previewItem.appendChild(removeBtn);
+                    previewContainer.appendChild(previewItem);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        updateGalleryCount();
+    }
+
+    function updateGalleryCount() {
+        const count = document.querySelectorAll('.image-preview-item').length;
+        galleryCountInput.value = count;
+    }
+    
+    // 24 hours checkbox toggle
+    const open24HoursCheckbox = document.getElementById('id_open_24_hours');
+    const hoursContainer = document.getElementById('hours-container');
+    
+    if (open24HoursCheckbox) {
+        open24HoursCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                hoursContainer.style.display = 'none';
+                document.getElementById('id_opening_time').value = '';
+                document.getElementById('id_closing_time').value = '';
+            } else {
+                hoursContainer.style.display = 'block';
+            }
+        });
+    }
+    
+   
+    
+    
+    
+    // Amenities checkbox styling
+    document.querySelectorAll('.amenity-checkbox').forEach(item => {
+        const checkbox = item.querySelector('input[type="checkbox"]');
+        const checkIcon = item.querySelector('.fa-check-circle');
+        
+        if (checkbox.checked) {
+            checkIcon.classList.remove('d-none');
+            item.style.borderColor = 'var(--step-complete)';
+            item.style.backgroundColor = 'rgba(40, 167, 69, 0.05)';
+        }
+        
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                checkIcon.classList.remove('d-none');
+                item.style.borderColor = 'var(--step-complete)';
+                item.style.backgroundColor = 'rgba(40, 167, 69, 0.05)';
+            } else {
+                checkIcon.classList.add('d-none');
+                item.style.borderColor = 'var(--border-color)';
+                item.style.backgroundColor = '';
+            }
+        });
+    });
+
+    // GALLERY DELETION (AJAX) – moved inside DOMContentLoaded
+    // --------------------------------------------------------
+    {% if is_editing %}
+    document.querySelectorAll('.delete-gallery-image').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const imageId = this.dataset.imageId;
+            const deleteUrl = this.dataset.imageUrl;
+            const imageItem = this.closest('.existing-image-item');
+            
+            if (!confirm('Are you sure you want to remove this image?')) return;
+            
+            // Show loading state
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    imageItem.remove();
+                    showAlert('Image deleted successfully.', 'success');
+                } else {
+                    showAlert('Failed to delete image.', 'error');
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-times"></i>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('An error occurred.', 'error');
+                this.disabled = false;
+                this.innerHTML = '<i class="fas fa-times"></i>';
+            });
+        });
+    });
+    {% endif %}
+    
+    // --------------------------------------------------------
+    // STEP VALIDATION – FIXED FOR EDIT MODE
+    // --------------------------------------------------------
+    function validateStep(step) {
+        let isValid = true;
+        let errorMessage = '';
+
+        switch(step) {
+            case 1:
+                if (!document.getElementById('id_name').value.trim()) {
+                    isValid = false;
+                    errorMessage = 'Venue name is required';
+                } else if (!document.getElementById('id_category').value) {
+                    isValid = false;
+                    errorMessage = 'Please select a category';
+                } else if (!document.getElementById('id_description').value.trim()) {
+                    isValid = false;
+                    errorMessage = 'Description is required';
+                }
+                break;
+
+            case 2:
+                if (!document.getElementById('id_phone').value.trim()) {
+                    isValid = false;
+                    errorMessage = 'Phone number is required';
+                }
+                break;
+
+            case 3:
+                if (!document.getElementById('id_address').value.trim()) {
+                    isValid = false;
+                    errorMessage = 'Address is required';
+                } else if (!document.getElementById('id_city').value.trim()) {
+                    isValid = false;
+                    errorMessage = 'City is required';
+                } else if (!document.getElementById('id_state').value.trim()) {
+                    isValid = false;
+                    errorMessage = 'State is required';
+                }
+                break;
+
+            case 4:   // Amenities – optional
+                break;
+
+            case 5:   // Operating Hours – optional
+                break;
+
+            case 6:   // Media – cover image logic
+                const coverInput = document.getElementById('id_cover_image');
+                {% if is_editing and venue.cover_image %}
+                    // Edit mode with existing cover: no new file required
+                    // Only validate if user selected a file – no error otherwise
+                {% else %}
+                    // Create mode OR edit mode without existing cover: file is required
+                    if (!coverInput || !coverInput.files.length) {
+                        isValid = false;
+                        errorMessage = 'Cover image is required';
+                    }
+                {% endif %}
+                break;
+        }
+
+        if (!isValid) {
+            showAlert(errorMessage, 'error');
+        }
+
+        return isValid;
+    }
+    
+    // Form navigation
+    if (btnPrevious) {
+        btnPrevious.addEventListener('click', function() {
+            formAction.value = 'previous';
+            form.submit();
+        });
+    }
+    
+    if (btnNext) {
+        btnNext.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Validate current step
+            if (!validateStep(currentStep)) {
+                return;
+            }
+            
+            // Add loading state
+            btnNext.innerHTML = '<span class="btn-loading"></span>';
+            btnNext.disabled = true;
+            
+            formAction.value = 'next';
+            form.submit();
+        });
+    }
+    
+    // Remove the AJAX fetch block for btnSave
+    if (btnSave) {
+        btnSave.addEventListener('click', function(e) {
+            if (!validateStep(currentStep)) {
+                e.preventDefault();
+                return;
+            }
+            // Add loading spinner
+            btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+            btnSave.disabled = true;
+            // Let the form submit normally
+            form.submit();
+        });
+    }
+    
+    
+    
+    // Alert function
+    function showAlert(message, type = 'error') {
+        // Remove existing alerts
+        document.querySelectorAll('.alert-dismissible').forEach(alert => alert.remove());
+        
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.querySelector('.form-header').appendChild(alertDiv);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+    
+    // Cancel button handling
+    document.querySelector('.btn-cancel')?.addEventListener('click', function(e) {
+        if (!confirm('Are you sure you want to cancel? All unsaved changes will be lost.')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

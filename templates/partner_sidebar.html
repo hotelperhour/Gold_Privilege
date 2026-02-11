@@ -1,0 +1,339 @@
+<!-- templates/partner/partner_sidebar.html -->
+<aside class="partner-sidebar">
+    <!-- Desktop Sidebar -->
+    <div class="sidebar-desktop d-none d-lg-block">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <svg width="30" height="30" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M25 5L29 15L40 12L35 22L45 25L35 28L40 38L29 35L25 45L21 35L10 38L15 28L5 25L15 22L10 12L21 15L25 5Z" fill="#E5AD04" stroke="#020202" stroke-width="2"/>
+                    <circle cx="25" cy="25" r="5" fill="#020202"/>
+                </svg>
+                <span class="sidebar-brand">Partner Hub</span>
+            </div>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="{% url 'account:partner_dashboard' %}" 
+               class="nav-item {% if request.resolver_match.url_name == 'partner_dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'venues:partner_list' %}" 
+               class="nav-item {% if 'partner_list' in request.path and 'venues' in request.path %}active{% endif %}">
+                <i class="fas fa-building"></i>
+                <span>Venues</span>
+            </a>
+            <a href="{% url 'bookings:partner_list' %}" 
+               class="nav-item {% if 'partner_list' in request.path and 'bookings' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-check"></i>
+                <span>Bookings</span>
+            </a>
+            <a href="{% url 'bookings:partner_check_in' %}" 
+               class="nav-item {% if 'check_in' in request.path %}active{% endif %}">
+                <i class="fas fa-qrcode"></i>
+                <span>Check-ins</span>
+            </a>
+            <a href="{% url 'account:profile' %}" 
+               class="nav-item {% if 'profile' in request.path %}active{% endif %}">
+                <i class="fas fa-user"></i>
+                <span>Profile</span>
+            </a>
+        </nav>
+        
+        <!-- Partner Info at bottom of sidebar -->
+        <div class="sidebar-footer">
+            <div class="partner-info">
+                <div class="partner-name">{{ user.partner_profile.business_name|truncatechars:20 }}</div>
+                <div class="partner-status">
+                    {% if user.partner_profile.status == 'APPROVED' %}
+                        <span class="status-dot active"></span>
+                        <small>Active</small>
+                    {% elif user.partner_profile.status == 'PENDING' %}
+                        <span class="status-dot pending"></span>
+                        <small>Pending</small>
+                    {% else %}
+                        <span class="status-dot inactive"></span>
+                        <small>Inactive</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Mobile Sidebar (Icon-only) -->
+    <div class="sidebar-mobile d-lg-none">
+        <nav class="mobile-nav">
+            <a href="{% url 'account:partner_dashboard' %}" 
+               class="mobile-nav-item {% if request.resolver_match.url_name == 'partner_dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span class="mobile-tooltip">Dashboard</span>
+            </a>
+            <a href="{% url 'venues:partner_list' %}" 
+               class="mobile-nav-item {% if 'partner_list' in request.path and 'venues' in request.path %}active{% endif %}">
+                <i class="fas fa-building"></i>
+                <span class="mobile-tooltip">Venues</span>
+            </a>
+            <a href="{% url 'bookings:partner_list' %}" 
+               class="mobile-nav-item {% if 'partner_list' in request.path and 'bookings' in request.path %}active{% endif %}">
+                <i class="fas fa-calendar-check"></i>
+                <span class="mobile-tooltip">Bookings</span>
+            </a>
+            <a href="{% url 'bookings:partner_check_in' %}" 
+               class="mobile-nav-item {% if 'check_in' in request.path %}active{% endif %}">
+                <i class="fas fa-qrcode"></i>
+                <span class="mobile-tooltip">Check-in</span>
+            </a>
+            <a href="{% url 'account:profile' %}" 
+               class="mobile-nav-item {% if 'profile' in request.path %}active{% endif %}">
+                <i class="fas fa-user"></i>
+                <span class="mobile-tooltip">Profile</span>
+            </a>
+        </nav>
+    </div>
+</aside>
+
+<style>
+    /* Partner Sidebar Styles */
+    .partner-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        z-index: 1000;
+        overflow: hidden;
+    }
+    
+    /* Desktop Sidebar - FIXED: Scrollable content */
+    .sidebar-desktop {
+        width: 250px;
+        height: 100vh;
+        background-color: #FFFFFF;
+        border-right: 1px solid rgba(0, 0, 0, 0.08);
+        display: flex;
+        flex-direction: column;
+        padding-top: 80px; /* Reduced from 100px */
+        overflow: hidden;
+    }
+    
+    .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
+    }
+    
+    .sidebar-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .sidebar-brand {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        color: var(--dark-bg);
+        font-size: 16px;
+    }
+    
+    /* Scrollable navigation */
+    .sidebar-nav {
+        flex: 1;
+        padding: 20px 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    }
+    
+    .sidebar-nav::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .sidebar-nav::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .sidebar-nav::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 20px;
+    }
+    
+    .sidebar-nav::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(0, 0, 0, 0.3);
+    }
+    
+    .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 14px 20px;
+        text-decoration: none;
+        color: var(--black);
+        font-family: 'Poppins', sans-serif;
+        font-weight: 500;
+        font-size: 15px;
+        border-left: 3px solid transparent;
+        transition: all 0.3s ease;
+        margin: 2px 0;
+        position: relative;
+    }
+    
+    .nav-item:hover {
+        background-color: rgba(229, 173, 4, 0.1);
+        color: var(--gold-secondary);
+        border-left: 3px solid var(--gold-secondary);
+    }
+    
+    .nav-item.active {
+        background-color: rgba(229, 173, 4, 0.15);
+        color: var(--gold-primary);
+        border-left: 3px solid var(--gold-primary);
+        font-weight: 600;
+    }
+    
+    .nav-item i {
+        width: 20px;
+        text-align: center;
+        font-size: 16px;
+    }
+    
+    /* Sidebar Footer */
+    .sidebar-footer {
+        padding: 20px;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        flex-shrink: 0;
+    }
+    
+    .partner-info {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .partner-name {
+        font-weight: 600;
+        color: var(--dark-bg);
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .partner-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .partner-status small {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+    
+    .status-dot.active {
+        background-color: #28a745;
+    }
+    
+    .status-dot.pending {
+        background-color: #ffc107;
+    }
+    
+    .status-dot.inactive {
+        background-color: #6c757d;
+    }
+    
+    /* Mobile Sidebar - FIXED: Fixed at bottom */
+    .sidebar-mobile {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 65px;
+        background-color: #FFFFFF;
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        z-index: 1000;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    }
+    
+    .mobile-nav {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        height: 100%;
+        padding: 0 10px;
+    }
+    
+    .mobile-nav-item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        text-decoration: none;
+        color: var(--black);
+        transition: all 0.3s ease;
+    }
+    
+    .mobile-nav-item:hover {
+        background-color: rgba(229, 173, 4, 0.1);
+        color: var(--gold-secondary);
+    }
+    
+    .mobile-nav-item.active {
+        background-color: rgba(229, 173, 4, 0.15);
+        color: var(--gold-primary);
+    }
+    
+    .mobile-nav-item i {
+        font-size: 20px;
+    }
+    
+    .mobile-tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: var(--dark-bg);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        margin-bottom: 5px;
+    }
+    
+    .mobile-nav-item:hover .mobile-tooltip {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    /* Main Content Adjustment */
+    .partner-content-wrapper {
+        margin-left: 250px;
+        padding: 20px 30px;
+        min-height: 100vh;
+        background-color: #f8f9fa;
+    }
+    
+    @media (max-width: 991px) {
+        .sidebar-desktop {
+            display: none;
+        }
+        
+        .partner-content-wrapper {
+            margin-left: 0;
+            padding: 20px 15px;
+            padding-bottom: 85px; /* Space for bottom nav */
+        }
+    }
+</style>

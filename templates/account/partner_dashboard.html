@@ -1,355 +1,650 @@
-{% extends 'base.html' %}
-{% load static %}
+<!-- templates/account/partner_dashboard.html -->
+{% extends 'base_partner.html' %}
 
 {% block title %}Partner Dashboard - Gold Privilege{% endblock %}
 
-{% block content %}
-<div class="row mt-4">
-    <div class="col-12">
-        <h1 class="mb-4">
-            <i class="fas fa-briefcase"></i> Partner Dashboard
-        </h1>
-    </div>
-</div>
-
-<div class="row">
-    <!-- Business Info Card -->
-    <div class="col-md-4 mb-4">
-        <div class="card card-custom">
-            <div class="card-body text-center">
-                <i class="fas fa-building" style="font-size: 80px; color: var(--primary-color);"></i>
-                <h5 class="mt-3">{{ partner_profile.business_name }}</h5>
-                <p class="text-muted mb-2">
-                    {% if partner_profile.status == 'APPROVED' %}
-                        <span class="badge bg-success">Active Partner</span>
-                    {% elif partner_profile.status == 'PENDING' %}
-                        <span class="badge bg-warning">Pending Approval</span>
-                    {% elif partner_profile.status == 'REJECTED' %}
-                        <span class="badge bg-danger">Rejected</span>
-                    {% elif partner_profile.status == 'SUSPENDED' %}
-                        <span class="badge bg-dark">Suspended</span>
-                    {% endif %}
-                </p>
-                <hr>
-                <div class="mb-2">
-                    <small class="text-muted">Joined:</small><br>
-                    <strong>{{ partner_profile.created_at|date:"M d, Y" }}</strong>
-                </div>
-                {% if partner_profile.approved_at %}
-                <div class="mb-2">
-                    <small class="text-muted">Approved:</small><br>
-                    <strong>{{ partner_profile.approved_at|date:"M d, Y" }}</strong>
-                </div>
-                {% endif %}
-                <hr>
-                <a href="{% url 'account:profile' %}" class="btn btn-gold btn-sm">
-                    <i class="fas fa-edit"></i> Edit Profile
-                </a>
-            </div>
-        </div>
-    </div>
+{% block extra_css %}
+<style>
+    /* Dashboard Specific Styles */
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-secondary: #F9B036;
+        --dark-bg: #020202;
+        --white: #FFFFFF;
+        --black: #000000;
+    }
     
-    <!-- Quick Stats -->
-    <div class="col-md-8 mb-4">
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <div class="card card-custom">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <p class="text-muted mb-1">Total Bookings</p>
-                                <h3 class="mb-0">{{ total_bookings|default:0 }}</h3>
-                                <small class="text-muted">All time</small>
-                            </div>
-                            <i class="fas fa-calendar-check" style="font-size: 40px; color: var(--primary-color);"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6 mb-3">
-                <div class="card card-custom">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <p class="text-muted mb-1">My Venues</p>
-                                <h3 class="mb-0">{{ venues.count|default:0 }}</h3>
-                                <small class="text-muted">
-                                    {% if venues %}
-                                        {{ venues|length }} active
-                                    {% else %}
-                                        No venues yet
-                                    {% endif %}
-                                </small>
-                            </div>
-                            <i class="fas fa-map-marker-alt" style="font-size: 40px; color: var(--primary-color);"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6 mb-3">
-                <div class="card card-custom">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <p class="text-muted mb-1">Pending Check-ins</p>
-                                <h3 class="mb-0">{{ pending_bookings|default:0 }}</h3>
-                                <small class="text-muted">
-                                    {% if pending_bookings > 0 %}
-                                        Awaiting confirmation
-                                    {% else %}
-                                        No pending
-                                    {% endif %}
-                                </small>
-                            </div>
-                            <i class="fas fa-clock" style="font-size: 40px; color: var(--primary-color);"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-md-6 mb-3">
-                <div class="card card-custom">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center">
-                            <div class="flex-grow-1">
-                                <p class="text-muted mb-1">Account Status</p>
-                                <h3 class="mb-0">
-                                    {% if partner_profile.status == 'APPROVED' %}
-                                        <i class="fas fa-check-circle text-success"></i>
-                                    {% elif partner_profile.status == 'PENDING' %}
-                                        <i class="fas fa-hourglass-half text-warning"></i>
-                                    {% else %}
-                                        <i class="fas fa-times-circle text-danger"></i>
-                                    {% endif %}
-                                </h3>
-                                <small class="text-muted">{{ partner_profile.get_status_display }}</small>
-                            </div>
-                            <i class="fas fa-user-shield" style="font-size: 40px; color: var(--primary-color);"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <!-- Quick Actions -->
-    <div class="col-md-6 mb-4">
-        <div class="card card-custom">
-            <div class="card-header-custom">
-                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    {% if partner_profile.status == 'APPROVED' %}
-                        <a href="{% url 'venues:partner_create' %}" class="btn btn-gold">
-                            <i class="fas fa-plus"></i> Add New Venue
-                        </a>
-                        <a href="{% url 'venues:partner_list' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-building"></i> Manage My Venues
-                        </a>
-                        <a href="{% url 'bookings:partner_list' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-calendar"></i> View All Bookings
-                        </a>
-                        <a href="{% url 'bookings:partner_check_in' %}" class="btn btn-outline-primary">
-                            <i class="fas fa-qrcode"></i> Check-in Member
-                        </a>
-                    {% else %}
-                        <div class="alert alert-warning mb-0">
-                            <i class="fas fa-info-circle"></i>
-                            {% if partner_profile.status == 'PENDING' %}
-                                <strong>Awaiting Approval</strong>
-                                <p class="mb-0 mt-2">Your partner application is under review. You'll be notified once approved.</p>
-                            {% elif partner_profile.status == 'REJECTED' %}
-                                <strong>Application Rejected</strong>
-                                <p class="mb-0 mt-2">{{ partner_profile.rejection_reason|default:"Please contact support for more information." }}</p>
-                            {% elif partner_profile.status == 'SUSPENDED' %}
-                                <strong>Account Suspended</strong>
-                                <p class="mb-0 mt-2">Please contact support to resolve this issue.</p>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
+    /* Stats Cards */
+    .partner-card {
+        background: #FFFFFF;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
     
-    <!-- Recent Bookings -->
-    <div class="col-md-6 mb-4">
-        <div class="card card-custom">
-            <div class="card-header-custom d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-clock"></i> Recent Bookings</h5>
-                {% if recent_bookings %}
-                <a href="{% url 'bookings:partner_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
-                {% endif %}
-            </div>
-            <div class="card-body">
-                {% if recent_bookings %}
-                    <div class="list-group list-group-flush">
-                        {% for booking in recent_bookings|slice:":5" %}
-                        <div class="list-group-item px-0">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-1">{{ booking.venue.name }}</h6>
-                                    <small class="text-muted">
-                                        <i class="fas fa-user"></i> {{ booking.user.get_full_name }}<br>
-                                        <i class="fas fa-calendar"></i> {{ booking.visit_date|date:"M d, Y" }}<br>
-                                        <i class="fas fa-users"></i> {{ booking.guests_count }} guest{{ booking.guests_count|pluralize }}
-                                    </small>
-                                </div>
-                                <div class="text-end">
-                                    {% if booking.status == 'CONFIRMED' %}
-                                        <span class="badge bg-success">Confirmed</span>
-                                    {% elif booking.status == 'CHECKED_IN' %}
-                                        <span class="badge bg-info">Checked In</span>
-                                    {% elif booking.status == 'COMPLETED' %}
-                                        <span class="badge bg-secondary">Completed</span>
-                                    {% elif booking.status == 'CANCELLED' %}
-                                        <span class="badge bg-danger">Cancelled</span>
-                                    {% endif %}
-                                    <br>
-                                    <small class="text-muted">{{ booking.booking_reference }}</small>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-inbox" style="font-size: 50px; color: #ccc;"></i>
-                        <p class="text-muted mt-3 mb-0">No bookings yet</p>
-                        {% if partner_profile.status == 'APPROVED' and venues.count == 0 %}
-                        <small class="text-muted">Add a venue to start receiving bookings</small>
-                        {% endif %}
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
+    .partner-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+    
+    .partner-card .card-title {
+        color: var(--dark-bg);
+        font-weight: 600;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+    }
+    
+    .partner-card .card-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--dark-bg);
+        margin-bottom: 5px;
+    }
+    
+    .partner-card .card-change {
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .card-change.positive {
+        color: #28a745;
+    }
+    
+    .card-change.negative {
+        color: #dc3545;
+    }
+    
+    /* Icon Circle */
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .bg-warning-subtle {
+        background-color: rgba(255, 193, 7, 0.15);
+    }
+    
+    .bg-primary-subtle {
+        background-color: rgba(13, 110, 253, 0.15);
+    }
+    
+    .bg-info-subtle {
+        background-color: rgba(13, 202, 240, 0.15);
+    }
+    
+    /* Quick Actions - Fixed for mobile */
+    .quick-action-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin: 0;
+    }
+    
+    .quick-action-card {
+        background: #FFFFFF;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        text-decoration: none;
+        color: var(--dark-bg);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 120px;
+    }
+    
+    .quick-action-card:hover {
+        border-color: var(--gold-primary);
+        background-color: rgba(229, 173, 4, 0.05);
+        transform: translateY(-2px);
+        text-decoration: none;
+        color: var(--dark-bg);
+    }
+    
+    .quick-action-card i {
+        font-size: 24px;
+        color: var(--gold-primary);
+        margin-bottom: 10px;
+    }
+    
+    .quick-action-card h6 {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: var(--dark-bg);
+    }
+    
+    .quick-action-card small {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    /* Tables */
+    .partner-table {
+        background: #FFFFFF;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .partner-table th {
+        background-color: #f8f9fa;
+        border: none;
+        padding: 15px 20px;
+        font-weight: 600;
+        color: var(--dark-bg);
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+    }
+    
+    .partner-table td {
+        padding: 15px 20px;
+        border-top: 1px solid #f1f1f1;
+        vertical-align: middle;
+    }
+    
+    .partner-table tr:hover {
+        background-color: rgba(229, 173, 4, 0.03);
+    }
+    
+    /* Buttons */
+    .btn-gold-primary {
+        background-color: var(--gold-primary);
+        color: var(--black);
+        border: none;
+        font-weight: 600;
+        padding: 10px 24px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-gold-primary:hover {
+        background-color: var(--gold-secondary);
+        color: var(--black);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+    }
+    
+    .btn-gold-outline {
+        background-color: transparent;
+        color: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        font-weight: 600;
+        padding: 8px 20px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-gold-outline:hover {
+        background-color: rgba(229, 173, 4, 0.1);
+        color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+    }
+    
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--dark-bg);
+        margin: 0;
+    }
+    
+    .page-header h4 {
+        font-size: 16px;
+        font-weight: 400;
+        color: #6c757d;
+        margin: 5px 0 0 0;
+    }
+    
+    /* Status Badges */
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+    }
+    
+    .status-active {
+        background-color: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+    
+    .status-pending {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+        border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+    
+    .status-inactive {
+        background-color: rgba(108, 117, 125, 0.15);
+        color: #6c757d;
+        border: 1px solid rgba(108, 117, 125, 0.3);
+    }
+    
+    /* Mobile Responsive Fixes */
+    @media (max-width: 991px) {
+        .partner-content-wrapper {
+            padding-bottom: 80px; /* Space for mobile sidebar */
+        }
+        
+        .quick-action-grid {
+            grid-template-columns: repeat(2, 1fr); /* 2 per row on tablet */
+            gap: 12px;
+        }
+        
+        .quick-action-card {
+            padding: 15px;
+            min-height: 110px;
+        }
+        
+        .quick-action-card i {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+        
+        .quick-action-card h6 {
+            font-size: 13px;
+        }
+        
+        .quick-action-card small {
+            font-size: 11px;
+        }
+        
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .partner-card .card-value {
+            font-size: 28px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .quick-action-grid {
+            grid-template-columns: 1fr; /* 1 per row on mobile */
+            gap: 10px;
+        }
+        
+        .quick-action-card {
+            padding: 12px;
+            min-height: 100px;
+        }
+        
+        .quick-action-card i {
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+        
+        .quick-action-card h6 {
+            font-size: 12px;
+        }
+        
+        .partner-card .card-value {
+            font-size: 24px;
+        }
+        
+        .page-header h1 {
+            font-size: 24px;
+        }
+        
+        .page-header h4 {
+            font-size: 14px;
+        }
+        
+        .btn-gold-primary {
+            padding: 8px 20px;
+            height: 40px;
+            font-size: 14px;
+        }
+    }
+    
+    /* Extra small devices */
+    @media (max-width: 400px) {
+        .partner-content-wrapper {
+            padding: 15px 10px;
+            padding-bottom: 80px;
+        }
+        
+        .quick-action-card {
+            min-height: 90px;
+            padding: 10px;
+        }
+        
+        .partner-table th,
+        .partner-table td {
+            padding: 12px 10px;
+            font-size: 13px;
+        }
+    }
+</style>
+{% endblock %}
 
-<!-- My Venues Section -->
-{% if partner_profile.status == 'APPROVED' %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="card card-custom">
-            <div class="card-header-custom d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-building"></i> My Venues</h5>
-                <a href="{% url 'venues:partner_create' %}" class="btn btn-sm btn-gold">
-                    <i class="fas fa-plus"></i> Add Venue
-                </a>
-            </div>
-            <div class="card-body">
-                {% if venues %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Venue Name</th>
-                                    <th>Category</th>
-                                    <th>Status</th>
-                                    <th>City</th>
-                                    <th>Created</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for venue in venues|slice:":5" %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ venue.name }}</strong>
-                                    </td>
-                                    <td>{{ venue.get_category_display }}</td>
-                                    <td>
-                                        {% if venue.status == 'APPROVED' %}
-                                            <span class="badge bg-success">Approved</span>
-                                        {% elif venue.status == 'PENDING' %}
-                                            <span class="badge bg-warning">Pending</span>
-                                        {% elif venue.status == 'DRAFT' %}
-                                            <span class="badge bg-secondary">Draft</span>
-                                        {% elif venue.status == 'REJECTED' %}
-                                            <span class="badge bg-danger">Rejected</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ venue.city }}</td>
-                                    <td>{{ venue.created_at|date:"M d, Y" }}</td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'venues:partner_detail' venue.slug %}" 
-                                               class="btn btn-outline-primary" 
-                                               title="View">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{% url 'venues:partner_edit' venue.slug %}" 
-                                               class="btn btn-outline-secondary" 
-                                               title="Edit">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% if venues.count > 5 %}
-                    <div class="text-center mt-3">
-                        <a href="{% url 'venues:partner_list' %}" class="btn btn-outline-primary">
-                            View All {{ venues.count }} Venues
-                        </a>
-                    </div>
-                    {% endif %}
-                {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-building" style="font-size: 60px; color: #ccc;"></i>
-                        <h5 class="mt-3">No Venues Yet</h5>
-                        <p class="text-muted">Add your first venue to start receiving bookings from Gold Privilege members</p>
-                        <a href="{% url 'venues:partner_create' %}" class="btn btn-gold">
-                            <i class="fas fa-plus"></i> Add Your First Venue
-                        </a>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
+{% block partner_content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1>Welcome back, {{ partner_profile.business_name }}</h1>
+        <h4>Manage your venues and bookings</h4>
     </div>
-</div>
-{% endif %}
-
-<!-- Bank Details Alert -->
-{% if partner_profile.status == 'APPROVED' %}
-<div class="row mt-4">
-    <div class="col-md-12">
-        {% if not partner_profile.bank_name or not partner_profile.account_number or not partner_profile.account_name %}
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i>
-            <strong>Complete Your Bank Details</strong>
-            <p class="mb-2">Add your bank account information to receive payments for bookings.</p>
-            <a href="{% url 'account:profile' %}" class="btn btn-sm btn-primary">
-                <i class="fas fa-university"></i> Update Bank Details
+    <div class="d-flex align-items-center gap-3">
+        <!-- Status Badge -->
+        {% if partner_profile.status == 'APPROVED' %}
+            <span class="status-badge status-active">
+                <i class="fas fa-check-circle"></i>
+                Active
+            </span>
+        {% elif partner_profile.status == 'PENDING' %}
+            <span class="status-badge status-pending">
+                <i class="fas fa-hourglass-half"></i>
+                Pending
+            </span>
+        {% else %}
+            <span class="status-badge status-inactive">
+                <i class="fas fa-times-circle"></i>
+                Inactive
+            </span>
+        {% endif %}
+        
+        <!-- Add Venue Button -->
+        {% if partner_profile.status == 'APPROVED' %}
+            <a href="{% url 'venues:multistep_create' %}" class="btn-gold-primary">
+                <i class="fas fa-plus"></i>
+                Add Venue
             </a>
-        </div>
         {% endif %}
     </div>
 </div>
-{% endif %}
 
-<!-- Business License Alert -->
-{% if partner_profile.status == 'APPROVED' and not partner_profile.business_license %}
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <!-- Total Earnings Card -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="partner-card">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="card-title">Total Earnings</h6>
+                        <h2 class="card-value">
+                            ₦{% if total_earnings %}{{ total_earnings|floatformat:0 }}{% else %}0{% endif %}
+                        </h2>
+                        <div class="card-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            <span>This month</span>
+                        </div>
+                    </div>
+                    <div class="icon-circle bg-warning-subtle">
+                        <i class="fas fa-money-bill-wave text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- My Venues Card -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="partner-card">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="card-title">My Venues</h6>
+                        <h2 class="card-value">{{ venues.count|default:0 }}</h2>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="card-change {% if venues.count > 0 %}positive{% else %}negative{% endif %}">
+                                {% if venues.count > 0 %}
+                                    <i class="fas fa-check-circle"></i>
+                                    {{ venues.count }} active
+                                {% else %}
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    No venues
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="icon-circle bg-primary-subtle">
+                        <i class="fas fa-building text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pending Check-ins Card -->
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="partner-card">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center">
+                    <div class="flex-grow-1">
+                        <h6 class="card-title">Pending Check-ins</h6>
+                        <h2 class="card-value">{{ pending_bookings|default:0 }}</h2>
+                        <div class="card-change {% if pending_bookings > 0 %}negative{% else %}positive{% endif %}">
+                            {% if pending_bookings > 0 %}
+                                <i class="fas fa-clock"></i>
+                                Awaiting confirmation
+                            {% else %}
+                                <i class="fas fa-check-circle"></i>
+                                All clear
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="icon-circle bg-info-subtle">
+                        <i class="fas fa-clock text-info"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Bookings Section -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0" style="color: var(--dark-bg); font-weight: 600;">
+                <i class="fas fa-history me-2"></i>
+                Recent Bookings
+            </h5>
+            {% if recent_bookings %}
+                <a href="{% url 'bookings:partner_list' %}" class="btn-gold-outline btn-sm">
+                    View All
+                </a>
+            {% endif %}
+        </div>
+        
+        {% if recent_bookings %}
+            <div class="partner-table">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Venue</th>
+                                <th>Member</th>
+                                <th>Visit Date</th>
+                                <th>Guests</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in recent_bookings|slice:":8" %}
+                            <tr>
+                                <td>
+                                    <small class="text-muted">{{ booking.booking_reference }}</small>
+                                </td>
+                                <td>
+                                    <strong>{{ booking.venue.name|truncatechars:20 }}</strong>
+                                </td>
+                                <td>
+                                    {{ booking.user.get_full_name|default:booking.user.username }}
+                                </td>
+                                <td>
+                                    <div>{{ booking.visit_date|date:"M d, Y" }}</div>
+                                    <small class="text-muted">{{ booking.visit_time|time:"g:i A" }}</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ booking.guests_count }}</span>
+                                </td>
+                                <td>
+                                    {% if booking.status == 'CONFIRMED' %}
+                                        <span class="badge bg-warning text-dark">Confirmed</span>
+                                    {% elif booking.status == 'CHECKED_IN' %}
+                                        <span class="badge bg-info">Checked In</span>
+                                    {% elif booking.status == 'COMPLETED' %}
+                                        <span class="badge bg-success">Completed</span>
+                                    {% elif booking.status == 'CANCELLED' %}
+                                        <span class="badge bg-danger">Cancelled</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'bookings:partner_detail' booking.id %}" 
+                                           class="btn btn-outline-primary btn-sm" 
+                                           title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if booking.status == 'CONFIRMED' %}
+                                            <a href="{% url 'bookings:partner_check_in' %}?booking={{ booking.id }}" 
+                                               class="btn btn-outline-success btn-sm" 
+                                               title="Check-in">
+                                                <i class="fas fa-qrcode"></i>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox" style="font-size: 60px; color: #dee2e6;"></i>
+                <h5 class="mt-3" style="color: #6c757d;">No bookings yet</h5>
+                <p class="text-muted">When you receive bookings, they'll appear here</p>
+                {% if partner_profile.status == 'APPROVED' and venues.count == 0 %}
+                    <a href="{% url 'venues:multistep_create' %}" class="btn-gold-primary mt-2">
+                        <i class="fas fa-plus"></i>
+                        Add Your First Venue
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quick Actions - Fixed Layout -->
+{% if partner_profile.status == 'APPROVED' %}
 <div class="row">
-    <div class="col-md-12">
-        <div class="alert alert-warning">
-            <i class="fas fa-exclamation-triangle"></i>
-            <strong>Upload Business License</strong>
-            <p class="mb-2">Upload your business license or CAC certificate for verification.</p>
-            <a href="{% url 'account:profile' %}" class="btn btn-sm btn-warning">
-                <i class="fas fa-upload"></i> Upload Document
-            </a>
+    <div class="col-12">
+        <div class="partner-card mb-4">
+            <div class="card-body p-4">
+                <h6 class="card-title mb-4">Quick Actions</h6>
+                <div class="quick-action-grid">
+                    <a href="{% url 'venues:multistep_create' %}" class="quick-action-card">
+                        <i class="fas fa-plus"></i>
+                        <h6>Add Venue</h6>
+                        <small>Add new venue</small>
+                    </a>
+                    <a href="{% url 'venues:partner_list' %}" class="quick-action-card">
+                        <i class="fas fa-building"></i>
+                        <h6>Manage Venues</h6>
+                        <small>Edit venues</small>
+                    </a>
+                    <a href="{% url 'bookings:partner_check_in' %}" class="quick-action-card">
+                        <i class="fas fa-qrcode"></i>
+                        <h6>Check-in</h6>
+                        <small>Member check-in</small>
+                    </a>
+                    <a href="{% url 'account:profile' %}" class="quick-action-card">
+                        <i class="fas fa-cog"></i>
+                        <h6>Settings</h6>
+                        <small>Account settings</small>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 {% endif %}
+
+<!-- Alerts -->
+{% if partner_profile.status == 'APPROVED' %}
+    {% if not partner_profile.bank_name or not partner_profile.account_number %}
+        <div class="alert alert-warning mt-4">
+            <div class="d-flex align-items-center flex-wrap">
+                <i class="fas fa-university fa-2x me-3 mb-2 mb-md-0"></i>
+                <div class="flex-grow-1">
+                    <h6 class="alert-heading mb-1">Bank Details Required</h6>
+                    <p class="mb-0">Add your bank account information to receive payments.</p>
+                </div>
+                <a href="{% url 'account:profile' %}" class="btn-gold-outline btn-sm mt-2 mt-md-0 ms-md-auto">
+                    Update Now
+                </a>
+            </div>
+        </div>
+    {% endif %}
+{% endif %}
+
+<script>
+    // Ensure proper spacing on mobile
+    document.addEventListener('DOMContentLoaded', function() {
+        function adjustMobileSpacing() {
+            const isMobile = window.innerWidth < 768;
+            const contentWrapper = document.querySelector('.partner-content-wrapper');
+            
+            if (isMobile) {
+                // Add extra bottom padding on mobile for the bottom navigation
+                contentWrapper.style.paddingBottom = '85px';
+                
+                // Adjust quick action grid spacing
+                const quickActionGrid = document.querySelector('.quick-action-grid');
+                if (quickActionGrid) {
+                    const gridItems = quickActionGrid.children.length;
+                    if (gridItems === 4) {
+                        quickActionGrid.style.gap = '10px';
+                    }
+                }
+            }
+        }
+        
+        // Run on load and resize
+        adjustMobileSpacing();
+        window.addEventListener('resize', adjustMobileSpacing);
+    });
+</script>
 
 {% endblock %}

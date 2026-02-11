@@ -58,7 +58,7 @@ class VenueAdmin(admin.ModelAdmin):
     """Admin interface for venues"""
     list_display = [
         'name', 'partner_link', 'category', 'city', 
-        'status_badge', 'rating_display', 'view_count', 'created_at'
+        'status_badge', 'rating_display', 'view_count', 'created_at', 'slug'
     ]
     list_filter = [
         'status', 'category',  'city', 

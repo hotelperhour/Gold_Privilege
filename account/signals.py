@@ -1,7 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-#from django.core.mail import send_mail
-from core.emails import send_email
+from django.core.mail import send_mail
 from django.conf import settings
 from .models import CustomUser, UserProfile, PartnerProfile
 
@@ -64,18 +63,12 @@ def notify_partner_status_change(sender, instance, created, **kwargs):
         
         # Send email (in production, use celery for async)
         try:
-            '''send_mail(
+            send_mail(
                 subject=subject,
                 message=message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[instance.user.email],
                 fail_silently=True,
-            )'''
-            send_email(
-                subject=subject,
-                to_email=instance.user.email,
-                message=message,
             )
-
         except Exception as e:
             print(f"Failed to send email: {e}")

@@ -1,49 +1,146 @@
-{% extends 'base.html' %}
+{% extends 'base2.html' %}
 
 {% block title %}Partner Application Pending - Gold Privilege{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center mt-5">
-    <div class="col-md-8 col-lg-6">
-        <div class="card card-custom text-center">
-            <div class="card-body p-5">
-                <div class="mb-4">
-                    <i class="fas fa-hourglass-half" style="font-size: 80px; color: var(--accent-color); animation: pulse 2s infinite;"></i>
-                </div>
-                <h2 class="mb-3">Application Under Review</h2>
-                <p class="lead">Thank you for applying to become a Gold Privilege partner!</p>
-                <p class="text-muted">
-                    Your partnership application is currently being reviewed by our team. 
-                    This process typically takes 24-48 hours.
-                </p>
-                
-                <div class="my-4 p-4" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;">
-                    <h5><i class="fas fa-building"></i> {{ user.partner_profile.business_name }}</h5>
-                    <p class="text-muted mb-0">{{ user.partner_profile.get_business_type_display }}</p>
-                </div>
-                
-                <div class="alert alert-info text-start">
-                    <h6><i class="fas fa-info-circle"></i> What happens next?</h6>
-                    <ol class="mb-0">
-                        <li>Our team reviews your application and documents</li>
-                        <li>We may contact you for additional information</li>
-                        <li>Once approved, you'll receive an email notification</li>
-                        <li>You'll get full access to your partner dashboard</li>
-                    </ol>
-                </div>
-                
-                <div class="alert alert-warning">
-                    <i class="fas fa-envelope"></i> 
-                    We'll send you an email at <strong>{{ user.email }}</strong> once your application is reviewed.
-                </div>
-                
-                <div class="mt-4">
-                    <a href="{% url 'account:profile' %}" class="btn btn-outline-secondary me-2">
-                        <i class="fas fa-user"></i> View Profile
-                    </a>
-                    <a href="{% url 'account:logout' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-sign-out-alt"></i> Logout
-                    </a>
+<div class="container-fluid py-5">
+    <div class="row justify-content-center align-items-center min-vh-75">
+        <!-- Wider column classes for desktop -->
+        <div class="col-12 col-sm-10 col-md-8 col-lg-7 col-xl-6">
+            <!-- Card with max-width constraint -->
+            <div class="card card-custom border-0 shadow-lg rounded-3" style="max-width: 540px; margin: 0 auto;">
+                <div class="card-body p-4 p-md-5">
+                    <!-- Animated icon with gold accent -->
+                    <div class="text-center mb-4">
+                        <div class="position-relative d-inline-block">
+                            <i class="fas fa-hourglass-half" 
+                               style="font-size: 60px; 
+                                      color: var(--gold-primary); 
+                                      filter: drop-shadow(0 4px 6px rgba(229, 173, 4, 0.2));"></i>
+                            <div class="position-absolute top-0 start-100 translate-middle">
+                                <div class="spinner-grow spinner-grow-sm text-gold" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main heading -->
+                    <h2 class="text-center fw-bold mb-3" style="color: var(--dark-bg);">
+                        Application Under Review
+                    </h2>
+
+                    <!-- Brief message -->
+                    <p class="text-center text-muted mb-4">
+                        Thank you for applying to become a Gold Privilege partner.
+                    </p>
+
+                    <!-- Compact status card -->
+                    <div class="mb-4 p-3 rounded-2" 
+                         style="background: linear-gradient(135deg, rgba(229, 173, 4, 0.05) 0%, rgba(249, 176, 54, 0.05) 100%); 
+                                border-left: 3px solid var(--gold-primary);">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-building me-3" style="color: var(--gold-primary);"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1" style="color: var(--dark-bg);">
+                                    {{ user.partner_profile.business_name }}
+                                </h6>
+                                <small class="text-muted">
+                                    {{ user.partner_profile.get_business_type_display }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Process timeline (compact) -->
+                    <div class="mb-4">
+                        <h6 class="fw-semibold mb-3" style="color: var(--dark-bg);">
+                            <i class="fas fa-clock me-2" style="color: var(--gold-primary);"></i>
+                            Review Timeline
+                        </h6>
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="small text-muted">Submitted</span>
+                            <span class="small fw-bold" style="color: var(--gold-primary);">In Review</span>
+                            <span class="small text-muted">Approved</span>
+                        </div>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar" 
+                                 role="progressbar" 
+                                 style="width: 50%; background-color: var(--gold-primary);" 
+                                 aria-valuenow="50" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100"></div>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Typically 24-48 hours
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- What's next - compact list -->
+                    <div class="mb-4">
+                        <h6 class="fw-semibold mb-3" style="color: var(--dark-bg);">
+                            <i class="fas fa-forward me-2" style="color: var(--gold-primary);"></i>
+                            What Happens Next?
+                        </h6>
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle me-2" style="color: var(--gold-primary); font-size: 12px;"></i>
+                                <span class="small">Document verification</span>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle me-2" style="color: var(--gold-primary); font-size: 12px;"></i>
+                                <span class="small">Business review</span>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check-circle me-2" style="color: var(--gold-primary); font-size: 12px;"></i>
+                                <span class="small">Email notification</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Notification alert -->
+                    <div class="alert alert-light border mb-4" role="alert">
+                        <div class="d-flex">
+                            <i class="fas fa-envelope me-3 mt-1" style="color: var(--gold-primary);"></i>
+                            <div>
+                                <h6 class="alert-heading mb-1" style="color: var(--dark-bg);">
+                                    Stay Updated
+                                </h6>
+                                <small class="text-muted">
+                                    We'll notify you at <strong>{{ user.email }}</strong> once reviewed.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'account:profile' %}" 
+                           class="btn btn-outline-dark btn-sm fw-semibold py-2">
+                            <i class="fas fa-user me-2"></i>
+                            View Profile
+                        </a>
+                        <a href="{% url 'account:logout' %}" 
+                           class="btn btn-sm fw-semibold py-2" 
+                           style="background-color: var(--gold-primary); color: var(--black);">
+                            <i class="fas fa-sign-out-alt me-2"></i>
+                            Logout
+                        </a>
+                    </div>
+
+                    <!-- Contact support -->
+                    <div class="text-center mt-4">
+                        <small class="text-muted">
+                            Questions? 
+                            <a href="#" class="text-decoration-none fw-semibold" 
+                               style="color: var(--gold-primary);">
+                                Contact Support
+                            </a>
+                        </small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -51,9 +148,45 @@
 </div>
 
 <style>
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.1); }
+    /* Custom styles for this page only */
+    .min-vh-75 {
+        min-height: 75vh;
+    }
+    
+    .text-gold {
+        color: var(--gold-primary);
+    }
+    
+    .card-custom {
+        background: linear-gradient(135deg, #FFFFFF 0%, #FDFDFD 100%);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    
+    .btn-outline-dark {
+        border-color: var(--dark-bg);
+        color: var(--dark-bg);
+    }
+    
+    .btn-outline-dark:hover {
+        background-color: var(--dark-bg);
+        color: var(--white);
+    }
+    
+    /* Subtle animation for progress bar */
+    @keyframes pulse-gold {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .progress-bar {
+        animation: pulse-gold 2s infinite;
+    }
+    
+    /* Responsive adjustments */
+    @media (min-width: 768px) {
+        .card-body {
+            padding: 2.5rem !important;
+        }
     }
 </style>
 {% endblock %}

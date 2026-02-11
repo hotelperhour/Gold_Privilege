@@ -1,0 +1,128 @@
+<!-- venues/partner/venue_success.html -->
+{% extends 'base_partner.html' %}
+
+{% block title %}Venue Created Successfully - Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    .success-container {
+        max-width: 600px;
+        margin: 5px auto;
+        text-align: center;
+    }
+    
+    .success-icon {
+        font-size: 80px;
+        color: green;
+        margin-bottom: 10px;
+    }
+    
+    .success-actions {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-action {
+        min-width: 180px;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-view-venue {
+        background-color: var(--gold-primary);
+        color: var(--black);
+        border: none;
+    }
+    
+    .btn-view-venue:hover {
+        background-color: var(--gold-secondary);
+        color: var(--black);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+    }
+    
+    .btn-another {
+        background-color: transparent;
+        color: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+    }
+    
+    .btn-another:hover {
+        background-color: rgba(229, 173, 4, 0.1);
+        color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+    }
+    
+    .btn-list {
+        background-color: #f8f9fa;
+        color: var(--dark-bg);
+        border: 1px solid var(--gold-secondary);
+    }
+    
+    .btn-list:hover {
+        background-color: rgba(229, 173, 4, 0.1);
+        border-color: var(--gold-primary);
+
+    }
+</style>
+{% endblock %}
+
+{% block partner_content %}
+<div class="success-container">
+    <div class="success-icon">
+        <i class="fas fa-check-circle"></i>
+    </div>
+    
+    <h1 class="mb-3">Congratulations!</h1>
+    <h4 class="text-muted mb-4">You have successfully added a venue</h4>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">{{ venue.name }}</h5>
+            <p class="card-text text-muted">{{ venue.get_category_display }}</p>
+            <p class="card-text">{{ venue.city }}, {{ venue.state }}</p>
+            <p class="card-text">
+                <small class="text-muted">
+                    Status: 
+                    <span class="badge {% if venue.status == 'DRAFT' %}bg-warning{% elif venue.status == 'PENDING' %}bg-info{% else %}bg-success{% endif %}">
+                        {{ venue.get_status_display }}
+                    </span>
+                </small>
+            </p>
+        </div>
+    </div>
+    
+    <p class="text-muted mb-4">
+        {% if venue.status == 'DRAFT' %}
+        Your venue has been saved as a draft. You can edit it anytime or submit it for approval when ready.
+        {% elif venue.status == 'PENDING' %}
+        Your venue has been submitted for approval. You'll be notified once it's reviewed.
+        {% endif %}
+    </p>
+    
+    <div class="success-actions">
+        <a href="{% url 'venues:partner_detail' venue.slug %}" class="btn-action btn-view-venue">
+            <i class="fas fa-eye me-2"></i>
+            View Venue
+        </a>
+        <a href="{% url 'venues:multistep_create' %}" class="btn-action btn-another">
+            <i class="fas fa-plus me-2"></i>
+            Add Another Venue
+        </a>
+        <a href="{% url 'venues:partner_list' %}" class="btn-action btn-list">
+            <i class="fas fa-list me-2"></i>
+            View All Venues
+        </a>
+    </div>
+</div>
+{% endblock %}

@@ -18,8 +18,7 @@ class VenueForm(forms.ModelForm):
             'amenities', 'cover_image',
             'opening_time', 'closing_time', 'open_24_hours',
             
-            'meta_description',
-            'slug',
+            
         ]
         widgets = {
             'name': forms.TextInput(attrs={
@@ -153,7 +152,7 @@ class VenueForm(forms.ModelForm):
         self.fields['address'].required = True
         self.fields['city'].required = True
         self.fields['state'].required = True
-        self.fields['cover_image'].required = True
+        self.fields['cover_image'].required = False
         
         # Add help text
         self.fields['latitude'].help_text = 'Optional: For map display'

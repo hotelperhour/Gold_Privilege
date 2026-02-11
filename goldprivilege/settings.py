@@ -78,6 +78,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                'venues.context_processors.mapbox_settings',
             ],
         },
     },
@@ -178,6 +179,9 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 PAYSTACK_SECRET_KEY = config('PAYSTACK_SECRET_KEY')
 PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY')
 
+# Mapbox Configuration
+MAPBOX_ACCESS_TOKEN = config('MAPBOX_ACCESS_TOKEN')
+
 # settings.py - Add this
 CACHES = {
     'default': {
@@ -214,6 +218,11 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 # CSRF settings
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
+
+# Add these settings
+SESSION_COOKIE_AGE = 3600  # 1 hour for venue creation session
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
 # For production, uncomment these:
 # CSRF_COOKIE_SECURE = True  # Only send over HTTPS

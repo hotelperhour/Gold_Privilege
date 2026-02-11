@@ -1,356 +1,1613 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load venue_filters %}
 
-{% block title %}Explore Venues - Gold Privilege{% endblock %}
+{% block title %}Discover Premium Venues - Gold Privilege{% endblock %}
 
 {% block extra_css %}
+<!-- Mapbox CSS -->
+<link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+<link rel='stylesheet' href='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.css' type='text/css' />
+
 <style>
-    .venue-card {
-        border: none;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        transition: transform 0.3s, box-shadow 0.3s;
+    /* ========== GLOBAL RESET ========== */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    :root {
+        --navbar-height: 80px;
+    }
+
+    
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        overflow-x: hidden;
+        background: #ffffff;
+        margin: 0;
+        padding: 0;
+        scrollbar-width: none;
+    }
+    body::-webkit-scrollbar {
+    width: 0;
+}
+    
+   
+    
+    /* ========== MAIN LAYOUT ========== */
+    .main-container {
+        display: flex;
+        min-height: calc(100vh - var(--navbar-height));
+        margin-top: var(--navbar-height);
+        width: 100%;
+        position: relative;
+        top: 0;
+        left: 0;
+        overflow: visible;
+        margin: 0;
+        padding: 0;
+    }
+    
+    /* 2. LEFT PANEL - Transparent with semi-transparent content area */
+    .venues-panel {
+        flex: 0 0 55%;
         height: 100%;
+        background: transparent; /* Transparent so map shows through */
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        z-index: 10;
+        padding-left: 80px;
+        
+    }
+
+    .venues-content {
+        flex: 1;
+        overflow: visible;
+        padding: 24px 24px 120px 0;
+        width: 100%;
+        height: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        background: rgba(255, 255, 255, 0.95); /* Semi-transparent */
+        backdrop-filter: blur(10px);
+        border-radius: 20px 0 0 20px;
+    }
+
+    .venues-content::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* 3. CATEGORIES - No background, just pills */
+    .categories-section {
+        margin-bottom: 32px;
+        width: 100%;
+        background: transparent; /* No background */
+        padding: 0; /* No padding */
+    }
+    
+    .categories-scroll {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding: 4px 0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    .categories-scroll::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .category-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 20px;
+        background: #ffffff;
+        border: 2px solid #E5E7EB;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #1F2937;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    
+    .category-pill:hover {
+        border-color: #E5AD04;
+        transform: translateY(-1px);
+    }
+    
+    .category-pill.active {
+        background: #E5AD04 !important;
+        border-color: #E5AD04 !important;
+        color: #000000 !important;
+        font-weight: 600;
+    }
+    
+    .category-count {
+        margin-left: 6px;
+        font-size: 12px;
+        font-weight: 400;
+        color: #6B7280;
+        background: rgba(0, 0, 0, 0.05);
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+    
+    .category-pill.active .category-count {
+        color: rgba(0, 0, 0, 0.7);
+        background: rgba(0, 0, 0, 0.1);
+    }
+    
+    /* ========== FILTER BAR ========== */
+    .filter-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding: 0 4px;
+    }
+    
+    .venues-count {
+        font-size: 16px;
+        font-weight: 600;
+        color: #111827;
+    }
+    
+    .filter-actions {
+        display: flex;
+        gap: 12px;
+    }
+    
+    .filter-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: #ffffff;
+        border: 1.5px solid #D1D5DB;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #374151;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .filter-btn:hover {
+        border-color: #E5AD04;
+    }
+    
+    /* ========== VENUES GRID - 2 PER ROW ========== */
+    .venues-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+    
+    /* ========== VENUE CARD ========== */
+    .venue-card {
+        background: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        position: relative;
+        aspect-ratio: 3/2;
     }
     
     .venue-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        transform: translateY(-4px);
+    }
+    
+    .venue-card.highlighted {
+        box-shadow: 0 0 0 3px rgba(229, 173, 4, 0.5);
+        transform: scale(1.02);
+    }
+    
+    .venue-image-container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        border-radius: 16px;
     }
     
     .venue-image {
-        height: 220px;
-        object-fit: cover;
         width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.3s ease;
     }
     
-    .venue-category-badge {
+    .venue-card:hover .venue-image {
+        transform: scale(1.05);
+    }
+    
+    /* Text overlay on image */
+    .venue-text-overlay {
         position: absolute;
-        top: 10px;
-        left: 10px;
-        background: rgba(255,255,255,0.95);
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-    
-    .price-badge {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: #d4af37;
-        color: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-    
-    .rating-stars {
-        color: #ffc107;
-        font-size: 0.9rem;
-    }
-    
-    .filter-sidebar {
-        background: #f8f9fa;
-        border-radius: 12px;
+        bottom: 0;
+        left: 0;
+        right: 0;
         padding: 20px;
-        position: sticky;
-        top: 20px;
-    }
-    
-    .amenity-checkbox {
-        margin-bottom: 10px;
-    }
-    
-    .search-header {
-        background: linear-gradient(135deg, #d4af37 0%, #c19a2b 100%);
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
         color: white;
-        padding: 60px 0;
-        margin-bottom: 30px;
+    }
+    
+    .venue-name {
+        font-size: 18px;
+        font-weight: 700;
+        color: #ffffff;
+        margin-bottom: 4px;
+        line-height: 1.3;
+    }
+    
+    .venue-city {
+        font-size: 14px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0;
+    }
+    
+    .venue-rating-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #000000;
+        backdrop-filter: blur(4px);
+        z-index: 2;
+    }
+    
+    .rating-star {
+        color: #E5AD04;
+        font-size: 12px;
+    }
+    
+    /* ========== RIGHT PANEL - MAP (FULL HEIGHT OVER NAVBAR) ========== */
+    .map-panel {
+    flex: 0 0 45%;
+    height: 100vh; /* Full viewport height */
+    position: sticky;
+    right: 0;
+    top: 0; /* Start from very top */
+    width: 45%;
+    align-self: flex-start;
+    z-index: 1;
+    margin-bottom: -80px;
+}
+    
+    #venuesMap {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+    
+    /* Mapbox Custom Styles */
+    .mapboxgl-ctrl-group {
+        margin: 10px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+        background: #ffffff !important;
+    }
+    .map-search-container,
+.map-overlay-search {
+    z-index: 2000;
+}
+    /* Map Search - Positioned to avoid navbar overlap */
+    .map-search-container {
+        position: absolute;
+        top:20px;
+        left: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+    
+    .mapboxgl-ctrl-geocoder {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15) !important;
+        border-radius: 12px !important;
+        border: 2px solid transparent !important;
+        font-size: 14px !important;
+    }
+    
+    .mapboxgl-ctrl-geocoder:focus-within {
+        border-color: #E5AD04 !important;
+    }
+    .mapboxgl-popup-content {
+    pointer-events: auto !important;
+}
+
+.mapboxgl-popup {
+    pointer-events: none !important;
+}
+
+    
+    /* Custom Golden Marker */
+    .gold-marker {
+        background: #E5AD04;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 3px solid #ffffff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+    }
+    
+    .gold-marker:hover {
+        transform: scale(1.2);
+        box-shadow: 0 4px 16px rgba(229, 173, 4, 0.4);
+        z-index: 1000 !important;
+    }
+    
+    .gold-marker.highlighted {
+        transform: scale(1.3);
+        box-shadow: 0 0 0 4px rgba(229, 173, 4, 0.6);
+        z-index: 1001 !important;
+    }
+    
+    .marker-icon {
+        color: #ffffff;
+        font-size: 14px;
+    }
+    
+    /* Enhanced Map Popup - Show on Hover */
+    .mapboxgl-popup {
+        max-width: 320px !important;
+        z-index: 5000 !important;
+        pointer-events: none;
+    }
+    
+    .mapboxgl-popup-content {
+        padding: 0 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+        overflow: hidden;
+        pointer-events: none;
+        border: 2px solid #E5AD04;
+    }
+    
+    .venue-popup {
+        display: flex;
+        padding: 16px;
+        background: white;
+        min-width: 280px;
+    }
+    
+    .popup-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 12px;
+        margin-right: 16px;
+        flex-shrink: 0;
+        border: 2px solid #F3F4F6;
+    }
+    
+    .popup-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .popup-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 6px;
+        line-height: 1.3;
+    }
+    .popup-title a {
+    color: #E5AD04 !important;
+    text-decoration: none !important;
+    font-weight: 700 !important;
+    transition: all 0.2s ease !important;
+    }
+
+    .popup-title a:hover {
+        color: #E5AD04 !important;
+        text-decoration: underline !important;
+        text-decoration-color: #E5AD04 !important;
+    }
+    
+    .popup-location {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        color: #6B7280;
+        margin: 0 0 8px 0;
+        line-height: 1.4;
+    }
+    
+    .popup-category {
+        font-size: 12px;
+        color: #E5AD04;
+        font-weight: 600;
+        background: #FFF9E6;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-block;
+    }
+    
+    /* ========== MOBILE BOTTOM ACTIONS - SINGLE PILL BUTTON ========== */
+ .mobile-actions {
+    display: none;
+    position: sticky;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    z-index: 2000;
+    padding: 0 16px;
+    margin-top: auto; /* Push to bottom of content */
+}
+
+
+    
+    .mobile-pill-button {
+        display: flex;
+        background: #ffffff;
+        border-radius: 50px;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+        border: 2px solid #E5E7EB;
+    }
+    
+    .pill-half {
+        flex: 1;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #ffffff;
+        color: #111827;
+        min-width: 0;
+    }
+    
+    .pill-half:hover {
+        background: #F9FAFB;
+    }
+    
+    .pill-divider {
+        width: 1px;
+        background: #E5E7EB;
+    }
+    
+    .pill-half-left {
+        border-radius: 50px 0 0 50px;
+    }
+    
+    .pill-half-right {
+        border-radius: 0 50px 50px 0;
+    }
+    
+    /* ========== MAP OVERLAY FOR MOBILE ========== */
+    .map-overlay {
+        display: none;
+        position: fixed;
+        top: 80px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: #ffffff;
+        z-index: 2000; /* Above navbar */
+        flex-direction: column;
+    }
+    
+    .map-overlay.active {
+        display: flex;
+    }
+    
+    .map-overlay-header {
+        display: none;
+    }
+    .map-overlay-search {
+    
+        padding: 16px;
+        background: #ffffff;
+        border-bottom: 1px solid #E5E7EB;
+    }
+    /* Mobile map actions */
+/* Add this to your existing CSS in the extra_css block */
+.mobile-map-actions {
+    display: none;
+}
+
+.map-overlay.active .mobile-map-actions {
+    display: block;
+    position: fixed;
+    bottom: 20px;
+    left: 16px;
+    right: 16px;
+    z-index: 2001;
+}
+
+
+
+/* For mobile, ensure map overlay starts below navbar */
+
+
+/* Adjust for mobile navbar height */
+@media (max-width: 1024px) {
+    .map-overlay {
+        top: 80px; /* Typical mobile navbar height */
+        height: calc(100vh - 80px);
+    }
+}
+
+/* Fix hover behavior for markers */
+.gold-marker:hover .mapboxgl-popup {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Ensure navbar stays on top */
+
+    
+    .map-overlay-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+    }
+    
+    .close-map {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #6B7280;
+        cursor: pointer;
+        padding: 8px;
+    }
+    
+    .map-overlay-categories {
+        padding: 16px;
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: none;
+        z-index: 3001;
+        background: transparent !important; /* Make transparent */
+        backdrop-filter: none !important; /* Remove blur */
+        border-bottom: none !important; /* Remove border */
+    }
+    
+    .map-overlay-categories::-webkit-scrollbar {
+        display: none;
+    }
+    
+    #venuesMapMobile {
+        flex: 1;
+        width: 100%;
+        height: 100%;
+    }
+    
+    /* ========== PAGINATION ========== */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 32px;
+        padding-top: 24px;
+        border-top: 1px solid #E5E7EB;
+    }
+    
+    .pagination {
+        display: flex;
+        gap: 8px;
+        list-style: none;
+    }
+    
+    .page-item {
+        margin: 0;
+    }
+    
+    .page-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 40px;
+        height: 40px;
+        padding: 0 12px;
+        background: #ffffff;
+        border: 1.5px solid #D1D5DB;
+        border-radius: 8px;
+        color: #374151;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .page-link:hover {
+        border-color: #E5AD04;
+        color: #000000;
+    }
+    
+    .page-item.active .page-link {
+        background: #E5AD04;
+        border-color: #E5AD04;
+        color: #000000;
+        font-weight: 600;
+    }
+    
+    /* ========== NO RESULTS ========== */
+    .no-results {
+        text-align: center;
+        padding: 48px 24px;
+        background: #F9FAFB;
+        border-radius: 12px;
+        margin: 32px 0;
+    }
+    
+    .no-results-icon {
+        font-size: 48px;
+        color: #E5E7EB;
+        margin-bottom: 16px;
+    }
+    
+    .no-results-title {
+        font-size: 20px;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+    
+    .no-results-text {
+        color: #6B7280;
+        margin-bottom: 24px;
+    }
+
+    
+    
+    /* ========== RESPONSIVE DESIGN ========== */
+    @media (max-width: 1200px) {
+        .venues-panel {
+            padding-left: 40px;
+        }
+        
+        .map-search-container {
+            top: 90px;
+        }
+    }
+    
+    @media (max-width: 1024px) {
+        body {
+            overflow-y: auto !important;
+        }
+
+        .main-container {
+            flex-direction: column;
+            height: auto;
+            min-height: 100vh;
+            position: relative;
+        }
+        .map-overlay {
+            position: fixed;
+            top: 0; /* Start from very top */
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: transparent; /* Map shows through */
+            z-index: 1500; /* Below navbar (z-index: 2002) */
+            flex-direction: column;
+        }
+        .map-overlay.active {
+            display: flex;
+        }
+        .map-overlay-categories {
+            padding: 16px !important;
+            padding-bottom: 5px;
+            background: transparent !important; /* Make transparent */
+        backdrop-filter: none !important; /* Remove blur */
+        border-bottom: none !important; /* Remove border */
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: none;
+            z-index: 1600;
+            margin-top: 80px; /* Below navbar */
+        }
+        
+
+        .map-overlay-search {
+            padding: 5px 16px;
+            background: transparent !important; /* Make transparent */
+            backdrop-filter: none !important; /* Remove blur */
+            border-bottom: none !important; /* Remove border */
+            z-index: 1600;
+        }
+        #venuesMapMobile {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Behind content */
+        }
+        .venues-panel {
+            flex: 0 0 auto;
+            width: 100%;
+            padding-left: 0;
+            padding: 0 24px;
+            padding-top: 16px;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(100vh - 80px); /* Ensure enough height */
+        }
+        
+        .venues-content {
+            padding: 24px 0 140px 0;
+            height: auto;
+            max-height: none;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding-bottom: 180px;
+        }
+        .categories-section {
+            padding: 0 !important;
+            margin-bottom: 24px;
+        }
+        .map-panel {
+            display: none; /* Hide map on mobile */
+        }
+        .categories-scroll {
+        padding: 4px 0 !important;
+    }
+        
+        .mobile-actions {
+            display: block;
+            position: sticky;
+            bottom: 20px;
+            margin-top: auto; /* This pushes it to bottom */
+            padding: 0;
+            z-index: 2000;
+        }
+        
+        /* Hide filter button on mobile in the filter bar */
+        .filter-actions {
+            display: none;
+        }
+        
+        /* Keep 2 venues per row on mobile */
+        .venues-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        
+        /* Adjust venue card text size for mobile */
+        .venue-name {
+            font-size: 16px;
+        }
+        
+        .venue-city {
+            font-size: 13px;
+        }
+        
+         .pill-half {
+        flex: 1;
+        padding: 12px 20px; /* Same padding */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        font-weight: 600;
+        font-size: 14px; /* Same font size */
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: #ffffff;
+        color: #111827;
+        min-width: 0; /* Allow equal flex */
+    }
+    
+    .mobile-pill-button {
+        display: flex;
+        background: #ffffff;
+        border-radius: 50px;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+        border: 2px solid #E5E7EB;
+        max-width: 400px; /* Limit max width */
+        margin: 0 auto;
+    }
+    
+    /* Ensure navbar stays on top */
+    .navbar {
+        z-index: 2002 !important;
+        position: fixed !important;
+        width: 100%;
+        top: 0;
+    }
+    
+    .navbar-wrapper {
+        z-index: 2002 !important;
+    }
+    }
+    
+    
+    @media (max-width: 768px) {
+        .venues-panel {
+            padding: 0 10px;
+            padding-top: 3px !important;
+        }
+        
+        .categories-section {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+    }
+        .venues-content {
+            padding: 16px 0 140px 0;
+            border-radius: 16px;
+        }
+        
+        .venues-grid {
+            gap: 12px;
+        }
+        
+        .filter-bar {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        
+        .filter-actions {
+            display: none; /* Hidden on mobile */
+        }
+        
+        .mobile-pill-button {
+            margin: 0 auto;
+            max-width: 350px;
+        }
+        
+        
+    }
+
+    @media (min-width: 768px) and (max-width: 1024px) {
+    .mobile-pill-button {
+        max-width: 320px;
+    }
+    
+    .pill-half {
+        padding: 10px 16px;
+        font-size: 13px;
+        gap: 6px;
+    }
+}
+    
+    @media (max-width: 480px) {
+        .venues-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .venue-name {
+            font-size: 15px;
+        }
+        
+        .venue-city {
+            font-size: 12px;
+        }
+        
+        .category-pill {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+        
+       
+        
+        .map-overlay-header {
+            padding-top: calc(16px + env(safe-area-inset-top));
+        }
+    }
+    
+    /* Safe area for iPhone X+ */
+    @supports (padding: max(0px)) {
+        .mobile-actions {
+            bottom: max(20px, env(safe-area-inset-bottom));
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Search Header -->
-<div class="search-header">
-    <div class="container">
-        <h1 class="display-4 mb-3">Discover Premium Venues</h1>
-        <p class="lead mb-4">Explore exclusive restaurants, gyms, spas, and entertainment venues</p>
-        
-        <!-- Search Form -->
-        <form method="get" class="row g-3">
-            <div class="col-md-6">
-                <input type="text" 
-                       name="q" 
-                       class="form-control form-control-lg" 
-                       placeholder="Search venues, locations..." 
-                       value="{{ search_query }}"
-                       autocomplete="off">
+<div class="main-container">
+    <!-- Left Panel: Venues List -->
+    <div class="venues-panel">
+        <div class="venues-content" id="venuesContent">
+            <!-- Categories Section - Capsule Buttons -->
+            <div class="categories-section">
+                <div class="categories-scroll" id="categoriesScroll">
+                    <!-- All Categories -->
+                    <a href="{% url 'venues:list' %}" 
+                       class="category-pill {% if not current_category %}active{% endif %}"
+                       data-category="">
+                        All Venues
+                        <span class="category-count">{{ page_obj.paginator.count }}</span>
+                    </a>
+                    
+                    <!-- Individual Categories -->
+                    {% for code, data in category_counts.items %}
+                    <a href="{% url 'venues:list' %}?category={{ code }}" 
+                       class="category-pill {% if current_category == code %}active{% endif %}"
+                       data-category="{{ code }}">
+                        {{ data.name }}
+                        <span class="category-count">{{ data.count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
             </div>
-            <div class="col-md-3">
-                <select name="category" class="form-select form-select-lg">
-                    <option value="">All Categories</option>
-                    {% for code, label in categories %}
-                    <option value="{{ code }}" {% if code == current_category %}selected{% endif %}>
-                        {{ label }}
-                    </option>
+            
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <div class="venues-count" id="venuesCount">
+                    {% if current_category %}
+                        {% for code, data in category_counts.items %}
+                            {% if code == current_category %}
+                                {{ page_obj.paginator.count }} {{ data.name }}
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        {{ page_obj.paginator.count }} Venues
+                    {% endif %}
+                </div>
+                <div class="filter-actions">
+                    <button class="filter-btn" onclick="openFilterModal()">
+                        <i class="fas fa-sliders-h"></i>
+                        Filters
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Venues Grid -->
+            <div id="venuesGrid">
+                {% if venues %}
+                    <div class="venues-grid">
+                        {% for venue in venues %}
+                        <a href="{% url 'venues:detail' venue.slug %}" 
+                           class="venue-card" 
+                           data-venue-id="{{ venue.id }}"
+                           data-lat="{{ venue.latitude }}"
+                           data-lng="{{ venue.longitude }}"
+                           data-category="{{ venue.category }}"
+                           data-name="{{ venue.name }}"
+                           data-city="{{ venue.city }}"
+                           data-state="{{ venue.state }}"
+                           data-image="{% if venue.cover_image %}{{ venue.cover_image.url }}{% endif %}">
+                            
+                            <!-- Venue Image with Text Overlay -->
+                            <div class="venue-image-container">
+                                {% if venue.cover_image %}
+                                <img src="{{ venue.cover_image.url }}" 
+                                     alt="{{ venue.name }}" 
+                                     class="venue-image"
+                                     loading="lazy">
+                                {% else %}
+                                <div class="venue-image" style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);"></div>
+                                {% endif %}
+                                
+                                <div class="venue-text-overlay">
+                                    <h3 class="venue-name">{{ venue.name|truncatechars:30 }}</h3>
+                                    <h5 class="venue-city">{{ venue.city }}{% if venue.state %}, {{ venue.state }}{% endif %}</h5>
+                                </div>
+                                
+                                {% if venue.average_rating > 0 %}
+                                <div class="venue-rating-badge">
+                                    <i class="fas fa-star rating-star"></i>
+                                    <span>{{ venue.average_rating|floatformat:1 }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Pagination -->
+                    {% if page_obj.has_other_pages %}
+                    <div class="pagination-container">
+                        <ul class="pagination">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?page={{ page_obj.previous_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" 
+                                   href="?page={{ page_obj.next_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                {% else %}
+                    <!-- No Results -->
+                    <div class="no-results">
+                        <div class="no-results-icon">
+                            <i class="fas fa-search-location"></i>
+                        </div>
+                        <h3 class="no-results-title">No venues found</h3>
+                        <p class="no-results-text">
+                            Try adjusting your filters or select a different category
+                        </p>
+                        <a href="{% url 'venues:list' %}" class="filter-btn" style="display: inline-flex;">
+                            <i class="fas fa-redo"></i>
+                            Clear Filters
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <!-- Mobile Bottom Actions - Single Pill Button -->
+<div class="mobile-actions">
+    <div class="mobile-pill-button">
+        <button class="pill-half pill-half-left" id="mobileMapBtn" onclick="toggleMapOverlay()">
+            <i class="fas fa-map-marked-alt"></i>
+            Map
+        </button>
+        <div class="pill-divider"></div>
+        <button class="pill-half pill-half-right" onclick="openFilterModal()">
+            <i class="fas fa-sliders-h"></i>
+            Filter
+        </button>
+    </div>
+</div>
+    <!-- Right Panel: Map (45% width) - Desktop Only -->
+    <div class="map-panel">
+        <div class="map-search-container">
+            <div id="geocoder"></div>
+        </div>
+        <div id="venuesMap"></div>
+    </div>
+</div>
+
+
+
+<!-- Map Overlay for Mobile -->
+<div class="map-overlay" id="mapOverlay">
+    <div class="map-overlay-categories">
+        <div class="categories-scroll">
+            <a href="{% url 'venues:list' %}" 
+               class="category-pill {% if not current_category %}active{% endif %}"
+               onclick="handleCategoryFilter(''); return false;">
+                All Venues
+                <span class="category-count">{{ page_obj.paginator.count }}</span>
+            </a>
+            
+            {% for code, data in category_counts.items %}
+            <a href="{% url 'venues:list' %}?category={{ code }}" 
+               class="category-pill {% if current_category == code %}active{% endif %}"
+               onclick="handleCategoryFilter('{{ code }}'); return false;">
+                {{ data.name }}
+                <span class="category-count">{{ data.count }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Mobile Map Search Bar -->
+    <div class="map-overlay-search">
+        <div id="geocoderMobile"></div>
+    </div>
+    
+    <div id="venuesMapMobile"></div>
+    
+    <!-- Mobile Bottom Actions for Map Overlay -->
+    <div class="mobile-actions mobile-map-actions">
+        <div class="mobile-pill-button">
+            <button class="pill-half pill-half-left" onclick="goBackToList()">
+                <i class="fas fa-list"></i>
+                List
+            </button>
+            <div class="pill-divider"></div>
+            <button class="pill-half pill-half-right" onclick="openFilterModal()">
+                <i class="fas fa-sliders-h"></i>
+                Filter
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modal -->
+<div id="filterModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 20px; font-weight: 600;">Filter Venues</h3>
+            <button onclick="closeFilterModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6B7280;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="get" action="{% url 'venues:list' %}" id="filterForm">
+            {% if current_category %}
+            <input type="hidden" name="category" value="{{ current_category }}">
+            {% endif %}
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px;">City</label>
+                <select name="city" style="width: 100%; padding: 10px; border: 1.5px solid #D1D5DB; border-radius: 8px;">
+                    <option value="">All Cities</option>
+                    {% for city in cities %}
+                    <option value="{{ city }}" {% if current_city == city %}selected{% endif %}>{{ city }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-light btn-lg w-100">
-                    <i class="fas fa-search me-2"></i>Search
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px;">Price Range</label>
+                <select name="price_range" style="width: 100%; padding: 10px; border: 1.5px solid #D1D5DB; border-radius: 8px;">
+                    <option value="">Any Price</option>
+                    <option value="BUDGET" {% if current_price_range == 'BUDGET' %}selected{% endif %}>₦ Budget</option>
+                    <option value="MODERATE" {% if current_price_range == 'MODERATE' %}selected{% endif %}>₦₦ Moderate</option>
+                    <option value="UPSCALE" {% if current_price_range == 'UPSCALE' %}selected{% endif %}>₦₦₦ Upscale</option>
+                    <option value="LUXURY" {% if current_price_range == 'LUXURY' %}selected{% endif %}>₦₦₦₦ Luxury</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button type="button" onclick="clearAllFilters()" style="flex: 1; padding: 12px; background: white; border: 1.5px solid #D1D5DB; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Clear All
+                </button>
+                <button type="submit" style="flex: 1; padding: 12px; background: #E5AD04; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    Apply Filters
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<div class="container">
-    <div class="row">
-        <!-- Filters Sidebar -->
-        <div class="col-lg-3 mb-4">
-            <div class="filter-sidebar">
-                <h5 class="mb-3"><i class="fas fa-filter me-2"></i>Filters</h5>
+<!-- Venues data for JavaScript -->
+<script id="venuesData" type="application/json">
+{
+    "venues": [
+        {% for venue in venues %}
+        {
+            "id": {{ venue.id }},
+            "name": "{{ venue.name|escapejs }}",
+            "slug": "{{ venue.slug }}",
+            "category": "{{ venue.category }}",
+            "category_display": "{{ venue.get_category_display|escapejs }}",
+            "latitude": {% if venue.latitude %}{{ venue.latitude }}{% else %}null{% endif %},
+            "longitude": {% if venue.longitude %}{{ venue.longitude }}{% else %}null{% endif %},
+            "city": "{{ venue.city|escapejs }}",
+            "state": "{{ venue.state|escapejs }}",
+            "address": "{{ venue.address|escapejs }}",
+            "cover_image": "{% if venue.cover_image %}{{ venue.cover_image.url }}{% endif %}",
+            "average_rating": {{ venue.average_rating|default:0 }}
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ],
+    "current_category": "{{ current_category }}",
+    "total_count": {{ page_obj.paginator.count }}
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Mapbox JS -->
+<script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+<script src='https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.0/mapbox-gl-geocoder.min.js'></script>
+
+<script>
+    // Mapbox access token
+    mapboxgl.accessToken = '{{ MAPBOX_ACCESS_TOKEN }}';
+    
+    // Global variables
+    let map, mobileMap;
+    let markers = [], mobileMarkers = [];
+    let currentCategory = '{{ current_category }}';
+    let activeMarker = null;
+    let activeVenueCard = null;
+    let activePopup = null;
+    let isMobile = window.innerWidth <= 1024;
+    let mobileGeocoder = null;
+    
+    // Initialize desktop map
+    function initMap() {
+        try {
+            // Default center (Lagos, Nigeria)
+            const defaultCenter = [3.3792, 6.5244];
+            
+            map = new mapboxgl.Map({
+                container: 'venuesMap',
+                style: 'mapbox://styles/mapbox/streets-v12',
+                center: defaultCenter,
+                zoom: 11,
+                attributionControl: false,
+                maxZoom: 18,
+                minZoom: 3,
+                scrollZoom: false
+            });
+            
+            // Add navigation controls
+            map.addControl(new mapboxgl.NavigationControl({
+                showCompass: true,
+                showZoom: true
+            }), 'top-right');
+            
+            // Add geocoder (search)
+            const geocoder = new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl,
+                marker: false,
+                placeholder: 'Search venues or locations...',
+                bbox: [2.69, 6.39, 3.59, 6.67],
+                proximity: { longitude: 3.3792, latitude: 6.5244 }
+            });
+            
+            document.getElementById('geocoder').appendChild(geocoder.onAdd(map));
+            
+            // Add markers when map loads
+            map.on('load', function() {
+                addMarkersToMap(map, markers);
+                fitMapToMarkers(map, markers);
+            });
+            
+        } catch (error) {
+            console.error('Failed to initialize map:', error);
+        }
+    }
+    
+    // Initialize mobile map
+    function initMobileMap() {
+        try {
+            const defaultCenter = [3.3792, 6.5244];
+            
+            mobileMap = new mapboxgl.Map({
+                container: 'venuesMapMobile',
+                style: 'mapbox://styles/mapbox/streets-v12',
+                center: defaultCenter,
+                zoom: 11,
+                attributionControl: false,
+                maxZoom: 18,
+                minZoom: 3,
+                scrollZoom: false
+            });
+            
+            // Add navigation controls
+            mobileMap.addControl(new mapboxgl.NavigationControl({
+                showCompass: true,
+                showZoom: true
+            }), 'top-right');
+            // Add mobile geocoder - only once
+            if (!mobileGeocoder) {
+                mobileGeocoder = new MapboxGeocoder({
+                    accessToken: mapboxgl.accessToken,
+                    mapboxgl: mapboxgl,
+                    marker: false,
+                    placeholder: 'Search venues or locations...',
+                    bbox: [2.69, 6.39, 3.59, 6.67],
+                    proximity: { longitude: 3.3792, latitude: 6.5244 }
+                });
                 
-                <form method="get" id="filterForm">
-                    <!-- Preserve search query -->
-                    {% if search_query %}
-                    <input type="hidden" name="q" value="{{ search_query }}">
-                    {% endif %}
-                    
-                    <!-- City Filter -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">City</label>
-                        <select name="city" class="form-select">
-                            <option value="">All Cities</option>
-                            {% for city in cities %}
-                            <option value="{{ city }}" {% if city == current_city %}selected{% endif %}>
-                                {{ city }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <!-- Price Range Filter -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Price Range</label>
-                        <select name="price_range" class="form-select">
-                            <option value="">Any Price</option>
-                            <option value="BUDGET" {% if current_price_range == 'BUDGET' %}selected{% endif %}>₦ Budget</option>
-                            <option value="MODERATE" {% if current_price_range == 'MODERATE' %}selected{% endif %}>₦₦ Moderate</option>
-                            <option value="UPSCALE" {% if current_price_range == 'UPSCALE' %}selected{% endif %}>₦₦₦ Upscale</option>
-                            <option value="LUXURY" {% if current_price_range == 'LUXURY' %}selected{% endif %}>₦₦₦₦ Luxury</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Amenities Filter -->
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Amenities</label>
-                        <div style="max-height: 250px; overflow-y: auto;">
-                            {% for amenity in amenities %}
-                            <div class="form-check amenity-checkbox">
-                                <input class="form-check-input" 
-                                       type="checkbox" 
-                                       name="amenities" 
-                                       value="{{ amenity.id }}" 
-                                       id="amenity_{{ amenity.id }}">
-                                <label class="form-check-label" for="amenity_{{ amenity.id }}">
-                                    {% if amenity.icon_class %}
-                                    <i class="{{ amenity.icon_class }} me-1"></i>
-                                    {% endif %}
-                                    {{ amenity.name }}
-                                </label>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary w-100 mb-2">
-                        Apply Filters
-                    </button>
-                    <a href="{% url 'venues:list' %}" class="btn btn-outline-secondary w-100">
-                        Clear All
-                    </a>
-                </form>
-            </div>
-        </div>
+                // Clear existing mobile geocoder if any
+                const mobileGeocoderContainer = document.getElementById('geocoderMobile');
+                mobileGeocoderContainer.innerHTML = '';
+                mobileGeocoderContainer.appendChild(mobileGeocoder.onAdd(mobileMap));
+            }
+            
+            // Add markers when map loads
+            mobileMap.on('load', function() {
+                addMarkersToMap(mobileMap, mobileMarkers, true);
+                fitMapToMarkers(mobileMap, mobileMarkers);
+            });
+            
+        } catch (error) {
+            console.error('Failed to initialize mobile map:', error);
+        }
         
-        <!-- Venue Results -->
-        <div class="col-lg-9">
-            <!-- Results Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h4 class="mb-0">
-                        {% if search_query %}
-                        Search Results for "{{ search_query }}"
-                        {% else %}
-                        All Venues
-                        {% endif %}
-                    </h4>
-                    <p class="text-muted mb-0">{{ page_obj.paginator.count }} venue{{ page_obj.paginator.count|pluralize }} found</p>
-                </div>
-                
-                <!-- Sort Options -->
-                <div class="d-flex align-items-center">
-                    <label class="me-2 text-nowrap">Sort by:</label>
-                    <form method="get" class="d-flex">
-                        {% for key, value in request.GET.items %}
-                        {% if key != 'sort' %}
-                        <input type="hidden" name="{{ key }}" value="{{ value }}">
-                        {% endif %}
-                        {% endfor %}
-                        <select name="sort" class="form-select" onchange="this.form.submit()">
-                            <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Highest Rated</option>
-                            <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>Most Popular</option>
-                            <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest</option>
-                            <option value="name" {% if current_sort == 'name' %}selected{% endif %}>Name (A-Z)</option>
-                        </select>
-                    </form>
-                </div>
-            </div>
+    }
+    
+    // Add markers to map with hover functionality
+    function addMarkersToMap(mapInstance, markerArray, isMobile = false) {
+        // Clear existing markers
+        markerArray.forEach(marker => marker.remove());
+        markerArray.length = 0;
+        
+        try {
+            const venuesData = JSON.parse(document.getElementById('venuesData').textContent);
             
-            <!-- Subscription Warning -->
-            {% if not user.is_authenticated or not has_active_subscription %}
-            <div class="alert alert-warning mb-4">
-                <i class="fas fa-lock me-2"></i>
-                <strong>Unlock Full Access!</strong>
-                {% if not user.is_authenticated %}
-                <a href="{% url 'account:register_user' %}" class="alert-link">Sign up</a> to get exclusive access to premium venues.
-                {% else %}
-                <a href="{% url 'subscriptions:plans_list' %}" class="alert-link">Subscribe now</a> to unlock exclusive venue access and benefits.
-                {% endif %}
-            </div>
-            {% endif %}
-            
-            <!-- Venue Grid -->
-            {% if venues %}
-            <div class="row g-4 mb-4">
-                {% for venue in venues %}
-                <div class="col-md-6 col-lg-4">
-                    <div class="card venue-card">
-                        <div class="position-relative">
-                            <img src="{{ venue.cover_image.url }}" 
-                                 class="venue-image" 
-                                 alt="{{ venue.name }}">
-                            <span class="venue-category-badge">
-                                {{ venue.get_category_display }}
-                            </span>
-                            <span class="price-badge">
-                                {{ venue.get_price_display }}
-                            </span>
+            venuesData.venues.forEach(venue => {
+                if (venue.latitude && venue.longitude && venue.latitude !== 0 && venue.longitude !== 0) {
+                    // Create marker element
+                    const el = document.createElement('div');
+                    el.className = 'gold-marker';
+                    el.innerHTML = '<i class="fas fa-map-marker-alt marker-icon"></i>';
+                    el.dataset.venueId = venue.id;
+                    
+                    // Create marker
+                    const marker = new mapboxgl.Marker(el)
+                        .setLngLat([venue.longitude, venue.latitude])
+                        .addTo(mapInstance);
+                    
+                    // Create enhanced popup for hover
+                    const popup = new mapboxgl.Popup({
+                        offset: 25,
+                        closeButton: false,
+                        closeOnClick: false,
+                        closeOnMove: false,
+                        className: 'venue-popup-container'
+                    }).setHTML(`
+                        <div class="venue-popup">
+                            ${venue.cover_image ? `
+                            <img src="${venue.cover_image}" class="popup-image" alt="${venue.name}">
+                            ` : '<div class="popup-image" style="background: #f3f4f6;"></div>'}
+                            <div class="popup-content">
+                                <h4 class="popup-title">
+                                <a href="/venues/${venue.slug}/">${venue.name}</a>
+                                </h4>
+
+                                <p class="popup-location">
+                                    <i class="fas fa-map-marker-alt" style="color: #9CA3AF;"></i>
+                                    ${venue.city}${venue.state ? ', ' + venue.state : ''}
+                                </p>
+                                <span class="popup-category">${venue.category_display}</span>
+                            </div>
                         </div>
+                    `);
+                    
+                    // Hover functionality
+                    let hoverTimeout;
+                    
+                    el.addEventListener('mouseenter', function() {
+                        clearTimeout(hoverTimeout);
                         
-                        <div class="card-body">
-                            <h5 class="card-title mb-2">
-                                <a href="{% url 'venues:detail' venue.slug %}" 
-                                   class="text-decoration-none text-dark">
-                                    {{ venue.name }}
-                                </a>
-                            </h5>
+                        hoverTimeout = setTimeout(() => {
+                            // Highlight marker
+                            this.classList.add('highlighted');
                             
-                            {% if venue.tagline %}
-                            <p class="text-muted small mb-2">{{ venue.tagline }}</p>
-                            {% endif %}
+                            // Show popup
+                            marker.setPopup(popup);
                             
-                            <div class="d-flex align-items-center mb-2">
-                                <span class="rating-stars me-2">
-                                    {% for i in "12345" %}
-                                    {% if forloop.counter <= venue.average_rating %}
-                                    <i class="fas fa-star"></i>
-                                    {% else %}
-                                    <i class="far fa-star"></i>
-                                    {% endif %}
-                                    {% endfor %}
-                                </span>
-                                <span class="text-muted small">
-                                    {{ venue.average_rating|floatformat:1 }} ({{ venue.total_reviews }})
-                                </span>
-                            </div>
                             
-                            <p class="text-muted small mb-3">
-                                <i class="fas fa-map-marker-alt me-1"></i>
-                                {{ venue.city }}{% if venue.suburb %}, {{ venue.suburb }}{% endif %}
-                            </p>
                             
-                            <!-- Quick Amenities -->
-                            {% if venue.amenities.all|slice:":3" %}
-                            <div class="mb-3">
-                                {% for amenity in venue.amenities.all|slice:":3" %}
-                                <span class="badge bg-light text-dark me-1">
-                                    {% if amenity.icon_class %}
-                                    <i class="{{ amenity.icon_class }} me-1"></i>
-                                    {% endif %}
-                                    {{ amenity.name }}
-                                </span>
-                                {% endfor %}
-                                {% if venue.amenities.count > 3 %}
-                                <span class="badge bg-light text-dark">
-                                    +{{ venue.amenities.count|add:"-3" }} more
-                                </span>
-                                {% endif %}
-                            </div>
-                            {% endif %}
                             
-                            <a href="{% url 'venues:detail' venue.slug %}" 
-                               class="btn btn-outline-primary btn-sm w-100">
-                                View Details <i class="fas fa-arrow-right ms-2"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            
-            <!-- Pagination -->
-            {% if page_obj.has_other_pages %}
-            <nav aria-label="Venue pagination">
-                <ul class="pagination justify-content-center">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">First</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
-                    </li>
-                    {% endif %}
+                            
+                        }, 150);
+                    });
                     
-                    {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
-                    </li>
-                    {% endif %}
-                    {% endfor %}
+                    el.addEventListener('mouseleave', function() {
+                        clearTimeout(hoverTimeout);
+                        
+                        setTimeout(() => {
+                            // Remove highlight from marker
+                            this.classList.remove('highlighted');
+                            
+                            // Remove popup
+                            marker.removePopup();
+                            
+                            
+                        }, 100);
+                    });
                     
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Last</a>
-                    </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
+                    
+                    
+                    markerArray.push(marker);
+                }
+            });
             
-            {% else %}
-            <!-- No Results -->
-            <div class="text-center py-5">
-                <i class="fas fa-search fa-4x text-muted mb-3"></i>
-                <h4>No venues found</h4>
-                <p class="text-muted">Try adjusting your filters or search terms</p>
-                <a href="{% url 'venues:list' %}" class="btn btn-primary">View All Venues</a>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-</div>
+        } catch (error) {
+            console.error('Error parsing venues data:', error);
+        }
+    }
+    
+    // Fit map to show all markers
+    function fitMapToMarkers(mapInstance, markerArray) {
+        const bounds = new mapboxgl.LngLatBounds();
+        let hasBounds = false;
+        
+        markerArray.forEach(marker => {
+            bounds.extend(marker.getLngLat());
+            hasBounds = true;
+        });
+        
+        if (hasBounds && markerArray.length > 0) {
+            mapInstance.fitBounds(bounds, {
+                padding: { top: 50, bottom: 50, left: 50, right: 50 },
+                maxZoom: 15,
+                duration: 1000
+            });
+        }
+    }
+    
+    // Highlight venue card when marker is hovered
+    function highlightVenueCard(venueId) {
+        // Remove previous highlight
+        if (activeVenueCard) {
+            activeVenueCard.classList.remove('highlighted');
+        }
+        
+        // Find and highlight new card
+        const card = document.querySelector(`.venue-card[data-venue-id="${venueId}"]`);
+        if (card) {
+            card.classList.add('highlighted');
+            activeVenueCard = card;
+            
+            // Scroll to card if not in view (desktop only)
+            if (window.innerWidth > 1024) {
+                const rect = card.getBoundingClientRect();
+                if (rect.bottom > window.innerHeight || rect.top < 0) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+    }
+    
+    // Remove highlight from venue card
+    function removeVenueCardHighlight(venueId) {
+        const card = document.querySelector(`.venue-card[data-venue-id="${venueId}"]`);
+        if (card) {
+            card.classList.remove('highlighted');
+            if (activeVenueCard === card) {
+                activeVenueCard = null;
+            }
+        }
+    }
+    
+    // Toggle mobile map overlay
+    function toggleMapOverlay(forceState = null) {
+    const overlay = document.getElementById('mapOverlay');
+    const mapBtn = document.getElementById('mobileMapBtn');
+
+    const shouldOpen = forceState !== null
+        ? forceState
+        : !overlay.classList.contains('active');
+
+    if (!shouldOpen) {
+        overlay.classList.remove('active');
+        mapBtn.innerHTML = '<i class="fas fa-map-marked-alt"></i> Map';
+        document.body.style.overflow = 'auto';
+
+        if (mobileMap) {
+            mobileMap.remove();
+            mobileMap = null;
+            mobileGeocoder = null;
+        }
+        return;
+    }
+
+    overlay.classList.add('active');
+    mapBtn.innerHTML = '<i class="fas fa-list"></i> List';
+    document.body.style.overflow = 'hidden';
+
+    if (!mobileMap) {
+        requestAnimationFrame(initMobileMap);
+    }
+}
+
+    // Go back to list from mobile map
+    function goBackToList() {
+        toggleMapOverlay();
+    }
+    
+    // Handle category filtering
+    function handleCategoryFilter(category) {
+        sessionStorage.setItem('openMap', 'true');
+
+        const url = new URL(window.location);
+        if (category) {
+            url.searchParams.set('category', category);
+        } else {
+            url.searchParams.delete('category');
+        }
+        url.searchParams.delete('page');
+        window.location.href = url.toString();
+        
+    }
+    
+    // Filter modal functions
+    function openFilterModal() {
+        document.getElementById('filterModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeFilterModal() {
+        document.getElementById('filterModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+    
+    function clearAllFilters() {
+        window.location.href = '{% url "venues:list" %}';
+    }
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize desktop map
+        if (window.innerWidth > 1024) {
+            initMap();
+        }
+        
+        // Add click handlers to category pills
+        document.querySelectorAll('.category-pill').forEach(pill => {
+            pill.addEventListener('click', function(e) {
+                if (window.innerWidth <= 1024 && this.closest('.map-overlay-categories')) {
+                    e.preventDefault();
+                    const category = this.getAttribute('href').split('category=')[1] || '';
+                    handleCategoryFilter(category);
+                }
+            });
+        });
+        if (sessionStorage.getItem('openMap') === 'true') {
+            sessionStorage.removeItem('openMap');
+            toggleMapOverlay(true);
+        }
+
+        
+        // Close filter modal on outside click
+        document.getElementById('filterModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeFilterModal();
+            }
+        });
+        
+        // Close map overlay on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const overlay = document.getElementById('mapOverlay');
+                if (overlay.classList.contains('active')) {
+                    toggleMapOverlay();
+                }
+                closeFilterModal();
+            }
+        });
+        
+        // Handle window resize
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (map) map.resize();
+                if (mobileMap) mobileMap.resize();
+            }, 250);
+        });
+        
+       
+    });
+</script>
 {% endblock %}

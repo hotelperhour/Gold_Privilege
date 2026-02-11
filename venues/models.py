@@ -315,6 +315,7 @@ class Venue(models.Model):
             models.Index(fields=['status', 'category']),
             models.Index(fields=['city', 'state']),
             models.Index(fields=['-average_rating']),
+            models.Index(fields=['latitude', 'longitude']),
         ]
     
     def __str__(self):
@@ -435,7 +436,24 @@ class Venue(models.Model):
         if self.opening_time and self.closing_time:
             return f"{self.opening_time.strftime('%I:%M %p')} - {self.closing_time.strftime('%I:%M %p')}"
         return "Hours not specified"
-    
+    def to_map_json(self):
+        """Serialize venue data for map display"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'slug': self.slug,
+            'category': self.category,
+            'category_display': self.get_category_display(),
+            'city': self.city,
+            'suburb': self.suburb or '',
+            'address': self.address,
+            'latitude': float(self.latitude) if self.latitude else None,
+            'longitude': float(self.longitude) if self.longitude else None,
+            'cover_image': self.cover_image.url if self.cover_image else None,
+            'average_rating': float(self.average_rating),
+            'total_reviews': self.total_reviews,
+            'tagline': self.tagline or '',
+        }
    
 
 
