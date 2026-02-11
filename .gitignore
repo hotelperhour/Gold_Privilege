@@ -19,3 +19,4 @@ media/
 test_email.py
 test_sms.py
 test_smtp.py
+db.sqlite3
