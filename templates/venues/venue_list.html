@@ -190,6 +190,7 @@
         margin-bottom: 32px;
     }
     
+    
     /* ========== VENUE CARD ========== */
     .venue-card {
         background: #ffffff;
@@ -344,14 +345,23 @@
     pointer-events: none !important;
 }
 
+.map-panel .mapboxgl-ctrl-top-right {
+    top: 60px !important; /* adjust as needed */
+    
+}
+.map-overlay.active ~ .venues-panel,
+.map-overlay.active ~ .main-container .mobile-actions {
+    display: none !important;
+}
+
     
     /* Custom Golden Marker */
     .gold-marker {
         background: #E5AD04;
-        width: 40px;
-        height: 40px;
+        width: 35px;
+        height: 35px;
         border-radius: 50%;
-        border: 3px solid #ffffff;
+        border: 2px solid #ffffff;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         display: flex;
         align-items: center;
@@ -1262,7 +1272,9 @@
                 attributionControl: false,
                 maxZoom: 18,
                 minZoom: 3,
-                scrollZoom: false
+                scrollZoom: true,
+                dragpan: { inertia: 0 },
+                touchZoomRotate: { inertia: 0 }
             });
             
             // Add navigation controls
@@ -1307,7 +1319,9 @@
                 attributionControl: false,
                 maxZoom: 18,
                 minZoom: 3,
-                scrollZoom: false
+                scrollZoom: true,
+                dragpan: {inertia:0},
+                touchZoomRotate: {inertia:0}
             });
             
             // Add navigation controls
@@ -1494,6 +1508,8 @@
     function toggleMapOverlay(forceState = null) {
     const overlay = document.getElementById('mapOverlay');
     const mapBtn = document.getElementById('mobileMapBtn');
+    const venuesPanel = document.querySelector('.venues-panel');
+    const mainMobileActions = document.querySelector('.main-container .mobile-actions');
 
     const shouldOpen = forceState !== null
         ? forceState

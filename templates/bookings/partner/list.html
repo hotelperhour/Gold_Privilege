@@ -1,407 +1,973 @@
-{% extends 'base.html' %}
+{% extends 'base_partner.html' %}
 {% load static %}
 
-{% block title %}Partner Dashboard - {{ site_name }}{% endblock %}
+{% block title %}Bookings - Gold Privilege{% endblock %}
 
-{% block content %}
-<div class="container-fluid py-4">
-    <div class="row">
-        <!-- Sidebar -->
-        <div class="col-lg-3">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="mb-0">Quick Stats</h6>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <h1 class="display-6">{{ booking_stats.today }}</h1>
-                        <small class="text-muted">Today's Bookings</small>
-                    </div>
-                    <div class="mb-3">
-                        <h1 class="display-6">{{ booking_stats.checked_in_today }}</h1>
-                        <small class="text-muted">Checked In Today</small>
-                    </div>
-                    <div class="mb-3">
-                        <h1 class="display-6">{{ booking_stats.upcoming }}</h1>
-                        <small class="text-muted">Upcoming Bookings</small>
-                    </div>
-                    <div>
-                        <h1 class="display-6">{{ booking_stats.total_month }}</h1>
-                        <small class="text-muted">This Month</small>
-                    </div>
-                </div>
-            </div>
+{% block extra_css %}
+<style>
+    /* Bookings Page Styles */
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-secondary: #F9B036;
+        --dark-bg: #020202;
+        --white: #FFFFFF;
+        --black: #000000;
+        --gray-600: #6c757d;
+    }
+    
+    * {
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--black);
+        margin: 0;
+    }
+    
+    .page-header h4 {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--gray-600);
+        margin: 5px 0 0 0;
+    }
+    
+    .header-actions {
+        display: flex;
+        gap: 12px;
+    }
+    
+    .btn-outline-gold {
+        background-color: var(--white);
+        color: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-outline-gold:hover {
+        background-color: rgba(229, 173, 4, 0.1);
+        color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+    }
+    
+    .btn-gold-primary {
+        background-color: var(--gold-primary);
+        color: var(--black);
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+    
+    .btn-gold-primary:hover {
+        background-color: var(--gold-secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+    }
+    
+    /* Stats Cards */
+    .partner-card {
+        background: #FFFFFF;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .partner-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+    
+    .partner-card .card-body {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .partner-card .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+    }
+    
+    .bg-warning-subtle {
+        background-color: rgba(229, 173, 4, 0.15);
+    }
+    
+    .bg-success-subtle {
+        background-color: rgba(41, 204, 151, 0.15);
+    }
+    
+    .bg-info-subtle {
+        background-color: rgba(13, 202, 240, 0.15);
+    }
+    
+    .bg-primary-subtle {
+        background-color: rgba(13, 110, 253, 0.15);
+    }
+    
+    .partner-card .card-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--black);
+        margin: 0 0 5px 0;
+    }
+    
+    .partner-card .card-title {
+        color: var(--gray-600);
+        font-weight: 500;
+        font-size: 14px;
+        margin: 0;
+    }
+    
+    /* Filters */
+    .filters-container {
+        background: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .filters-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 0;
+    }
+    
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .filter-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--black);
+        margin-bottom: 6px;
+    }
+    
+    .filter-input {
+        padding: 10px 14px;
+        border: 1px solid #E5E5E5;
+        border-radius: 8px;
+        font-size: 14px;
+        color: var(--black);
+        transition: all 0.3s ease;
+    }
+    
+    .filter-input:focus {
+        outline: none;
+        border-color: var(--gold-primary);
+        box-shadow: 0 0 0 3px rgba(229, 173, 4, 0.1);
+    }
+    
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 15px;
+    }
+    
+    
+.btn-apply,
+.btn-clear {
+    flex: none; /* Remove flex: 1 */
+    min-width: 140px; /* Fixed width instead */
+    background-color: var(--gold-primary);
+    color: var(--black);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
 
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="mb-0">Quick Actions</h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'bookings:partner_check_in' %}" class="btn btn-primary">
-                            <i class="bi bi-qr-code-scan me-1"></i>Check-in Guest
-                        </a>
-                        <button class="btn btn-outline-primary" onclick="printTodayList()">
-                            <i class="bi bi-printer me-1"></i>Print Today's List
-                        </button>
-                    </div>
-                </div>
-            </div>
+.btn-clear {
+    background-color: transparent;
+    color: var(--gray-600);
+    border: 1px solid #E5E5E5;
+}
 
-            <!-- Filter Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Filter Bookings</h6>
-                </div>
-                <div class="card-body">
-                    <form method="get" id="filterForm">
-                        <div class="mb-3">
-                            <label class="form-label">Status</label>
-                            <select name="status" class="form-select">
-                                <option value="">All Status</option>
-                                {% for status_code, status_name in status_choices %}
-                                <option value="{{ status_code }}" 
-                                        {% if filter_status == status_code %}selected{% endif %}>
-                                    {{ status_name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Venue</label>
-                            <select name="venue" class="form-select">
-                                <option value="">All Venues</option>
-                                {% for venue in partner_venues %}
-                                <option value="{{ venue.id }}" 
-                                        {% if filter_venue == venue.id|stringformat:"i" %}selected{% endif %}>
-                                    {{ venue.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Date From</label>
-                            <input type="date" name="date_from" class="form-control" 
-                                   value="{{ filter_date_from }}">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Date To</label>
-                            <input type="date" name="date_to" class="form-control" 
-                                   value="{{ filter_date_to }}">
-                        </div>
-                        
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-funnel me-1"></i>Apply Filters
-                            </button>
-                            <a href="{% url 'bookings:partner_list' %}" class="btn btn-outline-secondary">
-                                Clear Filters
-                            </a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
 
-        <!-- Main Content -->
-        <div class="col-lg-9">
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h5 class="mb-0">Bookings</h5>
-                            <small class="text-muted">Showing {{ bookings.count }} bookings</small>
-                        </div>
-                        <div class="btn-group">
-                            <button class="btn btn-outline-secondary btn-sm" onclick="exportBookings()">
-                                <i class="bi bi-download me-1"></i>Export
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card-body">
-                    {% if bookings %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Reference</th>
-                                    <th>Member</th>
-                                    <th>Venue</th>
-                                    <th>Date</th>
-                                    <th>Guests</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for booking in bookings %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ booking.booking_reference }}</strong>
-                                        {% if booking.visit_date == today %}
-                                        <span class="badge bg-warning ms-1">Today</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div>{{ booking.user.get_full_name }}</div>
-                                        <small class="text-muted">{{ booking.user.email }}</small>
-                                    </td>
-                                    <td>{{ booking.venue.name }}</td>
-                                    <td>{{ booking.visit_date|date:"M j, Y" }}</td>
-                                    <td>{{ booking.guests_count }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ booking.get_status_badge_color }}">
-                                            {{ booking.get_status_display }}
-                                        </span>
-                                        {% if booking.checked_in_at %}
-                                        <br>
-                                        <small class="text-muted">
-                                            {{ booking.checked_in_at|time:"g:i A" }}
-                                        </small>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'bookings:partner_detail' booking.booking_reference %}" 
-                                               class="btn btn-outline-primary">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                            {% if booking.status == 'CONFIRMED' and booking.visit_date == today %}
-                                            <button class="btn btn-outline-success quick-checkin-btn" 
-                                                    data-booking="{{ booking.booking_reference }}">
-                                                <i class="bi bi-check-circle"></i>
-                                            </button>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+    
+    .btn-apply:hover {
+        background-color: var(--gold-secondary);
+    }
+    
+    
+    
+    .btn-clear:hover {
+        background-color: #f8f9fa;
+        border-color: var(--gray-600);
+    }
+    
+    /* Bookings Table */
+    .bookings-section {
+        background: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    
+    .bookings-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .bookings-header h5 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--black);
+        margin: 0;
+    }
+    
+    .bookings-table {
+        width: 100%;
+        margin: 0;
+    }
+    
+    .bookings-table thead th {
+        background-color: transparent;
+        border: none;
+        padding: 20px 25px;
+        font-weight: 600;
+        color: var(--black);
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    .bookings-table thead th:first-child {
+        text-align: left;
+    }
+    
+    .bookings-table tbody td {
+        padding: 20px 25px;
+        border: none;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        vertical-align: middle;
+        color: var(--gray-600);
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    .bookings-table tbody td:first-child {
+        text-align: left;
+    }
+    
+    .bookings-table tbody tr:hover {
+        background-color: rgba(229, 173, 4, 0.03);
+    }
+    
+    /* Reference Cell */
+    .booking-ref {
+        font-weight: 600;
+        color: var(--black);
+        font-size: 14px;
+    }
+    
+    /* Member Cell */
+    .member-info {
+        text-align: left;
+    }
+    
+    .member-name {
+        font-weight: 500;
+        color: var(--black);
+        display: block;
+    }
+    
+    .member-email {
+        font-size: 12px;
+        color: var(--gray-600);
+    }
+    
+    /* Status Badges */
+    .status-confirmed {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: #FFC107;
+        border: 1px solid #FFC107;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-checked-in {
+        background-color: rgba(13, 202, 240, 0.15);
+        color: #0DCAF0;
+        border: 1px solid #0DCAF0;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-completed {
+        background-color: rgba(41, 204, 151, 0.15);
+        color: #29CC97;
+        border: 1px solid #29CC97;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-cancelled {
+        background-color: rgba(220, 53, 69, 0.15);
+        color: #DC3545;
+        border: 1px solid #DC3545;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-no-show {
+        background-color: rgba(108, 117, 125, 0.15);
+        color: #6C757D;
+        border: 1px solid #6C757D;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+    }
+    
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #E5E5E5;
+        background: #FFFFFF;
+        color: var(--black);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .action-btn:hover {
+        border-color: var(--gold-primary);
+        background-color: rgba(229, 173, 4, 0.1);
+        color: var(--gold-primary);
+    }
+    
+    .action-btn.success {
+        border-color: #29CC97;
+        color: #29CC97;
+    }
+    
+    .action-btn.success:hover {
+        background-color: rgba(41, 204, 151, 0.1);
+    }
+    
+    .action-btn i {
+        font-size: 14px;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-state i {
+        font-size: 60px;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state h4 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--black);
+        margin-bottom: 10px;
+    }
+    
+    .empty-state p {
+        color: var(--gray-600);
+        margin-bottom: 0;
+    }
+    
+    /* Loading State */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.9);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+    
+    .loading-overlay.active {
+        display: flex;
+    }
+    
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(229, 173, 4, 0.2);
+        border-top-color: var(--gold-primary);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    
 
-                    <!-- Pagination -->
-                    {% if is_paginated %}
-                    <nav aria-label="Booking pagination">
-                        <ul class="pagination justify-content-center">
-                            {% if page_obj.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page=1{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_venue %}&venue={{ filter_venue }}{% endif %}">
-                                    First
-                                </a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_venue %}&venue={{ filter_venue }}{% endif %}">
-                                    Previous
-                                </a>
-                            </li>
-                            {% endif %}
-                            
-                            <li class="page-item active">
-                                <span class="page-link">
-                                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-                                </span>
-                            </li>
-                            
-                            {% if page_obj.has_next %}
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_venue %}&venue={{ filter_venue }}{% endif %}">
-                                    Next
-                                </a>
-                            </li>
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if filter_status %}&status={{ filter_status }}{% endif %}{% if filter_venue %}&venue={{ filter_venue }}{% endif %}">
-                                    Last
-                                </a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                    {% endif %}
-                    
-                    {% else %}
-                    <div class="text-center py-5">
-                        <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
-                        <h5>No bookings found</h5>
-                        <p class="text-muted">Try adjusting your filters or check back later.</p>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
+    /* Mobile Responsive - UPDATED */
+@media (max-width: 991px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .btn-outline-gold,
+    .btn-gold-primary {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .filters-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .filter-actions {
+        justify-content: stretch; /* Full width on tablet */
+    }
+    
+    .btn-apply,
+    .btn-clear {
+        flex: 1; /* Equal width on tablet */
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .bookings-table {
+        min-width: 900px;
+    }
+}
 
-            <!-- Today's Summary -->
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="mb-0">Today's Schedule</h6>
-                        </div>
-                        <div class="card-body">
-                            {% with todays_bookings=bookings|slice:":5" %}
-                                {% if todays_bookings %}
-                                    {% for booking in todays_bookings %}
-                                        {% if booking.visit_date == today %}
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="me-3">
-                                                {% if booking.status == 'CHECKED_IN' %}
-                                                <i class="bi bi-check-circle-fill text-success fs-4"></i>
-                                                {% else %}
-                                                <i class="bi bi-clock text-warning fs-4"></i>
-                                                {% endif %}
-                                            </div>
-                                            <div class="flex-grow-1">
-                                                <h6 class="mb-0">{{ booking.user.get_full_name }}</h6>
-                                                <small class="text-muted">
-                                                    {{ booking.guests_count }} guest{{ booking.guests_count|pluralize }}
-                                                    • {{ booking.booking_reference }}
-                                                </small>
-                                            </div>
-                                            <div>
-                                                {% if booking.status == 'CONFIRMED' %}
-                                                <button class="btn btn-sm btn-success quick-checkin-btn" 
-                                                        data-booking="{{ booking.booking_reference }}">
-                                                    Check In
-                                                </button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% else %}
-                                    <p class="text-muted mb-0">No bookings for today</p>
-                                {% endif %}
-                            {% endwith %}
-                        </div>
-                    </div>
+@media (max-width: 576px) {
+    .page-header h1 {
+        font-size: 24px;
+    }
+    
+    .partner-card .card-value {
+        font-size: 28px;
+    }
+    
+    .filters-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+        justify-content: stretch;
+    }
+    
+    .btn-apply,
+    .btn-clear {
+        width: 100%; /* Full width on mobile */
+    }
+    
+    .bookings-table {
+        min-width: 800px;
+    }
+    .header-actions {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+    
+    .btn-outline-gold,
+    .btn-gold-primary {
+        width: 100%;
+        flex: none;          /* remove flex:1 from tablet rule */
+        justify-content: center;
+    }
+}
+    
+    
+    /* Pagination - Override Conflicts */
+.bookings-section .custom-pagination {
+    display: flex;
+    list-style: none;
+    padding: 20px 25px;
+    margin: 0;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.bookings-section .custom-pagination .page-item {
+    margin: 0;
+}
+
+.bookings-section .custom-pagination .page-link {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #E5E5E5;
+    background: #FFFFFF;
+    color: var(--black);
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.bookings-section .custom-pagination .page-link:hover {
+    border-color: var(--gold-primary);
+    background-color: rgba(229, 173, 4, 0.1);
+    color: var(--gold-primary);
+}
+
+.bookings-section .custom-pagination .page-item.active .page-link {
+    background-color: var(--gold-primary);
+    border-color: var(--gold-primary);
+    color: var(--black);
+    font-weight: 600;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bookings-section .custom-pagination .page-item.disabled .page-link {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+    background-color: #f8f9fa;
+}
+
+/* Remove any Bootstrap defaults */
+.bookings-section nav {
+    margin: 0;
+    padding: 0;
+}
+</style>
+{% endblock %}
+
+{% block partner_content %}
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1>Bookings</h1>
+        <h4>Manage your bookings</h4>
+    </div>
+    <div class="header-actions">
+        <button onclick="printTodaysList()" class="btn-outline-gold">
+            <i class="fas fa-print"></i>
+            Print Today's List
+        </button>
+        <a href="{% url 'bookings:partner_check_in' %}" class="btn-gold-primary">
+            <i class="fas fa-qrcode"></i>
+            Check-in Guest
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <!-- Today's Bookings -->
+    <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+        <div class="partner-card">
+            <div class="card-body">
+                <div class="icon-circle bg-warning-subtle">
+                    <i class="fas fa-calendar-day" style="color: var(--gold-primary);"></i>
                 </div>
-                
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h6 class="mb-0">Quick Check-in</h6>
-                        </div>
-                        <div class="card-body">
-                            <form id="quickCheckinForm">
-                                <div class="input-group mb-3">
-                                    <input type="text" class="form-control" 
-                                           placeholder="Enter booking reference" 
-                                           id="quickCheckinRef"
-                                           style="text-transform: uppercase;">
-                                    <button class="btn btn-primary" type="button" 
-                                            onclick="quickCheckin()">
-                                        Check In
-                                    </button>
-                                </div>
-                                <div id="quickCheckinResult"></div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+                <h2 class="card-value">{{ booking_stats.today|default:0 }}</h2>
+                <p class="card-title">Today's Bookings</p>
             </div>
         </div>
     </div>
+    
+    <!-- Checked In Today -->
+    <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
+        <div class="partner-card">
+            <div class="card-body">
+                <div class="icon-circle bg-success-subtle">
+                    <i class="fas fa-check-circle" style="color: #29CC97;"></i>
+                </div>
+                <h2 class="card-value">{{ booking_stats.checked_in_today|default:0 }}</h2>
+                <p class="card-title">Checked In Today</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upcoming Bookings -->
+    <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+        <div class="partner-card">
+            <div class="card-body">
+                <div class="icon-circle bg-info-subtle">
+                    <i class="fas fa-clock" style="color: #0DCAF0;"></i>
+                </div>
+                <h2 class="card-value">{{ booking_stats.upcoming|default:0 }}</h2>
+                <p class="card-title">Upcoming Bookings</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- This Month -->
+    <div class="col-lg-3 col-md-6">
+        <div class="partner-card">
+            <div class="card-body">
+                <div class="icon-circle bg-primary-subtle">
+                    <i class="fas fa-calendar-check" style="color: #0D6EFD;"></i>
+                </div>
+                <h2 class="card-value">{{ booking_stats.total_month|default:0 }}</h2>
+                <p class="card-title">This Month</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="filters-container">
+    <form id="filter-form">
+        <div class="filters-row">
+            <div class="filter-group">
+                <label class="filter-label">Status</label>
+                <select name="status" class="filter-input" id="filter-status">
+                    <option value="">All Status</option>
+                    {% for status_code, status_name in status_choices %}
+                    <option value="{{ status_code }}" {% if filter_status == status_code %}selected{% endif %}>
+                        {{ status_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Venue</label>
+                <select name="venue" class="filter-input" id="filter-venue">
+                    <option value="">All Venues</option>
+                    {% for venue in partner_venues %}
+                    <option value="{{ venue.id }}" {% if filter_venue == venue.id|stringformat:"i" %}selected{% endif %}>
+                        {{ venue.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Date From</label>
+                <input type="date" name="date_from" class="filter-input" id="filter-date-from" value="{{ filter_date_from }}">
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Date To</label>
+                <input type="date" name="date_to" class="filter-input" id="filter-date-to" value="{{ filter_date_to }}">
+            </div>
+        </div>
+        
+        <div class="filter-actions">
+            <button type="button" onclick="applyFilters()" class="btn-apply">
+                <i class="fas fa-filter me-2"></i>Apply Filters
+            </button>
+            <button type="button" onclick="clearFilters()" class="btn-clear">
+                Clear
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Bookings Table -->
+<div class="bookings-section" id="bookings-container">
+    <div class="bookings-header">
+        <h5><i class="fas fa-list me-2"></i>Booking List</h5>
+    </div>
+    
+    {% if bookings %}
+    <div class="table-responsive">
+        <table class="bookings-table">
+            <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Member</th>
+                    <th>Venue</th>
+                    <th>Date</th>
+                    <th>Guests</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="bookings-tbody">
+                {% for booking in bookings %}
+                <tr>
+                    <td>
+                        <span class="booking-ref">{{ booking.booking_reference }}</span>
+                        {% if booking.visit_date == today %}
+                        <span class="status-confirmed" style="font-size: 11px; padding: 3px 8px; margin-left: 5px;">Today</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="member-info">
+                            <span class="member-name">{{ booking.user.get_full_name }}</span>
+                            <span class="member-email">{{ booking.user.email }}</span>
+                        </div>
+                    </td>
+                    <td>{{ booking.venue.name|truncatechars:20 }}</td>
+                    <td>{{ booking.visit_date|date:"M j, Y" }}</td>
+                    <td>{{ booking.guests_count }}</td>
+                    <td>
+                        {% if booking.status == 'CONFIRMED' %}
+                            <span class="status-confirmed">Confirmed</span>
+                        {% elif booking.status == 'CHECKED_IN' %}
+                            <span class="status-checked-in">Checked In</span>
+                        {% elif booking.status == 'COMPLETED' %}
+                            <span class="status-completed">Completed</span>
+                        {% elif booking.status == 'CANCELLED' %}
+                            <span class="status-cancelled">Cancelled</span>
+                        {% elif booking.status == 'NO_SHOW' %}
+                            <span class="status-no-show">No Show</span>
+                        {% endif %}
+                        {% if booking.checked_in_at %}
+                        <br>
+                        <small style="color: var(--gray-600); font-size: 12px;">
+                            {{ booking.checked_in_at|time:"g:i A" }}
+                        </small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="{% url 'bookings:partner_detail' booking.booking_reference %}" 
+                               class="action-btn" 
+                               title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            {% if booking.status == 'CONFIRMED' and booking.visit_date == today %}
+                            <button class="action-btn success quick-checkin-btn" 
+                                    data-booking="{{ booking.booking_reference }}"
+                                    title="Check In">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% include 'partials/pagination.html' %}
+    
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <h4>No bookings found</h4>
+        <p>Try adjusting your filters or check back later</p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function printTodayList() {
-    window.print();
-}
-
-function exportBookings() {
-    // This would typically make an API call to generate an export
-    alert('Export functionality would generate a CSV file of filtered bookings.');
-}
-
-function quickCheckin() {
-    const ref = document.getElementById('quickCheckinRef').value.trim().toUpperCase();
-    const resultDiv = document.getElementById('quickCheckinResult');
-    
-    if (!ref) {
-        resultDiv.innerHTML = '<div class="alert alert-warning">Please enter a booking reference</div>';
-        return;
+// CSRF Token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
     }
+    return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// Apply Filters (No Page Reload)
+function applyFilters() {
+    const params = new URLSearchParams();
     
-    resultDiv.innerHTML = '<div class="alert alert-info">Processing...</div>';
+    const status = document.getElementById('filter-status').value;
+    const venue = document.getElementById('filter-venue').value;
+    const dateFrom = document.getElementById('filter-date-from').value;
+    const dateTo = document.getElementById('filter-date-to').value;
     
-    // AJAX call to quick check-in endpoint
-    fetch('{% url "bookings:quick_check_in" %}', {
-        method: 'POST',
+    if (status) params.append('status', status);
+    if (venue) params.append('venue', venue);
+    if (dateFrom) params.append('date_from', dateFrom);
+    if (dateTo) params.append('date_to', dateTo);
+    
+    loadBookings(params.toString());
+}
+
+// Clear Filters
+function clearFilters() {
+    document.getElementById('filter-form').reset();
+    loadBookings('');
+}
+
+// Load Bookings via AJAX
+function loadBookings(queryString) {
+    const overlay = document.getElementById('loading-overlay');
+    overlay.classList.add('active');
+    
+    const url = `{% url 'bookings:bookings_list' %}${queryString ? '?' + queryString : ''}`;
+    
+    fetch(url, {
         headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}',
             'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({
-            booking_reference: ref
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            resultDiv.innerHTML = `
-                <div class="alert alert-success">
-                    <i class="bi bi-check-circle me-2"></i>
-                    Successfully checked in ${data.member_name}<br>
-                    <small>Reference: ${data.booking_reference} • Time: ${data.checked_in_at}</small>
-                </div>
-            `;
-            document.getElementById('quickCheckinRef').value = '';
-            
-            // Refresh page after 2 seconds to update status
-            setTimeout(() => location.reload(), 2000);
-        } else {
-            resultDiv.innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="bi bi-x-circle me-2"></i>
-                    ${data.error}
-                </div>
-            `;
         }
     })
+    .then(response => response.text())
+    .then(html => {
+        // Parse HTML and extract bookings section
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newContent = doc.getElementById('bookings-container');
+        
+        if (newContent) {
+            document.getElementById('bookings-container').innerHTML = newContent.innerHTML;
+            
+            // Reinitialize quick check-in buttons
+            initQuickCheckIn();
+        }
+        
+        // Update URL without reload
+        window.history.pushState({}, '', url);
+        
+        overlay.classList.remove('active');
+    })
     .catch(error => {
-        resultDiv.innerHTML = `
-            <div class="alert alert-danger">
-                <i class="bi bi-x-circle me-2"></i>
-                Error processing check-in
-            </div>
-        `;
+        console.error('Error:', error);
+        overlay.classList.remove('active');
+        alert('Error loading bookings');
     });
 }
 
-// Quick check-in button handlers
-document.querySelectorAll('.quick-checkin-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        const ref = this.dataset.booking;
-        
-        if (confirm(`Check in booking ${ref}?`)) {
-            // Similar AJAX call as above
-            fetch('{% url "bookings:quick_check_in" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    booking_reference: ref
+// Quick Check-In
+function initQuickCheckIn() {
+    document.querySelectorAll('.quick-checkin-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const ref = this.dataset.booking;
+            
+            if (confirm(`Check in booking ${ref}?`)) {
+                fetch('{% url "bookings:quick_check_in" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        booking_reference: ref
+                    })
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert(`Successfully checked in ${data.member_name}`);
-                    location.reload();
-                } else {
-                    alert(`Error: ${data.error}`);
-                }
-            });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(`✅ Successfully checked in ${data.member_name}`);
+                        location.reload();
+                    } else {
+                        alert(`❌ Error: ${data.error}`);
+                    }
+                });
+            }
+        });
+    });
+}
+
+// Print Today's List
+function printTodaysList() {
+    window.print();
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initQuickCheckIn();
+    
+    // Handle pagination clicks
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('.page-link');
+        if (link && link.getAttribute('href')) {
+            e.preventDefault();
+            const url = new URL(link.href);
+            loadBookings(url.search.substring(1));
         }
     });
 });
@@ -409,12 +975,16 @@ document.querySelectorAll('.quick-checkin-btn').forEach(btn => {
 
 <style>
 @media print {
-    .card-header, .btn, .sidebar, .quick-actions {
+    .page-header, .header-actions, .filters-container, .action-buttons, nav {
         display: none !important;
     }
     
-    .table {
+    .bookings-table {
         font-size: 12px;
+    }
+    
+    .bookings-section {
+        box-shadow: none;
     }
 }
 </style>

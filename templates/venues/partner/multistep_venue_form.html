@@ -314,17 +314,20 @@
     
     /* Fix form actions on mobile */
     .form-actions {
-        flex-direction: column;
+        display: flex;
+        flex-direction: row;   /* Keep them side by side */
         gap: 10px;
-        align-items: stretch;
     }
-    
+
     .form-actions > div {
-        width: 100%;
+        flex: 1;               /* Each side takes equal width */
     }
-    
-    .btn-previous, .btn-next, .btn-save, .btn-cancel {
-        width: 100%;
+
+    .form-actions .btn-previous,
+    .form-actions .btn-cancel,
+    .form-actions .btn-next,
+    .form-actions .btn-save {
+        width: 100%;           /* Buttons fill their half */
         text-align: center;
     }
     
@@ -332,6 +335,7 @@
         margin-bottom: 10px;
     }
 }
+
 
 /* Extra small devices */
 @media (max-width: 480px) {
@@ -594,14 +598,22 @@
     
     @media (max-width: 768px) {
         .form-actions {
-            flex-direction: column;
-            gap: 15px;
-            align-items: stretch;
-        }
-        
-        .form-actions .btn {
-            width: 100%;
-        }
+        display: flex;
+        flex-direction: row;   /* Keep them side by side */
+        gap: 10px;
+    }
+
+    .form-actions > div {
+        flex: 1;               /* Each side takes equal width */
+    }
+
+    .form-actions .btn-previous,
+    .form-actions .btn-cancel,
+    .form-actions .btn-next,
+    .form-actions .btn-save {
+        width: 100%;           /* Buttons fill their half */
+        text-align: center;
+    }
     }
     
     .btn-cancel {

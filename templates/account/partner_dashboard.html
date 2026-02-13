@@ -251,6 +251,111 @@
         color: #6c757d;
         border: 1px solid rgba(108, 117, 125, 0.3);
     }
+
+    /* Bookings Table - Match Venues Style */
+.bookings-table {
+    width: 100%;
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+}
+
+.bookings-table thead th {
+    background-color: transparent;
+    border: none;
+    padding: 20px 25px;
+    font-weight: 600;
+    color: var(--black);
+    font-size: 14px;
+    text-align: center;
+}
+
+.bookings-table thead th:first-child {
+    text-align: left;
+}
+
+.bookings-table tbody td {
+    padding: 20px 25px;
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    vertical-align: middle;
+    color: var(--gray-600);
+    font-size: 14px;
+    text-align: center;
+}
+
+.bookings-table tbody td:first-child {
+    text-align: left;
+}
+
+.bookings-table tbody tr:hover {
+    background-color: rgba(229, 173, 4, 0.03);
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #E5E5E5;
+    background: #FFFFFF;
+    color: var(--black);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.action-btn:hover {
+    border-color: var(--gold-primary);
+    background-color: rgba(229, 173, 4, 0.1);
+    color: var(--gold-primary);
+}
+
+.action-btn i {
+    font-size: 14px;
+}
+
+/* Status Badges - Consistent with Venues */
+.status-approved {
+    background-color: rgba(41, 204, 151, 0.15);
+    color: #29CC97;
+    border: 1px solid #29CC97;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-pending {
+    background-color: rgba(255, 193, 7, 0.15);
+    color: #FFC107;
+    border: 1px solid #FFC107;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-rejected {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #DC3545;
+    border: 1px solid #DC3545;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
+}
     
     /* Mobile Responsive Fixes */
     @media (max-width: 991px) {
@@ -472,12 +577,12 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0" style="color: var(--dark-bg); font-weight: 600;">
+            <h5 class="mb-0" style="color: var(--black); font-weight: 600; font-size: 18px;">
                 <i class="fas fa-history me-2"></i>
                 Recent Bookings
             </h5>
             {% if recent_bookings %}
-                <a href="{% url 'bookings:partner_list' %}" class="btn-gold-outline btn-sm">
+                <a href="{% url 'bookings:bookings_list' %}" class="btn-gold-outline btn-sm">
                     View All
                 </a>
             {% endif %}
@@ -486,7 +591,7 @@
         {% if recent_bookings %}
             <div class="partner-table">
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="bookings-table">
                         <thead>
                             <tr>
                                 <th>Reference</th>
@@ -502,46 +607,41 @@
                             {% for booking in recent_bookings|slice:":8" %}
                             <tr>
                                 <td>
-                                    <small class="text-muted">{{ booking.booking_reference }}</small>
+                                    <span style="color: var(--gray-600); font-size: 13px;">{{ booking.booking_reference }}</span>
                                 </td>
                                 <td>
-                                    <strong>{{ booking.venue.name|truncatechars:20 }}</strong>
+                                    <strong style="color: var(--black);">{{ booking.venue.name|truncatechars:20 }}</strong>
                                 </td>
                                 <td>
-                                    {{ booking.user.get_full_name|default:booking.user.username }}
+                                    {{ booking.user.get_full_name|default:booking.user.email|truncatechars:30 }}
                                 </td>
                                 <td>
-                                    <div>{{ booking.visit_date|date:"M d, Y" }}</div>
-                                    <small class="text-muted">{{ booking.visit_time|time:"g:i A" }}</small>
-                                </td>
-                                <td>
-                                    <span class="badge bg-light text-dark">{{ booking.guests_count }}</span>
-                                </td>
-                                <td>
-                                    {% if booking.status == 'CONFIRMED' %}
-                                        <span class="badge bg-warning text-dark">Confirmed</span>
-                                    {% elif booking.status == 'CHECKED_IN' %}
-                                        <span class="badge bg-info">Checked In</span>
-                                    {% elif booking.status == 'COMPLETED' %}
-                                        <span class="badge bg-success">Completed</span>
-                                    {% elif booking.status == 'CANCELLED' %}
-                                        <span class="badge bg-danger">Cancelled</span>
+                                    <div style="color: var(--black); font-weight: 500;">{{ booking.visit_date|date:"M d, Y" }}</div>
+                                    {% if booking.visit_time %}
+                                    <small style="color: var(--gray-600);">{{ booking.visit_time|time:"g:i A" }}</small>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <div class="btn-group btn-group-sm">
+                                    <span style="background: rgba(229, 173, 4, 0.15); color: var(--gold-primary); padding: 4px 10px; border-radius: 6px; font-weight: 600; font-size: 13px;">{{ booking.guests_count }}</span>
+                                </td>
+                                <td>
+                                    {% if booking.status == 'CONFIRMED' %}
+                                        <span class="status-pending">Confirmed</span>
+                                    {% elif booking.status == 'CHECKED_IN' %}
+                                        <span class="status-approved" style="background-color: rgba(13, 202, 240, 0.15); color: #0DCAF0; border: 1px solid #0DCAF0;">Checked In</span>
+                                    {% elif booking.status == 'COMPLETED' %}
+                                        <span class="status-approved">Completed</span>
+                                    {% elif booking.status == 'CANCELLED' %}
+                                        <span class="status-rejected">Cancelled</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons" style="justify-content: center; gap: 8px;">
                                         <a href="{% url 'bookings:partner_detail' booking.id %}" 
-                                           class="btn btn-outline-primary btn-sm" 
+                                           class="action-btn" 
                                            title="View Details">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        {% if booking.status == 'CONFIRMED' %}
-                                            <a href="{% url 'bookings:partner_check_in' %}?booking={{ booking.id }}" 
-                                               class="btn btn-outline-success btn-sm" 
-                                               title="Check-in">
-                                                <i class="fas fa-qrcode"></i>
-                                            </a>
-                                        {% endif %}
                                     </div>
                                 </td>
                             </tr>
@@ -591,8 +691,8 @@
                     </a>
                     <a href="{% url 'account:profile' %}" class="quick-action-card">
                         <i class="fas fa-cog"></i>
-                        <h6>Settings</h6>
-                        <small>Account settings</small>
+                        <h6>Profile</h6>
+                        <small>User's Profile</small>
                     </a>
                 </div>
             </div>

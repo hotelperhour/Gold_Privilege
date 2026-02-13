@@ -11,7 +11,8 @@ from django.core.paginator import Paginator
 from datetime import date, timedelta
 import json
 from django.db import transaction
-from account.permissions import subscriber_required, IsApprovedPartnerMixin
+from account.permissions import subscriber_required, IsApprovedPartnerMixin, approved_partner_required
+
 from .models import Booking, BookingStatus, BookingActivity
 from .forms import BookingCreateForm, BookingCancelForm, VenueCheckInForm
 from venues.models import Venue
@@ -335,7 +336,7 @@ class PartnerBookingsListView(IsApprovedPartnerMixin, ListView):
     model = Booking
     template_name = 'bookings/partner/list.html'
     context_object_name = 'bookings'
-    paginate_by = 20
+    paginate_by = 2
     
     def get_queryset(self):
         # Get partner's venues
@@ -414,7 +415,7 @@ class PartnerBookingsListView(IsApprovedPartnerMixin, ListView):
         
         return context
 
-
+@approved_partner_required
 @login_required
 def partner_check_in(request):
     """

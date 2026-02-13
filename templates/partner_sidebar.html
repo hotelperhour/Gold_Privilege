@@ -18,13 +18,13 @@
                 <i class="fas fa-tachometer-alt"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="{% url 'venues:partner_list' %}" 
-               class="nav-item {% if 'partner_list' in request.path and 'venues' in request.path %}active{% endif %}">
+           <a href="{% url 'venues:partner_list' %}" 
+                class="nav-item {% if 'venue' in request.path or request.resolver_match.url_name == 'partner_list' %}active{% endif %}">
                 <i class="fas fa-building"></i>
                 <span>Venues</span>
             </a>
-            <a href="{% url 'bookings:partner_list' %}" 
-               class="nav-item {% if 'partner_list' in request.path and 'bookings' in request.path %}active{% endif %}">
+            <a href="{% url 'bookings:bookings_list' %}" 
+               class="nav-item {% if 'booking' in request.path or request.resolver_match.url_name == 'bookings_list' %}active{% endif %}">
                 <i class="fas fa-calendar-check"></i>
                 <span>Bookings</span>
             </a>
@@ -35,7 +35,7 @@
             </a>
             <a href="{% url 'account:profile' %}" 
                class="nav-item {% if 'profile' in request.path %}active{% endif %}">
-                <i class="fas fa-user"></i>
+                <i class="fas fa-cog"></i>
                 <span>Profile</span>
             </a>
         </nav>
@@ -69,12 +69,12 @@
                 <span class="mobile-tooltip">Dashboard</span>
             </a>
             <a href="{% url 'venues:partner_list' %}" 
-               class="mobile-nav-item {% if 'partner_list' in request.path and 'venues' in request.path %}active{% endif %}">
+               class="mobile-nav-item {% if 'venue' in request.path %}active{% endif %}">
                 <i class="fas fa-building"></i>
                 <span class="mobile-tooltip">Venues</span>
             </a>
-            <a href="{% url 'bookings:partner_list' %}" 
-               class="mobile-nav-item {% if 'partner_list' in request.path and 'bookings' in request.path %}active{% endif %}">
+            <a href="{% url 'bookings:bookings_list' %}" 
+               class="mobile-nav-item {% if 'bookings_list' in request.resolver_match.url_name %}active{% endif %}">
                 <i class="fas fa-calendar-check"></i>
                 <span class="mobile-tooltip">Bookings</span>
             </a>

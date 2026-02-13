@@ -21,11 +21,11 @@ urlpatterns = [
     path('api/review/<int:review_id>/helpful/', views.mark_review_helpful, name='review_helpful'),
     
     # ==================== PARTNER URLS ====================
-    path('partner/dashboard/', views.PartnerVenueListView.as_view(), name='partner_list'),
+    path('venue_list', views.PartnerVenueListView.as_view(), name='partner_list'),
     path('partner/<slug:slug>/', views.PartnerVenueDetailView.as_view(), name='partner_detail'),
     path('partner/<slug:slug>/submit/', views.partner_submit_for_approval, name='partner_submit_for_approval'),
-    path('partner/create/multistep/',views.MultiStepVenueCreateView.as_view(), name='multistep_create'),
-    path('partner/create/success/<int:venue_id>/', views.VenueCreateSuccessView.as_view(), name='multistep_success'),
-    path('partner/<slug:slug>/edit/multistep/',views.MultiStepVenueUpdateView.as_view(), name='multistep_update'),
+    path('create_venue',views.MultiStepVenueCreateView.as_view(), name='multistep_create'),
+    path('create_venue_success/<int:venue_id>/', views.VenueCreateSuccessView.as_view(), name='multistep_success'),
+    path('edit_venue/<slug:slug>',views.MultiStepVenueUpdateView.as_view(), name='multistep_update'),
     path('api/venue-image/<int:image_id>/delete/',views.delete_venue_image, name='delete_gallery_image'),
 ]

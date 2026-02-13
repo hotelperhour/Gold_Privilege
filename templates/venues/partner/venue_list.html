@@ -1,174 +1,857 @@
-{% extends 'base.html' %}
+<!-- templates/venues/partner/venue_list.html -->
+{% extends 'base_partner.html' %}
 {% load static %}
 
-{% block title %}My Venues - Partner Dashboard{% endblock %}
+{% block title %}My Venues - Gold Privilege{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h2 mb-1">My Venues</h1>
-            <p class="text-muted mb-0">Manage your venue listings</p>
-        </div>
-        <a href="{% url 'venues:multistep_create' %}" class="btn btn-primary">
-            <i class="fas fa-plus me-2"></i>Add New Venue
+{% block extra_css %}
+<style>
+    /* Dashboard Specific Styles */
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-secondary: #F9B036;
+        --dark-bg: #020202;
+        --white: #FFFFFF;
+        --black: #000000;
+        --gray-600: #6c757d;
+    }
+    
+    * {
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    /* Stats Cards */
+    .partner-card {
+        background: #FFFFFF;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .partner-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+    
+    .partner-card .card-body {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 140px;
+    }
+    
+    .partner-card .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: auto;
+    }
+    
+    .bg-warning-subtle {
+        background-color: rgba(229, 173, 4, 0.15);
+    }
+    
+    .bg-success-subtle {
+        background-color: rgba(41, 204, 151, 0.15);
+    }
+    
+    .bg-info-subtle {
+        background-color: rgba(13, 202, 240, 0.15);
+    }
+    
+    .partner-card .card-title {
+    color: var(--gray-600);
+    font-weight: 500;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+.partner-card .card-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--black);
+    margin: 0;
+}
+    
+    /* Page Header */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--black);
+        margin: 0;
+    }
+    
+    .page-header h4 {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--gray-600);
+        margin: 5px 0 0 0;
+    }
+    
+    /* Status Badge */
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 36px;
+    }
+    
+    .status-active {
+        background-color: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+    
+    /* Buttons */
+    .btn-gold-primary {
+        background-color: var(--gold-primary);
+        color: var(--black);
+        border: none;
+        font-weight: 600;
+        padding: 10px 24px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-gold-primary:hover {
+        background-color: var(--gold-secondary);
+        color: var(--black);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+    }
+    
+    /* Filter Tabs */
+    .filter-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-tab {
+        padding: 8px 20px;
+        border-radius: 8px;
+        background: #FFFFFF;
+        border: 1px solid #E5E5E5;
+        color: var(--gray-600);
+        font-weight: 500;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .filter-tab:hover {
+        border-color: var(--gold-primary);
+        color: var(--gold-primary);
+        background-color: rgba(229, 173, 4, 0.05);
+    }
+    
+    .filter-tab.active {
+        background-color: var(--gold-primary);
+        border-color: var(--gold-primary);
+        color: var(--black);
+        font-weight: 600;
+    }
+    
+    /* Venues Section */
+    .venues-section {
+        background: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+    }
+    
+    .venues-header {
+        padding: 20px 25px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .venues-header h5 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--black);
+        margin: 0;
+    }
+    
+    /* Borderless Table */
+    .venues-table {
+        width: 100%;
+        margin: 0;
+    }
+    
+    .venues-table thead th {
+        background-color: transparent;
+        border: none;
+        padding: 20px 25px;
+        font-weight: 600;
+        color: var(--black);
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    .venues-table thead th:first-child {
+        text-align: left;
+    }
+    
+    .venues-table tbody td {
+        padding: 20px 25px;
+        border: none;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        vertical-align: middle;
+        color: var(--gray-600);
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    .venues-table tbody td:first-child {
+        text-align: left;
+    }
+    
+    .venues-table tbody tr:hover {
+        background-color: rgba(229, 173, 4, 0.03);
+    }
+    
+    /* Venue Info Cell */
+    .venue-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .venue-image {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    
+    .venue-details h6 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--black);
+        margin: 0 0 5px 0;
+    }
+    
+    .venue-details small {
+        font-size: 13px;
+        color: var(--gray-600);
+    }
+    
+    /* Status Badges */
+    .status-approved {
+        background-color: rgba(41, 204, 151, 0.15);
+        color: #29CC97;
+        border: 1px solid #29CC97;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-pending {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: #FFC107;
+        border: 1px solid #FFC107;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .status-draft {
+        background-color: rgba(108, 117, 125, 0.15);
+        color: #6C757D;
+        border: 1px solid #6C757D;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    .action-btn.disabled-btn,
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+    filter: grayscale(0.3);
+}
+.action-btn:disabled:hover {
+    border-color: #E5E5E5;
+    background: #FFFFFF;
+    color: var(--black);
+}
+    .status-rejected {
+        background-color: rgba(220, 53, 69, 0.15);
+        color: #DC3545;
+        border: 1px solid #DC3545;
+        padding: 6px 14px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    
+    /* Rating */
+    .rating-display {
+        color: var(--gold-primary);
+        font-weight: 600;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+    }
+    
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #E5E5E5;
+        background: #FFFFFF;
+        color: var(--black);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .action-btn:hover {
+        border-color: var(--gold-primary);
+        background-color: rgba(229, 173, 4, 0.1);
+        color: var(--gold-primary);
+    }
+    
+    .action-btn i {
+        font-size: 14px;
+    }
+    
+    /* Custom Pagination */
+    .custom-pagination {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        gap: 8px;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .custom-pagination .page-item {
+        margin: 0;
+    }
+    
+    .custom-pagination .page-link {
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 1px solid #E5E5E5;
+        background: #FFFFFF;
+        color: var(--black);
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .custom-pagination .page-link:hover {
+        border-color: var(--gold-primary);
+        background-color: rgba(229, 173, 4, 0.1);
+        color: var(--gold-primary);
+    }
+    
+    .custom-pagination .page-item.active .page-link {
+        background-color: var(--gold-primary);
+        border-color: var(--gold-primary);
+        color: var(--black);
+        font-weight: 600;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .custom-pagination .page-item.disabled .page-link {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-state i {
+        font-size: 60px;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+    
+    .empty-state h4 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--black);
+        margin-bottom: 10px;
+    }
+    
+    .empty-state p {
+        color: var(--gray-600);
+        margin-bottom: 25px;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 991px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .partner-card .card-value {
+            font-size: 28px;
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .venues-table {
+            min-width: 800px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .page-header h1 {
+            font-size: 24px;
+        }
+        
+        .partner-card .card-value {
+            font-size: 24px;
+        }
+        
+        .btn-gold-primary {
+            padding: 8px 20px;
+            height: 40px;
+            font-size: 14px;
+        }
+        
+        .filter-tabs {
+            gap: 8px;
+        }
+        
+        .filter-tab {
+            padding: 6px 16px;
+            font-size: 13px;
+        }
+        
+        .custom-pagination .page-link {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block partner_content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1>Venues</h1>
+        <h4>Manage your venue listings</h4>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+        <!-- Status Badge -->
+        <span class="status-badge status-active">
+            <i class="fas fa-check-circle"></i>
+            Active
+        </span>
+        
+        <!-- Add Venue Button -->
+        <a href="{% url 'venues:multistep_create' %}" class="btn-gold-primary">
+            <i class="fas fa-plus"></i>
+            Add Venue
         </a>
     </div>
-    
-    <!-- Statistics Cards -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
-                <div class="card-body">
-                    <h3 class="mb-0">{{ stats.total }}</h3>
-                    <p class="mb-0">Total Venues</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body">
-                    <h3 class="mb-0">{{ stats.approved }}</h3>
-                    <p class="mb-0">Approved</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-white">
-                <div class="card-body">
-                    <h3 class="mb-0">{{ stats.pending }}</h3>
-                    <p class="mb-0">Pending Review</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h3 class="mb-0">{{ stats.total_views }}</h3>
-                    <p class="mb-0">Total Views</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Venue List -->
-    {% if venues %}
-    <div class="card">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Venue</th>
-                        <th>Category</th>
-                        <th>Status</th>
-                        <th>Rating</th>
-                        <th>Views</th>
-                        <th>Reviews</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for venue in venues %}
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                <img src="{{ venue.cover_image.url }}" 
-                                     class="rounded me-3" 
-                                     style="width: 60px; height: 60px; object-fit: cover;"
-                                     alt="{{ venue.name }}">
-                                <div>
-                                    <h6 class="mb-0">{{ venue.name }}</h6>
-                                    <small class="text-muted">{{ venue.city }}</small>
-                                </div>
-                            </div>
-                        </td>
-                        <td>{{ venue.get_category_display }}</td>
-                        <td>
-                            {% if venue.status == 'APPROVED' %}
-                            <span class="badge bg-success">Approved</span>
-                            {% elif venue.status == 'PENDING' %}
-                            <span class="badge bg-warning">Pending</span>
-                            {% elif venue.status == 'DRAFT' %}
-                            <span class="badge bg-secondary">Draft</span>
-                            {% elif venue.status == 'REJECTED' %}
-                            <span class="badge bg-danger">Rejected</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <span class="text-warning">
-                                <i class="fas fa-star"></i> {{ venue.average_rating|floatformat:1 }}
-                            </span>
-                        </td>
-                        <td>{{ venue.view_count }}</td>
-                        <td>{{ venue.total_reviews }}</td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="{% url 'venues:partner_detail' venue.slug %}" 
-                                   class="btn btn-outline-primary" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{% url 'venues:multistep_update' venue.slug %}" 
-                                   class="btn btn-outline-secondary" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                {% if venue.status == 'DRAFT' %}
-                                <form method="post" 
-                                      action="{% url 'venues:partner_submit_for_approval' venue.slug %}" 
-                                      style="display: inline;">
-                                    {% csrf_token %}
-                                    <button type="submit" 
-                                            class="btn btn-outline-success btn-sm" 
-                                            title="Submit for Approval">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </form>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-    
-    <!-- Pagination -->
-    {% if is_paginated %}
-    <nav class="mt-4">
-        <ul class="pagination justify-content-center">
-            {% if page_obj.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-            </li>
-            {% endif %}
-            
-            {% for num in page_obj.paginator.page_range %}
-            <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-            </li>
-            {% endfor %}
-            
-            {% if page_obj.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-            </li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-    
-    {% else %}
-    <!-- Empty State -->
-    <div class="card">
-        <div class="card-body text-center py-5">
-            <i class="fas fa-building fa-4x text-muted mb-3"></i>
-            <h4>No venues yet</h4>
-            <p class="text-muted mb-4">Start by adding your first venue to the platform</p>
-            <a href="{% url 'venues:multistep_create' %}" class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>Add Your First Venue
-            </a>
-        </div>
-    </div>
-    {% endif %}
 </div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <!-- Total Venues -->
+<div class="col-lg-4 col-md-4 mb-4">
+    <div class="partner-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="card-title mb-1">Total Venues</p>
+                    <h2 class="card-value">{{ stats.total|default:0 }}</h2>
+                </div>
+                <div class="icon-circle bg-warning-subtle">
+                    <i class="fas fa-building" style="color: var(--gold-primary);"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Approved -->
+<div class="col-lg-4 col-md-4 mb-4">
+    <div class="partner-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="card-title mb-1">Approved</p>
+                    <h2 class="card-value">{{ stats.approved|default:0 }}</h2>
+                </div>
+                <div class="icon-circle bg-success-subtle">
+                    <i class="fas fa-check-circle" style="color: #29CC97;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pending Reviews -->
+<div class="col-lg-4 col-md-4 mb-4">
+    <div class="partner-card">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <p class="card-title mb-1">Pending Reviews</p>
+                    <h2 class="card-value">{{ stats.pending|default:0 }}</h2>
+                </div>
+                <div class="icon-circle bg-info-subtle">
+                    <i class="fas fa-hourglass-half" style="color: #0DCAF0;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Filter Tabs -->
+<div class="filter-tabs">
+    <a href="{% url 'venues:partner_list' %}" 
+       class="filter-tab {% if not request.GET.status %}active{% endif %}">
+        All Venues
+    </a>
+    <a href="?status=APPROVED" 
+       class="filter-tab {% if request.GET.status == 'APPROVED' %}active{% endif %}">
+        Approved
+    </a>
+    <a href="?status=PENDING" 
+       class="filter-tab {% if request.GET.status == 'PENDING' %}active{% endif %}">
+        Pending
+    </a>
+    <a href="?status=DRAFT" 
+       class="filter-tab {% if request.GET.status == 'DRAFT' %}active{% endif %}">
+        Draft
+    </a>
+    <a href="?status=REJECTED" 
+       class="filter-tab {% if request.GET.status == 'REJECTED' %}active{% endif %}">
+        Rejected
+    </a>
+</div>
+
+<!-- Venues List -->
+{% if venues %}
+<div class="venues-section">
+    <div class="venues-header">
+        <h5><i class="fas fa-list me-2"></i>Venue List</h5>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="venues-table">
+            <thead>
+                <tr>
+                    <th>Venue</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Rating</th>
+                    <th>Reviews</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for venue in venues %}
+                <tr>
+                    <td>
+                        <div class="venue-info">
+                            {% if venue.cover_image %}
+                            <img src="{{ venue.cover_image.url }}" 
+                                 class="venue-image" 
+                                 alt="{{ venue.name }}">
+                            {% else %}
+                            <div class="venue-image" style="background: #f8f9fa; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-image" style="color: #dee2e6;"></i>
+                            </div>
+                            {% endif %}
+                            <div class="venue-details">
+                                <h6>{{ venue.name|truncatechars:30 }}</h6>
+                                <small>{{ venue.city }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ venue.get_category_display }}</td>
+                    <td>
+                        {% if venue.status == 'APPROVED' %}
+                            <span class="status-approved">Approved</span>
+                        {% elif venue.status == 'PENDING' %}
+                            <span class="status-pending">Pending</span>
+                        {% elif venue.status == 'DRAFT' %}
+                            <span class="status-draft">Draft</span>
+                        {% elif venue.status == 'REJECTED' %}
+                            <span class="status-rejected">Rejected</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="rating-display">
+                            <i class="fas fa-star"></i> {{ venue.average_rating|floatformat:1 }}
+                        </span>
+                    </td>
+                    <td>{{ venue.total_reviews }}</td>
+                    <td>
+    <div class="action-buttons">
+        <a href="{% url 'venues:partner_detail' venue.slug %}" 
+           class="action-btn" 
+           title="View">
+            <i class="fas fa-eye"></i>
+        </a>
+        <a href="{% url 'venues:multistep_update' venue.slug %}" 
+           class="action-btn" 
+           title="Edit">
+            <i class="fas fa-edit"></i>
+        </a>
+        
+        <!-- Submit for Approval - Always present, disabled when not DRAFT -->
+        <button type="button"
+                class="action-btn submit-approval-btn {% if venue.status != 'DRAFT' %}disabled-btn{% endif %}"
+                data-slug="{{ venue.slug }}"
+                data-csrf="{{ csrf_token }}"
+                {% if venue.status != 'DRAFT' %}disabled{% endif %}
+                title="{% if venue.status == 'DRAFT' %}Submit for Approval{% else %}Already submitted{% endif %}">
+            <i class="fas fa-check"></i>
+        </button>
+    </div>
+</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% include 'partials/pagination.html' %}
+
+{% else %}
+<!-- Empty State -->
+<div class="venues-section">
+    <div class="empty-state">
+        <i class="fas fa-building"></i>
+        <h4>No venues yet</h4>
+        <p>Start by adding venues to the platform</p>
+        <a href="{% url 'venues:multistep_create' %}" class="btn-gold-primary">
+            
+            Add Your Venue
+        </a>
+    </div>
+</div>
+{% endif %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // --------------------------------------------------------
+    // 1. AJAX SUBMIT FOR APPROVAL
+    // --------------------------------------------------------
+    document.querySelectorAll('.submit-approval-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (this.disabled) return;
+            
+            const slug = this.dataset.slug;
+            const csrf = this.dataset.csrf;
+            const originalHtml = this.innerHTML;
+            
+            // Show loading state
+            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            this.disabled = true;
+            
+            fetch(`/venues/partner/${slug}/submit/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrf,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update venue row: change status badge and disable this button
+                    const row = this.closest('tr');
+                    const statusCell = row.querySelector('td:nth-child(3)');
+                    statusCell.innerHTML = '<span class="status-pending">Pending</span>';
+                    
+                    // Disable and mark this button as already submitted
+                    this.innerHTML = '<i class="fas fa-check"></i>';
+                    this.classList.add('disabled-btn');
+                    this.title = 'Already submitted';
+                    
+                    showAlert('Venue submitted for approval.', 'success');
+                } else {
+                    showAlert(data.error || 'Submission failed.', 'error');
+                    this.innerHTML = '<i class="fas fa-check"></i>';
+                    this.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('An error occurred.', 'error');
+                this.innerHTML = '<i class="fas fa-check"></i>';
+                this.disabled = false;
+            });
+        });
+    });
+
+    // ------------------------------------------------------------
+// 2. AJAX FILTER & PAGINATION (No Page Reload)
+// ------------------------------------------------------------
+function initVenueList() {
+    // Re‑bind filter tabs
+    document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.removeEventListener('click', handleFilterClick);
+        tab.addEventListener('click', handleFilterClick);
+    });
+
+    // Re‑bind pagination links
+    document.querySelectorAll('.custom-pagination .page-link').forEach(link => {
+        link.removeEventListener('click', handlePaginationClick);
+        link.addEventListener('click', handlePaginationClick);
+    });
+
+    // Re‑bind submit‑for‑approval buttons (from previous AJAX code)
+    if (typeof bindSubmitButtons === 'function') bindSubmitButtons();
+}
+
+async function handleFilterClick(e) {
+    e.preventDefault();
+    const url = this.href;
+    await loadVenuesPage(url);
+    // Update active state manually
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    // Push new URL to browser history
+    history.pushState({}, '', url);
+}
+
+async function handlePaginationClick(e) {
+    e.preventDefault();
+    const url = this.href;
+    await loadVenuesPage(url);
+    // Scroll back to top of venues section
+    document.querySelector('.venues-section')?.scrollIntoView({ behavior: 'smooth' });
+    history.pushState({}, '', url);
+}
+
+async function loadVenuesPage(url) {
+    const venuesSection = document.querySelector('.venues-section');
+    if (!venuesSection) return;
+
+    // Show loading indicator
+    venuesSection.style.opacity = '0.5';
+    venuesSection.style.pointerEvents = 'none';
+
+    try {
+        const response = await fetch(url, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        // Replace venues section
+        const newVenuesSection = doc.querySelector('.venues-section');
+        if (newVenuesSection) {
+            venuesSection.outerHTML = newVenuesSection.outerHTML;
+        }
+
+        // Replace pagination container (if exists)
+        const paginationContainer = document.querySelector('.custom-pagination')?.parentNode;
+        const newPaginationContainer = doc.querySelector('.custom-pagination')?.parentNode;
+        if (paginationContainer && newPaginationContainer) {
+            paginationContainer.outerHTML = newPaginationContainer.outerHTML;
+        }
+
+        // Re‑attach all event listeners
+        initVenueList();
+
+    } catch (error) {
+        console.error('Filter failed:', error);
+        // Fallback: full page reload
+        window.location.href = url;
+    } finally {
+        // Restore visibility
+        const updatedSection = document.querySelector('.venues-section');
+        if (updatedSection) {
+            updatedSection.style.opacity = '';
+            updatedSection.style.pointerEvents = '';
+        }
+    }
+}
+
+// Initial binding
+initVenueList();
+
+    // --------------------------------------------------------
+    // 3. ALERT FUNCTION (reuse from your multi‑step form)
+    // --------------------------------------------------------
+    function showAlert(message, type = 'success') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.page-header').after(alertDiv);
+        setTimeout(() => alertDiv.remove(), 5000);
+    }
+});
+</script>
+
 {% endblock %}

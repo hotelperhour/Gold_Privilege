@@ -21,6 +21,8 @@ from django.views.decorators.csrf import csrf_exempt
 import os
 from django.conf import settings
 from django.utils.decorators import method_decorator
+from . models import VenueStatus
+from django.db import models
 # ==================== PUBLIC VIEWS ====================
 
 class VenueListView(ListView):
@@ -369,33 +371,42 @@ class PartnerVenueListView(IsApprovedPartnerMixin, ListView):
     paginate_by = 10
     
     def get_queryset(self):
-        """Show only partner's own venues"""
-        return Venue.objects.filter(
+        """Show only partner's own venues with optional status filter"""
+        queryset = Venue.objects.filter(
             partner=self.request.user.partner_profile
         ).prefetch_related(
             'images', 'amenities'
         ).order_by('-created_at')
+        
+        # Filter by status if provided
+        status = self.request.GET.get('status')
+        if status and status in dict(VenueStatus.choices):
+            queryset = queryset.filter(status=status)
+        
+        return queryset
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Statistics
-        venues = self.get_queryset()
+        # Statistics (all venues, not filtered)
+        all_venues = Venue.objects.filter(
+            partner=self.request.user.partner_profile
+        )
+        
         context['stats'] = {
-            'total': venues.count(),
-            'approved': venues.filter(status='APPROVED').count(),
-            'pending': venues.filter(status='PENDING').count(),
-            'draft': venues.filter(status='DRAFT').count(),
-            'total_views': venues.aggregate(
-                total=Count('view_count')
+            'total': all_venues.count(),
+            'approved': all_venues.filter(status='APPROVED').count(),
+            'pending': all_venues.filter(status='PENDING').count(),
+            'draft': all_venues.filter(status='DRAFT').count(),
+            'total_views': all_venues.aggregate(
+                total=models.Sum('view_count')
             )['total'] or 0,
-            'total_reviews': venues.aggregate(
-                total=Count('reviews')
+            'total_reviews': all_venues.aggregate(
+                total=models.Count('reviews')
             )['total'] or 0,
         }
         
         return context
-
 
 
 class PartnerVenueDetailView(IsApprovedPartnerMixin, DetailView):
@@ -434,24 +445,22 @@ class PartnerVenueDetailView(IsApprovedPartnerMixin, DetailView):
 @login_required
 @require_POST
 def partner_submit_for_approval(request, slug):
-    """Submit venue for admin approval"""
-    venue = get_object_or_404(
-        Venue,
-        slug=slug,
-        partner=request.user.partner_profile
-    )
+    venue = get_object_or_404(Venue, slug=slug, partner=request.user.partner_profile)
     
+    # If already not draft, return error
     if venue.status != 'DRAFT':
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Already submitted'})
         messages.warning(request, 'This venue has already been submitted.')
         return redirect('venues:partner_detail', slug=slug)
     
     venue.status = 'PENDING'
     venue.save()
     
-    messages.success(
-        request,
-        f'{venue.name} submitted for approval! We will review it shortly.'
-    )
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': True, 'status': 'PENDING'})
+    
+    messages.success(request, f'{venue.name} submitted for approval!')
     return redirect('venues:partner_detail', slug=slug)
 
 

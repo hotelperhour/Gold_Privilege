@@ -1,334 +1,583 @@
-{% extends 'base2.html' %}
+{% extends 'base_partner.html' %}
 {% load static %}
 
-{% block title %}Partner Profile - {{ site_name }}{% endblock %}
+{% block title %}Business Profile - Gold Privilege{% endblock %}
 
-{% block content %}
-<div class="container py-5">
-    <div class="row">
-        <!-- Sidebar Navigation -->
-        <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Partner Menu</h5>
-                </div>
-                <div class="card-body">
-                    <div class="nav flex-column nav-pills">
-                        <a class="nav-link active" href="{% url 'account:profile' %}">
-                            <i class="bi bi-person-circle me-2"></i>Profile
-                        </a>
-                        <a class="nav-link" href="{% url 'account:partner_dashboard' %}">
-                            <i class="bi bi-speedometer2 me-2"></i>Dashboard
-                        </a>
-                        <a class="nav-link" href="{% url 'bookings:partner_list' %}">
-                            <i class="bi bi-calendar-check me-2"></i>Bookings
-                        </a>
-                        <a class="nav-link" href="{% url 'venues:list' %}">
-                            <i class="bi bi-building me-2"></i>Venues
-                        </a>
-                        <a class="nav-link" href="#">
-                            <i class="bi bi-bar-chart me-2"></i>Analytics
-                        </a>
-                    </div>
-                </div>
+{% block extra_css %}
+<style>
+    /* Profile Specific Styles */
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-secondary: #F9B036;
+        --dark-bg: #020202;
+        --white: #FFFFFF;
+        --black: #000000;
+        --gray-light: #E5E5E5;
+        --gray-600: #6c757d;
+    }
+    
+    * {
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    /* Profile Container */
+    .profile-container {
+        display: flex;
+        gap: 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    /* Progress Steps Sidebar */
+    .progress-steps {
+        width: 280px;
+        flex-shrink: 0;
+    }
+    
+    .progress-header {
+        margin-bottom: 30px;
+    }
+    
+    .progress-header h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--black);
+        margin: 0 0 8px 0;
+    }
+    
+    .progress-header p {
+        font-size: 14px;
+        color: var(--gray-600);
+        margin: 0;
+    }
+    
+    .steps-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .step-bullet {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: var(--gray-light);
+        flex-shrink: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .step-item.completed .step-bullet {
+        background-color: var(--gold-primary);
+    }
+    
+    .step-item.active .step-bullet {
+        background-color: var(--gold-primary);
+        box-shadow: 0 0 0 4px rgba(229, 173, 4, 0.2);
+    }
+    
+    .step-label {
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--gray-600);
+        transition: all 0.3s ease;
+    }
+    
+    .step-item.completed .step-label {
+        color: var(--gold-primary);
+        font-weight: 600;
+    }
+    
+    .step-item.active .step-label {
+        color: var(--black);
+        font-weight: 600;
+    }
+    
+    /* Profile Form */
+    .profile-form {
+        flex: 1;
+        background: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 40px;
+    }
+    
+    /* Form Section */
+    .form-section {
+        padding-bottom: 5px;
+        margin-bottom: 30px;
+        border-bottom: 1px solid var(--gray-light);
+    }
+    
+    .form-section:last-of-type {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .form-section h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--black);
+        margin: 0 0 20px 0;
+    }
+    
+    /* Form Fields */
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .form-row.single {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-group {
+        margin-bottom: 0;
+    }
+    
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--black);
+        margin-bottom: 8px;
+    }
+    
+    .form-label .required {
+        color: #DC3545;
+        margin-left: 3px;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid var(--gray-light);
+        border-radius: 8px;
+        font-size: 14px;
+        color: var(--black);
+        transition: all 0.3s ease;
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--gold-primary);
+        box-shadow: 0 0 0 3px rgba(229, 173, 4, 0.1);
+    }
+    
+    .form-control.is-invalid {
+        border-color: #DC3545;
+    }
+    
+    .invalid-feedback {
+        color: #DC3545;
+        font-size: 13px;
+        margin-top: 5px;
+    }
+    
+    .form-text {
+        font-size: 12px;
+        color: var(--gray-600);
+        margin-top: 5px;
+    }
+    
+    .file-input-wrapper {
+        position: relative;
+    }
+    
+    .file-input-label {
+        display: inline-block;
+        padding: 10px 20px;
+        background: #F8F9FA;
+        border: 1px solid var(--gray-light);
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        color: var(--gray-600);
+        transition: all 0.3s ease;
+    }
+    
+    .file-input-label:hover {
+        border-color: var(--gold-primary);
+        background-color: rgba(229, 173, 4, 0.05);
+        color: var(--gold-primary);
+    }
+    
+    .file-input-label i {
+        margin-right: 8px;
+    }
+    
+    input[type="file"] {
+        display: none;
+    }
+    
+    .file-name {
+        display: block;
+        margin-top: 8px;
+        font-size: 13px;
+        color: var(--gray-600);
+    }
+    
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 40px;
+    }
+    
+    .btn-cancel {
+        background-color: var(--white);
+        color: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        padding: 12px 32px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-cancel:hover {
+        background-color: rgba(229, 173, 4, 0.1);
+        color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+    }
+    
+    .btn-save {
+        background-color: var(--gold-primary);
+        color: var(--black);
+        border: 2px solid var(--gold-primary);
+        padding: 12px 32px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-save:hover {
+        background-color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+    }
+    
+    /* Alert Messages */
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .alert-success {
+        background-color: rgba(41, 204, 151, 0.1);
+        color: #29CC97;
+        border: 1px solid #29CC97;
+    }
+    
+    .alert-danger {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #DC3545;
+        border: 1px solid #DC3545;
+    }
+    
+    .alert i {
+        font-size: 18px;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 991px) {
+        .progress-steps {
+            display: none; /* Hide on phones */
+        }
+        
+        .profile-container {
+            gap: 0;
+        }
+        
+        .profile-form {
+            padding: 25px 20px;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+    }
+    
+    /* Tablet (iPad) - Show steps */
+    @media (min-width: 768px) and (max-width: 991px) {
+        .progress-steps {
+            display: block !important;
+            width: 220px;
+        }
+        
+        .profile-container {
+            gap: 25px;
+        }
+    }
+    
+    /* Small Mobile */
+    @media (max-width: 576px) {
+        .profile-form {
+            padding: 20px 15px;
+            border-radius: 0;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .btn-cancel,
+        .btn-save {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block partner_content %}
+<div class="profile-container">
+    <!-- Progress Steps Sidebar -->
+    <div class="progress-steps">
+        <div class="progress-header">
+            <h2>Business Profile</h2>
+            <p>Edit your profile</p>
+        </div>
+        
+        <ul class="steps-list">
+            <li class="step-item" data-section="basic" id="step-basic">
+                <div class="step-bullet"></div>
+                <div class="step-label">Basic Information</div>
+            </li>
+            <li class="step-item" data-section="bank" id="step-bank">
+                <div class="step-bullet"></div>
+                <div class="step-label">Bank Account Details</div>
+            </li>
+            <li class="step-item" data-section="documents" id="step-documents">
+                <div class="step-bullet"></div>
+                <div class="step-label">Business Documents</div>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Profile Form -->
+    <div class="profile-form">
+        <!-- Success/Error Messages -->
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                <span>{{ message }}</span>
             </div>
-
-            <!-- Status Card -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Account Status</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="me-3">
-                            {% if profile.status == 'APPROVED' %}
-                            <i class="bi bi-check-circle-fill text-success fs-3"></i>
-                            {% elif profile.status == 'PENDING' %}
-                            <i class="bi bi-clock-history text-warning fs-3"></i>
-                            {% elif profile.status == 'REJECTED' %}
-                            <i class="bi bi-x-circle-fill text-danger fs-3"></i>
-                            {% elif profile.status == 'SUSPENDED' %}
-                            <i class="bi bi-pause-circle-fill text-secondary fs-3"></i>
-                            {% endif %}
+            {% endfor %}
+        {% endif %}
+        
+        <form method="post" enctype="multipart/form-data" id="profile-form">
+            {% csrf_token %}
+            
+            <!-- Basic Information Section -->
+            <div class="form-section" id="section-basic">
+                
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.business_name.id_for_label }}" class="form-label">
+                            Business Name<span class="required">*</span>
+                        </label>
+                        {{ form.business_name }}
+                        {% if form.business_name.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.business_name.errors }}
                         </div>
-                        <div>
-                            <h6 class="mb-0">{{ profile.get_status_display }}</h6>
-                            {% if profile.approved_at %}
-                            <small class="text-muted">
-                                Approved on {{ profile.approved_at|date:"M d, Y" }}
-                            </small>
-                            {% endif %}
-                        </div>
+                        {% endif %}
                     </div>
                     
-                    {% if profile.status == 'PENDING' %}
-                    <div class="alert alert-warning mt-3">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Your account is under review. You'll gain full access once approved.
-                    </div>
-                    {% elif profile.status == 'REJECTED' and profile.rejection_reason %}
-                    <div class="alert alert-danger mt-3">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Reason:</strong> {{ profile.rejection_reason }}
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Quick Stats -->
-            {% if profile.is_approved %}
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Quick Stats</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <small class="text-muted">Member Since</small>
-                        <p class="mb-0">{{ user.date_joined|date:"M d, Y" }}</p>
-                    </div>
-                    <div class="mb-3">
-                        <small class="text-muted">Last Updated</small>
-                        <p class="mb-0">{{ profile.updated_at|date:"M d, Y" }}</p>
+                    <div class="form-group">
+                        <label class="form-label">
+                            Business Email<span class="required">*</span>
+                        </label>
+                        <input type="email" class="form-control" 
+                               value="{{ user.email }}" readonly 
+                               style="background-color: #F8F9FA; cursor: not-allowed;">
+                        <small class="form-text">Contact admin to change email</small>
                     </div>
                 </div>
             </div>
-            {% endif %}
-        </div>
-
-        <!-- Main Content -->
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">Business Profile</h4>
-                        {% if profile.is_approved %}
-                        <span class="badge bg-success">
-                            <i class="bi bi-check-circle me-1"></i>Active Partner
-                        </span>
+            
+            <!-- Bank Account Details Section -->
+            <div class="form-section" id="section-bank">
+                
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.bank_name.id_for_label }}" class="form-label">
+                            Bank Name<span class="required">*</span>
+                        </label>
+                        {{ form.bank_name }}
+                        {% if form.bank_name.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.bank_name.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.account_name.id_for_label }}" class="form-label">
+                            Account Name<span class="required">*</span>
+                        </label>
+                        {{ form.account_name }}
+                        {% if form.account_name.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.account_name.errors }}
+                        </div>
                         {% endif %}
                     </div>
                 </div>
                 
-                <div class="card-body">
-                    <!-- Success/Error Messages -->
-                    {% if messages %}
-                    {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label for="{{ form.account_number.id_for_label }}" class="form-label">
+                            Account Number<span class="required">*</span>
+                        </label>
+                        {{ form.account_number }}
+                        {% if form.account_number.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.account_number.errors }}
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endfor %}
-                    {% endif %}
-
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        
-                        <!-- Basic Information -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">Basic Information</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Business Email</label>
-                                        <input type="email" class="form-control" 
-                                               value="{{ user.email }}" readonly>
-                                        <small class="text-muted">Contact admin to change email</small>
-                                    </div>
-                                    
-                                    <div class="col-md-6 mb-3">
-                                        <label for="{{ form.business_name.id_for_label }}" 
-                                               class="form-label">Business Name *</label>
-                                        {{ form.business_name }}
-                                        {% if form.business_name.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.business_name.errors }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Bank Details -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">Bank Details for Payouts</h5>
-                            </div>
-                            <div class="card-body">
-                                <p class="text-muted small mb-3">
-                                    Provide your bank details to receive payments. This information is secure and encrypted.
-                                </p>
-                                
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label for="{{ form.bank_name.id_for_label }}" 
-                                               class="form-label">Bank Name</label>
-                                        {{ form.bank_name }}
-                                        {% if form.bank_name.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.bank_name.errors }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                    
-                                    <div class="col-md-6 mb-3">
-                                        <label for="{{ form.account_number.id_for_label }}" 
-                                               class="form-label">Account Number</label>
-                                        {{ form.account_number }}
-                                        {% if form.account_number.errors %}
-                                        <div class="invalid-feedback d-block">
-                                            {{ form.account_number.errors }}
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <label for="{{ form.account_name.id_for_label }}" 
-                                           class="form-label">Account Name</label>
-                                    {{ form.account_name }}
-                                    {% if form.account_name.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.account_name.errors }}
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                
-                                {% if profile.bank_name and profile.account_number %}
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    Current bank details: {{ profile.bank_name }} - 
-                                    ****{{ profile.account_number|slice:"-4:" }}
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Business License -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">Business Documents</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label for="{{ form.business_license.id_for_label }}" 
-                                           class="form-label">Business License / CAC Certificate</label>
-                                    {{ form.business_license }}
-                                    {% if form.business_license.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.business_license.errors }}
-                                    </div>
-                                    {% endif %}
-                                    <div class="form-text">{{ form.business_license.help_text }}</div>
-                                </div>
-                                
+                </div>
+            </div>
+            
+            <!-- Business Documents Section -->
+            <div class="form-section" id="section-documents">
+                
+                
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label for="{{ form.business_license.id_for_label }}" class="form-label">
+                            Upload Document
+                        </label>
+                        <div class="file-input-wrapper">
+                            <label for="{{ form.business_license.id_for_label }}" class="file-input-label">
+                                <i class="fas fa-upload"></i>
+                                Choose File
+                            </label>
+                            {{ form.business_license }}
+                            <span class="file-name" id="file-name">
                                 {% if profile.business_license %}
-                                <div class="alert alert-success">
-                                    <i class="bi bi-check-circle me-2"></i>
-                                    Document uploaded: 
-                                    <a href="{{ profile.business_license.url }}" target="_blank" 
-                                       class="text-decoration-none">
-                                        View current file
-                                    </a>
-                                </div>
+                                    <i class="fas fa-check-circle" style="color: #29CC97;"></i>
+                                    Document uploaded
                                 {% else %}
-                                <div class="alert alert-warning">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                    No business license uploaded yet. Please upload to expedite approval.
-                                </div>
+                                    No file chosen
                                 {% endif %}
-                                
-                                {% if profile.status == 'PENDING' %}
-                                <div class="alert alert-info">
-                                    <i class="bi bi-clock me-2"></i>
-                                    Uploading your business license can help speed up the approval process.
-                                </div>
-                                {% endif %}
-                            </div>
+                            </span>
                         </div>
-
-                        <!-- Action Buttons -->
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% url 'account:partner_dashboard' %}" class="btn btn-outline-secondary me-md-2">
-                                <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save me-1"></i>Save Changes
-                            </button>
+                        {% if form.business_license.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.business_license.errors }}
                         </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Additional Information -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Account Information</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <strong>Registration Date:</strong>
-                            <p class="text-muted mb-0">{{ user.date_joined|date:"F j, Y" }}</p>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Account Status:</strong>
-                            <p class="mb-0">
-                                <span class="badge bg-{% if profile.status == 'APPROVED' %}success{% elif profile.status == 'PENDING' %}warning{% elif profile.status == 'REJECTED' %}danger{% else %}secondary{% endif %}">
-                                    {{ profile.get_status_display }}
-                                </span>
-                            </p>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Last Profile Update:</strong>
-                            <p class="text-muted mb-0">{{ profile.updated_at|date:"F j, Y, g:i a" }}</p>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Account Verified:</strong>
-                            <p class="mb-0">
-                                {% if user.is_verified %}
-                                <span class="badge bg-success">Verified</span>
-                                {% else %}
-                                <span class="badge bg-warning">Not Verified</span>
-                                {% endif %}
-                            </p>
-                        </div>
+                        {% endif %}
+                        <small class="form-text">Accepted formats: PDF, JPG, PNG (Max 5MB)</small>
                     </div>
                 </div>
             </div>
-        </div>
+            
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a href="{% url 'account:partner_dashboard' %}" class="btn-cancel">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-save">
+                    Save Changes
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 {% endblock %}
 
-{% block extra_css %}
-<style>
-.nav-pills .nav-link {
-    color: #495057;
-    padding: 0.75rem 1rem;
-    margin-bottom: 0.25rem;
-    border-radius: 0.375rem;
-}
-
-.nav-pills .nav-link.active {
-    background-color: #0d6efd;
-    color: white;
-}
-
-.nav-pills .nav-link:hover:not(.active) {
-    background-color: #f8f9fa;
-}
-
-.card-header {
-    background-color: #f8f9fa;
-    border-bottom: 1px solid rgba(0,0,0,.125);
-}
-
-.form-control:read-only {
-    background-color: #e9ecef;
-    opacity: 1;
-}
-</style>
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Track form completion
+    function checkStepCompletion() {
+        // Basic Information
+        const businessName = document.getElementById('{{ form.business_name.id_for_label }}').value;
+        if (businessName.trim()) {
+            document.getElementById('step-basic').classList.add('completed');
+        } else {
+            document.getElementById('step-basic').classList.remove('completed');
+        }
+        
+        // Bank Account Details
+        const bankName = document.getElementById('{{ form.bank_name.id_for_label }}').value;
+        const accountName = document.getElementById('{{ form.account_name.id_for_label }}').value;
+        const accountNumber = document.getElementById('{{ form.account_number.id_for_label }}').value;
+        
+        if (bankName.trim() && accountName.trim() && accountNumber.trim()) {
+            document.getElementById('step-bank').classList.add('completed');
+        } else {
+            document.getElementById('step-bank').classList.remove('completed');
+        }
+        
+        // Business Documents
+        {% if profile.business_license %}
+        document.getElementById('step-documents').classList.add('completed');
+        {% endif %}
+    }
+    
+    // Check on page load
+    checkStepCompletion();
+    
+    // Check on input change
+    const formInputs = document.querySelectorAll('#profile-form input, #profile-form select, #profile-form textarea');
+    formInputs.forEach(input => {
+        input.addEventListener('input', checkStepCompletion);
+        input.addEventListener('change', checkStepCompletion);
+    });
+    
+    // File input - show filename
+    const fileInput = document.getElementById('{{ form.business_license.id_for_label }}');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || 'No file chosen';
+            document.getElementById('file-name').innerHTML = 
+                `<i class="fas fa-file"></i> ${fileName}`;
+            checkStepCompletion();
+        });
+    }
+    
+    // Smooth scroll to section when step clicked (optional)
+    document.querySelectorAll('.step-item').forEach(step => {
+        step.addEventListener('click', function() {
+            const section = this.dataset.section;
+            const sectionEl = document.getElementById(`section-${section}`);
+            if (sectionEl) {
+                sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
