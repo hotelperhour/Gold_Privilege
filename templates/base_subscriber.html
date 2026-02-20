@@ -1,17 +1,17 @@
-<!-- templates/base_partner.html -->
+<!-- templates/base_subscriber.html -->
 {% extends 'base2.html' %}
 
 {% block content %}
-<div class="partner-wrapper">
-    {% include 'partner_sidebar.html' %}
+<div class="subscriber-wrapper">
+    {% include 'subscriber_sidebar.html' %}
     
-    <main class="partner-content-wrapper">
-        {% block partner_content %}{% endblock %}
+    <main class="subscriber-content-wrapper">
+        {% block subscriber_content %}{% endblock %}
     </main>
 </div>
 
 <script>
-    // Auto-hide alerts for partner pages
+    // Auto-hide alerts for subscriber pages
     document.addEventListener('DOMContentLoaded', function() {
         // Auto-hide alerts after 5 seconds
         const alerts = document.querySelectorAll('.alert');
@@ -28,7 +28,7 @@
         
         mobileNavItems.forEach(item => {
             const href = item.getAttribute('href');
-            if (currentPath.includes(href.split('/').filter(Boolean).pop())) {
+            if (href && currentPath.includes(href.split('/').filter(Boolean).pop())) {
                 item.classList.add('active');
             }
         });

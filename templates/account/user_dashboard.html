@@ -1,285 +1,582 @@
-{% extends 'base.html' %}
+{% extends 'base_subscriber.html' %}
 {% load static %}
 
 {% block title %}My Dashboard - Gold Privilege{% endblock %}
 
-{% block content %}
-<div class="row mt-4">
-    <div class="col-12">
-        <h1 class="mb-4">
-            <i class="fas fa-tachometer-alt"></i> Welcome, {{ user.profile.first_name|default:user.get_short_name }}!
-        </h1>
+{% block subscriber_content %}
+<style>
+    * { font-family: 'Poppins', sans-serif; }
+    
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-secondary: #F9B036;
+        --dark-bg: #020202;
+    }
+    
+    /* Dashboard Header */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--dark-bg);
+        margin: 0;
+    }
+    
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .btn-choose-plan {
+        background: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        color: #000;
+        font-weight: 600;
+        font-size: 14px;
+        padding: 10px 24px;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    
+    .btn-choose-plan:hover {
+        background: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+        color: #000;
+    }
+    
+    .btn-book-venue {
+        background: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        color: #000;
+        font-weight: 600;
+        font-size: 14px;
+        padding: 10px 24px;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    
+    .btn-book-venue:hover {
+        background: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+        transform: translateY(-2px);
+        color: #000;
+    }
+    
+    .subscription-badge {
+        background: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+    
+    .subscription-badge i {
+        font-size: 12px;
+    }
+    
+    /* Alert Box */
+    .no-subscription-alert {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: start;
+        gap: 12px;
+    }
+    
+    .no-subscription-alert i {
+        font-size: 24px;
+        color: #856404;
+        margin-top: 2px;
+    }
+    
+    .no-subscription-alert .alert-content {
+        flex: 1;
+    }
+    
+    .no-subscription-alert h5 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #856404;
+        margin: 0 0 6px 0;
+    }
+    
+    .no-subscription-alert p {
+        font-size: 14px;
+        color: #856404;
+        margin: 0;
+        line-height: 1.6;
+    }
+    
+    /* Stats Cards */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 32px;
+    }
+    
+    .stat-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    }
+    
+    .stat-card i {
+        font-size: 40px;
+        color: var(--gold-primary);
+        margin-bottom: 12px;
+    }
+    
+    .stat-card h3 {
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--dark-bg);
+        margin: 0 0 4px 0;
+    }
+    
+    .stat-card p {
+        font-size: 14px;
+        color: #6c757d;
+        margin: 0;
+        font-weight: 500;
+    }
+    .icon-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;  /* prevents shrinking in flex layouts */
+}
+
+.icon-circle i {
+    line-height: 1;        /* remove extra line height */
+    margin: 0;             /* ensure no default margins */
+    font-size: 24px;       /* adjust size to fit nicely inside 50px */
+}
+    
+    /* Recent Activity Section */
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    
+    .section-header h4 {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--dark-bg);
+        margin: 0;
+    }
+    
+    .activity-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+    
+    /* Table Styles */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .activity-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin: 0;
+    }
+    
+    .activity-table thead th {
+        background: #f8f9fa;
+        padding: 16px 20px;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--dark-bg);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e9ecef;
+        white-space: nowrap;
+    }
+    
+    .activity-table tbody td {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f1f3f4;
+        font-size: 14px;
+        color: #495057;
+        vertical-align: middle;
+    }
+    
+    .activity-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .activity-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .venue-name {
+        font-weight: 600;
+        color: var(--dark-bg);
+        margin-bottom: 4px;
+    }
+    
+    .venue-location {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    .category-badge {
+        background: rgba(229, 173, 4, 0.12);
+        color: var(--gold-primary);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+    
+    .status-badge.confirmed { background: rgba(40, 167, 69, 0.15); color: #28a745; }
+    .status-badge.checked-in { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; }
+    .status-badge.completed { background: rgba(108, 117, 125, 0.15); color: #6c757d; }
+    .status-badge.cancelled { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+    
+    .btn-view-details {
+        background: #fff;
+        border: 1.5px solid var(--gold-primary);
+        color: var(--gold-primary);
+        padding: 6px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    
+    .btn-view-details:hover {
+        background: var(--gold-primary);
+        color: #000;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-state i {
+        font-size: 64px;
+        color: #dee2e6;
+        margin-bottom: 16px;
+    }
+    
+    .empty-state h5 {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--dark-bg);
+        margin-bottom: 8px;
+    }
+    
+    .empty-state p {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 20px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 991px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+    }
+    
+    @media (max-width: 767px) {
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 24px;
+        }
+        
+        .header-actions {
+            width: 100%;
+            flex-direction: row;        /* keep items in a row */
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;            /* allow wrapping only if absolutely needed */
+        }
+        
+        .header-actions .btn-choose-plan,
+        .header-actions .btn-book-venue,
+        .header-actions .subscription-badge {
+            width: auto;                /* revert full width */
+            flex: 1 1 auto;             /* allow buttons to shrink if needed */
+            min-width: 0;               /* prevent overflow */
+            white-space: nowrap;
+        }
+        .header-actions .btn-choose-plan,
+        .header-actions .btn-book-venue {
+            padding: 10px 12px;         /* slightly smaller padding on mobile */
+        }
+
+        
+        .btn-choose-plan,
+        .btn-book-venue {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .subscription-badge {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .stat-card {
+            padding: 20px;
+        }
+        
+        .activity-table thead th,
+        .activity-table tbody td {
+            padding: 12px 14px;
+            font-size: 13px;
+        }
+        
+        .no-subscription-alert {
+            flex-direction: column;
+        }
+    }
+    
+    
+    /* Tablet styles (768px and up) */
+@media (min-width: 768px) and (max-width: 991px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+
+    /* Keep header actions inline on tablets */
+    .header-actions {
+        flex-direction: row;
+        width: auto;
+    }
+
+    .header-actions .btn-choose-plan,
+    .header-actions .btn-book-venue {
+        width: auto;
+    }
+}
+
+/* Phone styles (<768px) – override the 1‑column grid only when needed */
+@media (max-width: 767px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);  /* default to 2 columns on larger phones */
+    }
+}
+
+@media (max-width: 576px) {
+    .stats-grid {
+        grid-template-columns: 1fr;   /* single column only on small phones */
+    }
+}
+</style>
+
+<!-- Dashboard Header -->
+<div class="dashboard-header">
+    <h1>
+        <i class="fas fa-hand-sparkles" style="color: var(--gold-primary);"></i>
+        Welcome, {{ user.profile.first_name|default:user.get_short_name }}!
+    </h1>
+    
+    <div class="header-actions">
+        {% if active_subscription %}
+            <!-- Active Subscription State -->
+            <span class="subscription-badge">
+                <i class="fas fa-check-circle"></i>
+                {{ active_subscription.plan.name }} Plan
+            </span>
+            <a href="{% url 'venues:list' %}" class="btn-book-venue">
+                <i class="fas fa-calendar-plus"></i>
+                Book a Venue
+            </a>
+        {% else %}
+            <!-- No Subscription State -->
+            <a href="{% url 'subscriptions:plans_list' %}" class="btn-choose-plan">
+                <i class="fas fa-shopping-cart"></i>
+                Choose a Plan
+            </a>
+        {% endif %}
     </div>
 </div>
 
-<div class="row">
-    <!-- Profile Card -->
-    <div class="col-md-4 mb-4">
-        <div class="card card-custom">
-            <div class="card-body text-center">
-                <div class="mb-3">
-                    {% if user.profile.profile_picture %}
-                        <img src="{{ user.profile.profile_picture.url }}" 
-                             alt="Profile" 
-                             class="rounded-circle" 
-                             style="width: 100px; height: 100px; object-fit: cover;">
-                    {% else %}
-                        <i class="fas fa-user-circle" style="font-size: 80px; color: var(--primary-color);"></i>
-                    {% endif %}
-                </div>
-                <h5>{{ user.profile.get_full_name }}</h5>
-                <p class="text-muted mb-2">{{ user.email }}</p>
-                {% if user.profile.phone_number %}
-                <p class="text-muted mb-3">
-                    <i class="fas fa-phone"></i> {{ user.profile.phone_number }}
-                </p>
-                {% endif %}
-                <a href="{% url 'account:profile' %}" class="btn btn-gold btn-sm">
-                    <i class="fas fa-edit"></i> Edit Profile
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Subscription Status -->
-    <div class="col-md-8 mb-4">
-        <div class="card card-custom">
-            <div class="card-header-custom">
-                <h5 class="mb-0"><i class="fas fa-crown"></i> Membership Status</h5>
-            </div>
-            <div class="card-body">
-                {% if active_subscription %}
-                    <!-- Active Subscription -->
-                    <div class="alert alert-success">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <i class="fas fa-check-circle"></i> 
-                                <strong>{{ active_subscription.plan.name }} Membership Active</strong>
-                                <p class="mb-1 mt-2">
-                                    <strong>Expires:</strong> {{ active_subscription.end_date|date:"F j, Y" }}
-                                </p>
-                                <p class="mb-0">
-                                    <strong>Days Remaining:</strong> {{ active_subscription.days_remaining }} days
-                                </p>
-                            </div>
-                            <span class="badge bg-success">ACTIVE</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Usage Stats -->
-                    <div class="row mt-3">
-                        <div class="col-md-6">
-                            <div class="border rounded p-3 mb-2">
-                                <small class="text-muted">Bookings This Month</small>
-                                <h4 class="mb-0">
-                                    {{ bookings_used|default:0 }} 
-                                    {% if active_subscription.plan.max_bookings_per_month %}
-                                        / {{ active_subscription.plan.max_bookings_per_month }}
-                                    {% endif %}
-                                </h4>
-                                {% if active_subscription.plan.max_bookings_per_month %}
-                                <small class="text-muted">
-                                    {{ bookings_remaining }} remaining
-                                </small>
-                                {% else %}
-                                <small class="text-success">Unlimited</small>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="border rounded p-3 mb-2">
-                                <small class="text-muted">Plan Price</small>
-                                <h4 class="mb-0">₦{{ active_subscription.price_paid|floatformat:0 }}</h4>
-                                <small class="text-muted">{{ active_subscription.plan.get_billing_period_display }}</small>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-3 d-flex flex-wrap gap-2">
-                        <a href="{% url 'subscriptions:my_subscription' %}" class="btn btn-outline-primary">
-                            <i class="fas fa-crown"></i> Manage Subscription
-                        </a>
-                        <a href="{% url 'bookings:list' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-calendar-alt"></i> My Bookings
-                        </a>
-                        <a href="{% url 'venues:list' %}" class="btn btn-gold">
-                            <i class="fas fa-search"></i> Book a Venue
-                        </a>
-                    </div>
-                {% else %}
-                    <!-- No Subscription -->
-                    <div class="alert alert-warning">
-                        <i class="fas fa-info-circle"></i> 
-                        <strong>No Active Subscription</strong>
-                        <p class="mb-0 mt-2">You don't have an active membership yet. Subscribe now to access exclusive venues and benefits!</p>
-                    </div>
-                    <a href="{% url 'subscriptions:plans_list' %}" class="btn btn-gold">
-                        <i class="fas fa-shopping-cart"></i> Choose a Plan
-                    </a>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <!-- Quick Stats -->
-    <div class="col-md-3 mb-3">
-        <div class="card card-custom text-center">
-            <div class="card-body">
-                <i class="fas fa-calendar-check" style="font-size: 40px; color: var(--primary-color);"></i>
-                <h3 class="mt-3 mb-0">{{ total_bookings|default:0 }}</h3>
-                <p class="text-muted">Total Bookings</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-3">
-        <div class="card card-custom text-center">
-            <div class="card-body">
-                <i class="fas fa-check-circle" style="font-size: 40px; color: var(--primary-color);"></i>
-                <h3 class="mt-3 mb-0">{{ completed_visits|default:0 }}</h3>
-                <p class="text-muted">Completed Visits</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-3">
-        <div class="card card-custom text-center">
-            <div class="card-body">
-                <i class="fas fa-heart" style="font-size: 40px; color: var(--primary-color);"></i>
-                <h3 class="mt-3 mb-0">{{ favorite_venues_count|default:0 }}</h3>
-                <p class="text-muted">Favorite Venues</p>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-3 mb-3">
-        <div class="card card-custom text-center">
-            <div class="card-body">
-                <i class="fas fa-calendar-alt" style="font-size: 40px; color: var(--primary-color);"></i>
-                <h3 class="mt-3 mb-0">{{ upcoming_bookings_count|default:0 }}</h3>
-                <p class="text-muted">Upcoming</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Upcoming Bookings -->
-{% if upcoming_bookings %}
-<div class="row">
-    <div class="col-md-12 mb-4">
-        <div class="card card-custom">
-            <div class="card-header-custom d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Upcoming Bookings</h5>
-                <a href="{% url 'bookings:list' %}" class="btn btn-sm btn-outline-primary">View All</a>
-            </div>
-            <div class="card-body">
-                <div class="list-group list-group-flush">
-                    {% for booking in upcoming_bookings|slice:":3" %}
-                    <div class="list-group-item px-0">
-                        <div class="d-flex justify-content-between align-items-start">
-                            <div>
-                                <h6 class="mb-1">{{ booking.venue.name }}</h6>
-                                <p class="mb-1 text-muted">
-                                    <i class="fas fa-calendar"></i> {{ booking.visit_date|date:"l, F j, Y" }}
-                                </p>
-                                <p class="mb-0 text-muted">
-                                    <i class="fas fa-users"></i> {{ booking.guests_count }} guest{{ booking.guests_count|pluralize }}
-                                </p>
-                            </div>
-                            <div class="text-end">
-                                {% if booking.status == 'CONFIRMED' %}
-                                    <span class="badge bg-success">Confirmed</span>
-                                {% elif booking.status == 'CHECKED_IN' %}
-                                    <span class="badge bg-info">Checked In</span>
-                                {% endif %}
-                                <br>
-                                <small class="text-muted">{{ booking.booking_reference }}</small>
-                                <br>
-                                <a href="{% url 'bookings:detail' booking.booking_reference %}" 
-                                   class="btn btn-sm btn-outline-primary mt-2">
-                                    View Details
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
+<!-- No Subscription Alert (only if no active subscription) -->
+{% if not active_subscription %}
+<div class="no-subscription-alert">
+    <i class="fas fa-exclamation-circle"></i>
+    <div class="alert-content">
+        <h5>No Active Subscription</h5>
+        <p>You don't have an active membership yet. Subscribe now to access exclusive venues and benefits!</p>
     </div>
 </div>
 {% endif %}
 
-<div class="row">
-    <!-- Recent Activity -->
-    <div class="col-md-12">
-        <div class="card card-custom">
-            <div class="card-header-custom">
-                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity</h5>
-            </div>
-            <div class="card-body">
-                {% if recent_bookings %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Venue</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for booking in recent_bookings|slice:":5" %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ booking.venue.name }}</strong><br>
-                                        <small class="text-muted">{{ booking.venue.city }}</small>
-                                    </td>
-                                    <td>{{ booking.visit_date|date:"M d, Y" }}</td>
-                                    <td>
-                                        {% if booking.status == 'CONFIRMED' %}
-                                            <span class="badge bg-success">Confirmed</span>
-                                        {% elif booking.status == 'CHECKED_IN' %}
-                                            <span class="badge bg-info">Checked In</span>
-                                        {% elif booking.status == 'COMPLETED' %}
-                                            <span class="badge bg-secondary">Completed</span>
-                                        {% elif booking.status == 'CANCELLED' %}
-                                            <span class="badge bg-danger">Cancelled</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'bookings:detail' booking.booking_reference %}" 
-                                           class="btn btn-sm btn-outline-primary">
-                                            View
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center py-5">
-                        <i class="fas fa-inbox" style="font-size: 60px; color: #ccc;"></i>
-                        <p class="text-muted mt-3 mb-2">No recent activity yet</p>
-                        {% if active_subscription %}
-                            <p class="text-muted mb-3">Start booking venues to see your activity here</p>
-                            <a href="{% url 'venues:list' %}" class="btn btn-gold">
-                                <i class="fas fa-search"></i> Browse Venues
-                            </a>
-                        {% else %}
-                            <p class="text-muted mb-3">Subscribe to start booking venues</p>
-                            <a href="{% url 'subscriptions:plans_list' %}" class="btn btn-gold">
-                                <i class="fas fa-crown"></i> View Plans
-                            </a>
-                        {% endif %}
-                    </div>
-                {% endif %}
-            </div>
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="icon-circle bg-warning-subtle">
+        <i class="fas fa-calendar-check text-warning"></i>
         </div>
+        <h3>{{ total_bookings|default:0 }}</h3>
+        <p>Total Bookings</p>
+    </div>
+    
+    <div class="stat-card">
+        <div class="icon-circle bg-primary-subtle">
+        <i class="fas fa-check-circle text-primary"></i>
+        </div>
+        <h3>{{ completed_visits|default:0 }}</h3>
+        <p>Completed Check-ins</p>
+    </div>
+    
+    <div class="stat-card">
+        <div class="icon-circle bg-info-subtle">
+        <i class="fas fa-calendar-alt text-info"></i>
+        </div>
+        <h3>{{ upcoming_bookings_count|default:0 }}</h3>
+        <p>Upcoming Events</p>
     </div>
 </div>
+
+<!-- Recent Activity Section -->
+<div class="section-header">
+    <h4><i class="fas fa-history"></i> Recent Activity</h4>
+</div>
+
+<div class="activity-card">
+    {% if recent_bookings %}
+        <div class="table-responsive">
+            <table class="activity-table">
+                <thead>
+                    <tr>
+                        <th>Venue</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in recent_bookings|slice:":10" %}
+                    <tr>
+                        <td>
+                            <div class="venue-name">{{ booking.venue.name }}</div>
+                            <div class="venue-location">
+                                <i class="fas fa-map-marker-alt"></i> {{ booking.venue.city }}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="category-badge">{{ booking.venue.get_category_display }}</span>
+                        </td>
+                        <td>{{ booking.visit_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if booking.status == 'CONFIRMED' %}
+                                <span class="status-badge confirmed">Confirmed</span>
+                            {% elif booking.status == 'CHECKED_IN' %}
+                                <span class="status-badge checked-in">Checked In</span>
+                            {% elif booking.status == 'COMPLETED' %}
+                                <span class="status-badge completed">Completed</span>
+                            {% elif booking.status == 'CANCELLED' %}
+                                <span class="status-badge cancelled">Cancelled</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'bookings:detail' booking.booking_reference %}" 
+                               class="btn-view-details">
+                                <i class="fas fa-eye"></i>
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="far fa-calendar-times"></i>
+            <h5>No recent activity yet</h5>
+            <p>Subscribe to start booking venues</p>
+            <a href="{% url 'subscriptions:plans_list' %}" class="btn-choose-plan">
+                <i class="fas fa-crown"></i>
+                View Plans
+            </a>
+        </div>
+    {% endif %}
+</div>
+
 {% endblock %}

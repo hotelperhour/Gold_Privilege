@@ -1,47 +1,208 @@
-<!-- templates/components/pagination.html -->
+<!-- partials/pagination.html -->
+<style>
+    .pagination-wrapper {
+        width: 100%;
+        padding: 16px 20px;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        box-sizing: border-box;
+        overflow: visible;
+    }
+
+    .custom-pagination {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        gap: 6px;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .custom-pagination .page-item {
+        margin: 0;
+        flex-shrink: 0;
+    }
+
+    /* Prev / Next buttons */
+    .custom-pagination .page-item.prev-next .page-link,
+    .custom-pagination .page-item.disabled.prev-next .page-link {
+        padding: 8px 25px;
+        border-radius: 8px;
+        border: 1px solid #E5E5E5;
+        background: #FFFFFF;
+        color: #000000;
+        font-weight: 500;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        font-family: 'Poppins', sans-serif;
+        cursor: pointer;
+    }
+
+    .custom-pagination .page-item.prev-next .page-link:hover {
+        border-color: #E5AD04;
+        background-color: rgba(229, 173, 4, 0.1);
+        color: #E5AD04;
+    }
+
+    /* Number buttons */
+    .custom-pagination .page-item .page-link {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border-radius: 50%;
+        border: 1px solid #E5E5E5;
+        background: #FFFFFF;
+        color: #000000;
+        font-weight: 500;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .custom-pagination .page-item .page-link:hover {
+        border-color: #E5AD04;
+        background-color: rgba(229, 173, 4, 0.1);
+        color: #E5AD04;
+    }
+
+    /* Active page */
+    .custom-pagination .page-item.active .page-link {
+        background-color: #E5AD04;
+        border-color: #E5AD04;
+        color: #000000;
+        font-weight: 700;
+        cursor: default;
+    }
+
+    /* Disabled state */
+    .custom-pagination .page-item.disabled .page-link {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+        background-color: #f8f9fa;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 576px) {
+        .pagination-wrapper {
+            padding: 12px 10px;
+        }
+
+        .custom-pagination {
+            gap: 4px;
+        }
+
+        /* Shorten Prev/Next labels on tiny screens */
+        .custom-pagination .page-item.prev-next .page-link .btn-label {
+            display: none;   /* hide text, keep icon */
+        }
+
+        .custom-pagination .page-item.prev-next .page-link {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border-radius: 50%;
+            justify-content: center;
+        }
+
+        .custom-pagination .page-item .page-link {
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+        }
+    }
+</style>
+
 {% if is_paginated %}
-<nav aria-label="Page navigation" class="mt-4">
-    <ul class="custom-pagination">
-        {% if page_obj.has_previous %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
-                <i class="fas fa-arrow-left me-2"></i>Previous
-            </a>
-        </li>
-        {% else %}
-        <li class="page-item disabled">
-            <span class="page-link">
-                <i class="fas fa-arrow-left me-2"></i>Previous
-            </span>
-        </li>
-        {% endif %}
-        
-        <!-- Page Numbers -->
-        {% for num in page_obj.paginator.page_range %}
-            {% if page_obj.number == num %}
-                <li class="page-item active">
-                    <span class="page-link">P{{ num }}</span>
-                </li>
-            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">P{{ num }}</a>
-                </li>
+<nav aria-label="Page navigation">
+    <div class="pagination-wrapper">
+        <ul class="custom-pagination">
+
+            <!-- Previous -->
+            {% if page_obj.has_previous %}
+            <li class="page-item prev-next">
+                <a class="page-link"
+                   href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <i class="fas fa-chevron-left"></i>
+                    <span class="btn-label">Prev</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item prev-next disabled">
+                <span class="page-link">
+                    <i class="fas fa-chevron-left"></i>
+                    <span class="btn-label">Prev</span>
+                </span>
+            </li>
             {% endif %}
-        {% endfor %}
-        
-        {% if page_obj.has_next %}
-        <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">
-                Next<i class="fas fa-arrow-right ms-2"></i>
-            </a>
-        </li>
-        {% else %}
-        <li class="page-item disabled">
-            <span class="page-link">
-                Next<i class="fas fa-arrow-right ms-2"></i>
-            </span>
-        </li>
-        {% endif %}
-    </ul>
+
+            <!-- First page + ellipsis -->
+            {% if page_obj.number > 3 %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">1</a>
+            </li>
+            {% if page_obj.number > 4 %}
+            <li class="page-item disabled"><span class="page-link" style="border:none;background:transparent;color:#6c757d;">…</span></li>
+            {% endif %}
+            {% endif %}
+
+            <!-- Window of pages around current -->
+            {% for num in page_obj.paginator.page_range %}
+                {% if num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
+            <!-- Ellipsis + last page -->
+            {% if page_obj.number < page_obj.paginator.num_pages|add:"-2" %}
+            {% if page_obj.number < page_obj.paginator.num_pages|add:"-3" %}
+            <li class="page-item disabled"><span class="page-link" style="border:none;background:transparent;color:#6c757d;">…</span></li>
+            {% endif %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ page_obj.paginator.num_pages }}</a>
+            </li>
+            {% endif %}
+
+            <!-- Next -->
+            {% if page_obj.has_next %}
+            <li class="page-item prev-next">
+                <a class="page-link"
+                   href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                    <span class="btn-label">Next</span>
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item prev-next disabled">
+                <span class="page-link">
+                    <span class="btn-label">Next</span>
+                    <i class="fas fa-chevron-right"></i>
+                </span>
+            </li>
+            {% endif %}
+
+        </ul>
+    </div>
 </nav>
 {% endif %}

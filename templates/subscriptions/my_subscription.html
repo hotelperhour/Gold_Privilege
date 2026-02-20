@@ -1,226 +1,614 @@
-{% extends 'base.html' %}
-{% load humanize %}
+{% extends 'base_subscriber.html' %}
+{% load static %}
+
 {% block title %}My Subscription - Gold Privilege{% endblock %}
 
-{% block content %}
-<div class="container mt-5">
-    <h1 class="mb-4">
-        <i class="fas fa-crown"></i> My Subscription
-    </h1>
+{% block subscriber_content %}
+<style>
+    * { font-family: 'Poppins', sans-serif; }
     
-    {% if subscription %}
-        <div class="row">
-            <div class="col-md-8 mb-4">
-                <div class="card card-custom">
-                    <div class="card-header-custom">
-                        <h4 class="mb-0">
-                            <i class="fas fa-id-card"></i> Current Subscription
-                        </h4>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h3 style="color: var(--primary-color);">{{ subscription.plan.name }}</h3>
-                                <p class="text-muted">{{ subscription.plan.description }}</p>
-                                
-                                {% if subscription.is_trial %}
-                                    <span class="badge bg-info" style="font-size: 1rem;">
-                                        <i class="fas fa-gift"></i> Trial Period
-                                    </span>
-                                {% endif %}
-                                
-                                {% if subscription.status == 'ACTIVE' %}
-                                    <span class="badge bg-success" style="font-size: 1rem;">
-                                        <i class="fas fa-check-circle"></i> Active
-                                    </span>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6 text-end">
-                                <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-color);">
-                                    ₦{{ subscription.price_paid|floatformat:0|intcomma }}
-                                </div>
-                                <small class="text-muted">per {{ subscription.plan.get_billing_period_display }}</small>
-                            </div>
-                        </div>
-                        
-                        <hr class="my-4">
-                        
-                        <div class="row text-center">
-                            <div class="col-md-4 mb-3">
-                                <i class="fas fa-calendar-alt fa-2x mb-2" style="color: var(--primary-color);"></i>
-                                <p class="mb-0"><strong>Started</strong></p>
-                                <p>{{ subscription.start_date|date:"M d, Y" }}</p>
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <i class="fas fa-calendar-check fa-2x mb-2" style="color: var(--primary-color);"></i>
-                                <p class="mb-0"><strong>Expires</strong></p>
-                                <p>{{ subscription.end_date|date:"M d, Y" }}</p>
-                            </div>
-                            
-                            <div class="col-md-4 mb-3">
-                                <i class="fas fa-hourglass-half fa-2x mb-2" style="color: var(--primary-color);"></i>
-                                <p class="mb-0"><strong>Days Remaining</strong></p>
-                                <p style="font-size: 1.5rem; font-weight: bold; color: var(--primary-color);">
-                                    {{ subscription.days_remaining }}
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <div class="progress" style="height: 25px;">
-                            {% widthratio subscription.days_remaining subscription.plan.get_duration_in_days 100 as remaining_percentage %}
-                            <div class="progress-bar" role="progressbar" 
-                                 style="width: {{ remaining_percentage }}%; background: var(--primary-color);"
-                                 aria-valuenow="{{ remaining_percentage }}" aria-valuemin="0" aria-valuemax="100">
-                                {{ remaining_percentage }}% remaining
-                            </div>
-                        </div>
-                        
-                        <hr class="my-4">
-                        
-                        <h5><i class="fas fa-star"></i> Your Benefits</h5>
-                        <ul class="list-unstyled">
-                            {% for assignment in subscription.plan.feature_assignments.all %}
-                                <li class="mb-2">
-                                    <i class="fas {{ assignment.feature.icon|default:'fa-check' }}" style="color: var(--primary-color);"></i>
-                                    {{ assignment.feature.name }}
-                                </li>
-                            {% endfor %}
-                            
-                            <li class="mb-2">
-                                <i class="fas fa-calendar-check" style="color: var(--primary-color);"></i>
-                                {% if subscription.plan.max_bookings_per_month %}
-                                    {{ subscription.plan.max_bookings_per_month }} bookings per month
-                                    ({{ subscription.bookings_count }} used)
-                                {% else %}
-                                    Unlimited bookings
-                                {% endif %}
-                            </li>
-                        </ul>
-                        
-                        <div class="alert {% if subscription.auto_renew %}alert-info{% else %}alert-warning{% endif %} mt-4">
-                            <i class="fas {% if subscription.auto_renew %}fa-sync-alt{% else %}fa-exclamation-triangle{% endif %}"></i>
-                            {% if subscription.auto_renew %}
-                                <strong>Auto-Renewal Enabled:</strong> Your subscription will automatically renew on {{ subscription.end_date|date:"M d, Y" }}.
-                            {% else %}
-                                <strong>Auto-Renewal Disabled:</strong> Your subscription will end on {{ subscription.end_date|date:"M d, Y" }}.
-                            {% endif %}
-                        </div>
-                        
-                        <div class="d-grid gap-2 mt-4">
-                            <button 
-                                type="button" 
-                                class="btn btn-outline-danger"
-                                data-bs-toggle="modal" 
-                                data-bs-target="#cancelModal"
-                            >
-                                <i class="fas fa-times-circle"></i> Cancel Subscription
-                            </button>
-                        </div>
-                    </div>
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-light: #FAA631;
+        --dark-text: #020202;
+        --light-dark: #4a4a4a;
+    }
+    
+    .page-header {
+        font-size: 32px;
+        font-weight: 600;
+        color: var(--dark-text);
+        margin-bottom: 32px;
+    }
+    
+    .current-plan-badge {
+        background: #f8ebc3;
+        border: 2px solid #f8ebc3;
+        color: var(--gold-light);
+        font-size: 14px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        display: inline-block;
+        margin-bottom: 24px;
+    }
+    
+    .subscription-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 32px;
+        margin-bottom: 32px;
+    }
+    
+    .subscription-grid {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 32px;
+        align-items: start;
+    }
+    
+    .plan-details {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .plan-name {
+        font-size: 28px;
+        font-weight: 500;
+        color: var(--dark-text);
+        margin: 0;
+    }
+    
+    .plan-price {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--dark-text);
+        margin: 0;
+    }
+    
+    .plan-price .period {
+        font-weight: 400;
+        color: var(--light-dark);
+    }
+    
+    .status-badge {
+        background: #d4edda;
+        border: 1px solid #d4edda;
+        color: #155724;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 8px;
+        display: inline-block;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    
+    /* Action Buttons */
+    .action-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-width: 200px;
+    }
+    
+    .btn-upgrade {
+        background: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        color: #000;
+        font-weight: 500;
+        font-size: 15px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        text-decoration: none;
+        text-align: center;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    
+    .btn-upgrade:hover {
+        background: #FAA631;
+        border-color: #FAA631;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+        color: #000;
+    }
+    
+    .btn-cancel {
+        background: #fff;
+        border: 1px solid #dc3545;
+        color: #dc3545;
+        font-weight: 500;
+        font-size: 15px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    
+    .btn-cancel:hover {
+        background: #dc3545;
+        color: #fff;
+    }
+    
+    /* Benefits */
+    .benefits-section {
+        margin-top: 32px;
+    }
+    
+    .benefits-heading {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--dark-text);
+        margin-bottom: 20px;
+    }
+    
+    .benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        max-width: 800px;
+    }
+    
+    .benefit-item {
+        display: flex;
+        align-items: start;
+        gap: 12px;
+        font-size: 15px;
+        color: var(--light-dark);
+        line-height: 1.6;
+    }
+    
+    .benefit-item::before {
+        content: "●";
+        color: #000;
+        font-size: 12px;
+        margin-top: 4px;
+        flex-shrink: 0;
+    }
+    
+    .benefit-usage {
+        font-weight: 600;
+        color: var(--gold-primary);
+    }
+    
+    /* Renewal Info */
+    .renewal-info {
+        background: #d4edda;
+        border: 1px solid #d4edda;
+        color: #000;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 16px 20px;
+        border-radius: 10px;
+        margin-top: 32px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .renewal-info i {
+        color: #28a745;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+    
+    /* Modal */
+    
+    .modal {
+        z-index: 5000 !important;
+    }
+    .modal-backdrop {
+        z-index: 4999 !important;
+    }
+    .modal-backdrop.show { opacity: 0.6; }
+    
+    .cancel-modal .modal-dialog { max-width: 480px; }
+    
+    .cancel-modal .modal-content {
+        
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    
+    .cancel-modal .modal-header {
+        background: white;
+        border-bottom: none;
+        padding: 24px 24px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .cancel-modal .alert-icon {
+        width: 64px;
+        height: 64px;
+        border: solid 1px var(--gold-primary);
+        border-radius: 50%;
+        background: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+    
+    .cancel-modal .alert-icon i {
+        color: #dc3545;
+        font-size: 32px;
+    }
+    
+    .cancel-modal .modal-title {
+        color: #000;
+        font-size: 18px;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .cancel-modal .modal-body {
+        padding: 24px 32px;
+    }
+    
+    .cancel-modal .warning-text {
+        font-size: 15px;
+        color: var(--dark-text);
+        line-height: 1.6;
+        margin-bottom: 16px;
+        text-align: center;
+    }
+    
+    .cancel-modal .access-info {
+        font-size: 14px;
+        color: var(--light-dark);
+        border: 1px solid #f8ebc3;
+        border-radius: 8px;
+        background: #f8ebc3;
+        padding: 5px 7px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    .cancel-modal .access-info span{
+        font-weight: 600;
+        
+    }
+    
+    .cancel-modal .form-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--dark-text);
+        margin-bottom: 8px;
+    }
+    
+    .cancel-modal .form-control {
+        border: 1px solid var(--gold-primary);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+    
+    .cancel-modal .form-control:focus {
+        border-color: var(--gold-light);
+        box-shadow: 0 0 0 0.2rem rgba(229, 173, 4, 0.15);
+    }
+    
+    .cancel-modal .modal-footer {
+        border-top: none;
+        padding: 16px 32px 28px;
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+    }
+    
+    .btn-keep {
+        background: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        color: #000;
+        font-weight: 500;
+        font-size: 15px;
+        padding: 10px 28px;
+        border-radius: 8px;
+    }
+    
+    .btn-keep:hover {
+        background: var(--gold-light);
+        border-color: var(--gold-light);
+        color: #000;
+    }
+    
+    .btn-confirm-cancel {
+        background: #dc3545;
+        border: 2px solid #dc3545;
+        color: #fff;
+        font-weight: 500;
+        font-size: 15px;
+        padding: 10px 28px;
+        border-radius: 8px;
+    }
+    
+    .btn-confirm-cancel:hover {
+        background: #c82333;
+        border-color: #c82333;
+        color: #fff;
+    }
+    
+    /* No Subscription */
+    .no-subscription {
+        text-align: center;
+        padding: 80px 20px;
+    }
+    
+    .no-subscription i {
+        font-size: 80px;
+        color: #dee2e6;
+        margin-bottom: 24px;
+    }
+    
+    .no-subscription h3 {
+        font-size: 26px;
+        font-weight: 700;
+        color: var(--dark-text);
+        margin-bottom: 12px;
+    }
+    
+    .no-subscription p {
+        font-size: 16px;
+        color: var(--light-dark);
+        margin-bottom: 28px;
+    }
+    
+    .btn-view-plans {
+        background: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        color: #000;
+        font-weight: 700;
+        font-size: 16px;
+        padding: 14px 40px;
+        border-radius: 10px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .btn-view-plans:hover {
+        background: var(--gold-light);
+        border-color: var(--gold-light);
+        color: #000;
+    }
+    
+    /* ── TABLET FIX: Keep buttons stacked vertically ── */
+    @media (max-width: 1024px) and (min-width: 769px) {
+        .subscription-grid {
+            grid-template-columns: 1fr auto;  /* Keep 2-col layout */
+            gap: 24px;
+        }
+        
+        /* Buttons stay in column, NOT row */
+        .action-buttons {
+            flex-direction: column;
+            min-width: 180px;
+        }
+        
+        .action-buttons .btn-upgrade,
+        .action-buttons .btn-cancel {
+            width: 100%;  /* Full width of the column */
+        }
+        
+        .benefits-grid {
+            margin: 0 auto;
+        }
+    }
+    
+    /* ── MOBILE: Buttons 40% width, left-aligned ── */
+    @media (max-width: 767px) {
+        .page-header {
+            font-size: 26px;
+            margin-bottom: 24px;
+        }
+        
+        .subscription-card {
+            padding: 24px 20px;
+        }
+        
+        .subscription-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        
+        .plan-name { font-size: 24px; }
+        .plan-price { font-size: 18px; }
+        
+        /* ── BUTTONS: 40% width, left-aligned ── */
+        .action-buttons {
+            flex-direction: column;     
+            gap: 8px;
+            margin-top: 16px;
+            width: 100%;               
+        }
+
+        .action-buttons .btn-upgrade,
+        .action-buttons .btn-cancel {
+            width: 100%;                 
+            padding: 12px 16px;
+            font-size: 14px;
+            text-align: center;
+            white-space: normal;          
+            word-break: break-word;      
+        }
+        
+        
+        .benefits-grid {
+            grid-template-columns: 1fr;
+            text-align: left;  
+        }
+        
+        .benefit-item {
+            justify-content: flex-start;  
+        }
+        
+        .renewal-info {
+            flex-direction: column;
+            text-align: center;
+            padding: 20px 16px;
+        }
+        
+        .cancel-modal .modal-body {
+            padding: 20px 24px;
+        }
+        
+        .cancel-modal .modal-footer {
+            flex-direction: column;
+            padding: 12px 24px 24px;
+        }
+        
+        .cancel-modal .btn-keep,
+        .cancel-modal .btn-confirm-cancel {
+            width: 100%;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .page-header { font-size: 22px; }
+        .subscription-card { padding: 20px 16px; }
+        .plan-name { font-size: 20px; }
+        .benefits-heading { font-size: 18px; }
+        
+        /* Even smaller buttons on tiny phones */
+        .action-buttons .btn-upgrade,
+        .action-buttons .btn-cancel {
+            font-size: 12px;
+            padding: 8px 6px;
+        }
+    }
+</style>
+
+{% if subscription %}
+    <h1 class="page-header">My Subscription</h1>
+    
+    <div class="current-plan-badge">Current Plan</div>
+    
+    <div class="subscription-card">
+        <div class="subscription-grid">
+            <div class="plan-details">
+                <h2 class="plan-name">{{ subscription.plan.name }} Membership</h2>
+                
+                <p class="plan-price">
+                    {{ subscription.plan.get_billing_period_display }} 
+                    <span class="period">/ ₦{{ subscription.price_paid|floatformat:0 }}</span>
+                </p>
+                
+                <div>
+                    <span class="status-badge">
+                        <i class="fas fa-check-circle"></i> Active
+                    </span>
                 </div>
             </div>
             
-            <div class="col-md-4">
-                <div class="card card-custom mb-4">
-                    <div class="card-body text-center p-4">
-                        <i class="fas fa-headset fa-4x mb-3" style="color: var(--primary-color);"></i>
-                        <h5>Need Help?</h5>
-                        <p class="text-muted">Our support team is here for you</p>
-                        <a href="#" class="btn btn-outline-secondary">Contact Support</a>
+            <div class="action-buttons">
+                <a href="{% url 'subscriptions:plans_list' %}" class="btn-upgrade">
+                    <i class="fas fa-arrow-up"></i> Upgrade Plan
+                </a>
+                <button type="button" 
+                        class="btn-cancel"
+                        data-bs-toggle="modal" 
+                        data-bs-target="#cancelModal">
+                    <i class="fas fa-times-circle"></i> Cancel Subscription
+                </button>
+            </div>
+        </div>
+        
+        <!-- Benefits with Usage Limits -->
+        <div class="benefits-section">
+            <h3 class="benefits-heading">Benefits:</h3>
+            <div class="benefits-grid">
+                {% for assignment in subscription.plan.feature_assignments.all %}
+                    <div class="benefit-item">
+                        {{ assignment.feature.name }} 
+                        <span class="benefit-usage">x {{ assignment.usage_limit }}</span>
                     </div>
+                {% endfor %}
+                
+                <div class="benefit-item">
+                    Up to {{ subscription.plan.max_guests_per_booking }} guests per booking
+                </div>
+            </div>
+        </div>
+        
+        <div class="renewal-info">
+            <i class="fas fa-sync-alt"></i>
+            <div>
+                <strong>Auto-Renewal Enabled:</strong> 
+                Your subscription will automatically renew on {{ subscription.end_date|date:"M d, Y" }}.
+            </div>
+        </div>
+    </div>
+    
+    <!-- Cancel Modal -->
+    <div class="modal fade cancel-modal" id="cancelModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h5 class="modal-title">Cancel Subscription</h5>
                 </div>
                 
-                <div class="card card-custom">
-                    <div class="card-body text-center p-4">
-                        <i class="fas fa-gift fa-4x mb-3" style="color: var(--primary-color);"></i>
-                        <h5>Upgrade Plan</h5>
-                        <p class="text-muted">Get more benefits with a higher tier</p>
-                        <a href="{% url 'subscriptions:plans_list' %}" class="btn btn-gold">
-                            View Plans
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Cancel Subscription Modal -->
-        <div class="modal fade" id="cancelModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Cancel Subscription</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <form method="post" action="{% url 'subscriptions:cancel_subscription' subscription.subscription_id %}">
-                        {% csrf_token %}
-                        <div class="modal-body">
-                            <p>Are you sure you want to cancel your subscription?</p>
-                            <div class="alert alert-warning">
-                                <i class="fas fa-info-circle"></i> 
-                                You'll continue to have access until {{ subscription.end_date|date:"M d, Y" }}.
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Reason for cancelling (optional)</label>
-                                <textarea name="reason" class="form-control" rows="3" 
-                                         placeholder="Help us improve by telling us why..."></textarea>
-                            </div>
+                <form method="post" action="{% url 'subscriptions:cancel_subscription' subscription.subscription_id %}">
+                    {% csrf_token %}
+                    
+                    <div class="modal-body">
+                        <p class="warning-text">
+                            You are about to cancel your <strong>{{ subscription.plan.name }}</strong> subscription plan. 
+                            Are you sure about this action?
+                        </p>
+                        
+                        <p class="access-info">
+                            You'll continue to have access until <span class="end-date">{{ subscription.end_date|date:"M d, Y" }}</span>.
+                        </p>
+                        
+                        <div class="mb-3">
+                            <label for="cancellationReason" class="form-label">
+                                Reason for cancelling (optional)
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="cancellationReason"
+                                name="reason"
+                                rows="3"
+                                placeholder="Help us improve by sharing your feedback..."></textarea>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Subscription</button>
-                            <button type="submit" class="btn btn-danger">Yes, Cancel</button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn-keep" data-bs-dismiss="modal">
+                            Keep Subscription
+                        </button>
+                        <button type="submit" class="btn-confirm-cancel">
+                            Yes, Cancel
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-        
-    {% else %}
-        <div class="text-center py-5">
-            <i class="fas fa-inbox fa-5x mb-4" style="color: #ccc;"></i>
-            <h3>No Active Subscription</h3>
-            <p class="text-muted mb-4">Subscribe now to access exclusive venues and benefits</p>
-            <a href="{% url 'subscriptions:plans_list' %}" class="btn btn-gold btn-lg">
-                <i class="fas fa-crown"></i> View Plans
-            </a>
-        </div>
-    {% endif %}
-    
-    {% if past_subscriptions %}
-        <div class="card card-custom mt-4">
-            <div class="card-header-custom">
-                <h4 class="mb-0">
-                    <i class="fas fa-history"></i> Subscription History
-                </h4>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Plan</th>
-                                <th>Period</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for sub in past_subscriptions %}
-                                <tr>
-                                    <td><strong>{{ sub.plan.name }}</strong></td>
-                                    <td>{{ sub.start_date|date:"M d, Y" }} - {{ sub.end_date|date:"M d, Y" }}</td>
-                                    <td>₦{{ sub.price_paid|floatformat:0|intcomma }}</td>
-                                    <td>
-                                        <span class="badge bg-secondary">{{ sub.get_status_display }}</span>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    {% endif %}
-</div>
+    </div>
+
+{% else %}
+    <div class="no-subscription">
+        <i class="far fa-sad-tear"></i>
+        <h3>No Active Subscription</h3>
+        <p>You don't have an active membership yet. Subscribe now to access exclusive venues and benefits!</p>
+        <a href="{% url 'subscriptions:plans_list' %}" class="btn-view-plans">
+            <i class="fas fa-crown"></i>
+            View Plans
+        </a>
+    </div>
+{% endif %}
+
 {% endblock %}

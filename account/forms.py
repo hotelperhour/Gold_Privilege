@@ -98,17 +98,17 @@ class UserRegistrationForm(forms.ModelForm):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data['password1'])
         user.user_type = CustomUser.UserType.SUBSCRIBER
-        
+
         if commit:
             user.save()
-            # Create associated user profile with personal details
-            UserProfile.objects.create(
-                user=user,
-                first_name=self.cleaned_data['first_name'],
-                last_name=self.cleaned_data['last_name'],
-                phone_number=self.cleaned_data.get('phone_number', ''),
-            )
-        
+            # Use get_or_create to safely handle any profile already created by signals
+            profile, created = UserProfile.objects.get_or_create(user=user)
+            # Update profile fields with the form data
+            profile.first_name = self.cleaned_data['first_name']
+            profile.last_name = self.cleaned_data['last_name']
+            profile.phone_number = self.cleaned_data.get('phone_number', '')
+            profile.save()
+
         return user
 
 

@@ -232,47 +232,54 @@ class VenueDetailView(DetailView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         venue = self.object
-        
-        # Check access permissions
+
+        # Access logic (keep yours)
         can_access = False
         access_message = ""
-        
+
         if self.request.user.is_authenticated:
             can_access, access_message = venue.is_accessible_by(self.request.user)
-            
-            # Check if user has favorited
+
             context['is_favorited'] = VenueFavorite.objects.filter(
                 user=self.request.user,
                 venue=venue
             ).exists()
-            
-            # Check if user has reviewed
+
             context['user_has_reviewed'] = VenueReview.objects.filter(
                 user=self.request.user,
                 venue=venue
             ).exists()
-        
+
         context['can_access'] = can_access
         context['access_message'] = access_message
-        
-        # Review statistics
-        reviews = venue.reviews.filter(is_approved=True)
-        context['review_count'] = reviews.count()
+
+        # ✅ PAGINATED REVIEWS (clean)
+        reviews_qs = venue.reviews.filter(
+            is_approved=True
+        ).order_by('-created_at')
+
+        paginator = Paginator(reviews_qs, 5)   # 5 per page
+        page_number = self.request.GET.get('page')
+        reviews_page = paginator.get_page(page_number)
+
+        context['reviews'] = reviews_page
+        context['review_count'] = paginator.count
+        context['page_obj']     = reviews_page
+        context['is_paginated'] = reviews_page.has_other_pages()
+
         context['rating_distribution'] = {
-            i: reviews.filter(rating=i).count()
+            i: reviews_qs.filter(rating=i).count()
             for i in range(5, 0, -1)
         }
-        
-        # Similar venues
+
         context['similar_venues'] = Venue.objects.filter(
             category=venue.category,
             status='APPROVED'
         ).exclude(id=venue.id).order_by('-average_rating')[:4]
-        
-        # Review form
+
         if self.request.user.is_authenticated and can_access:
             context['review_form'] = VenueReviewForm()
-        
+
         return context
 
 
@@ -306,10 +313,19 @@ def toggle_favorite(request, slug):
 
 
 @login_required
-@subscriber_required
 def submit_review(request, slug):
     """Submit a review for a venue"""
     venue = get_object_or_404(Venue, slug=slug, status='APPROVED')
+
+    # 1. Venue owner cannot review their own venue
+    if hasattr(request.user, 'partner_profile') and request.user.partner_profile == venue.partner:
+        messages.error(request, "You cannot review your own venue.")
+        return redirect('venues:detail', slug=slug)
+
+    # 2. Only subscribers can review (if your business rule requires it)
+    if not request.user.is_subscriber:
+        messages.error(request, "Only subscribers can leave reviews.")
+        return redirect('venues:detail', slug=slug)
     
     # Check access
     can_access, _ = venue.is_accessible_by(request.user)
@@ -415,30 +431,69 @@ class PartnerVenueDetailView(IsApprovedPartnerMixin, DetailView):
     template_name = 'venues/venue_detail.html'
     context_object_name = 'venue'
     slug_url_kwarg = 'slug'
-    
+
     def get_queryset(self):
         """Only show partner's own venues"""
         return Venue.objects.filter(
             partner=self.request.user.partner_profile
-        ).prefetch_related('images', 'amenities', 'reviews')
-    
+        ).prefetch_related(
+            'images',
+            'amenities',
+            Prefetch(
+                'reviews',
+                queryset=VenueReview.objects.filter(
+                    is_approved=True
+                ).select_related('user', 'user__profile').order_by('-created_at')
+            )
+        )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         venue = self.object
-        
-        # Statistics
+
+        # ── Stats ────────────────────────────────────────────────
         context['stats'] = {
-            'total_views': venue.view_count,
-            'total_reviews': venue.total_reviews,
-            'average_rating': venue.average_rating,
+            'total_views':     venue.view_count,
+            'total_reviews':   venue.total_reviews,
+            'average_rating':  venue.average_rating,
             'total_favorites': VenueFavorite.objects.filter(venue=venue).count(),
         }
-        
-        # Recent reviews
-        context['recent_reviews'] = venue.reviews.filter(
+
+        # ── Reviews (same context keys as VenueDetailView) ───────
+        reviews = venue.reviews.filter(is_approved=True)
+        context['review_count'] = reviews.count()
+
+        # ── Access / review flags ────────────────────────────────
+        # Partners own this venue — they can see it but cannot write a review.
+        context['can_access'] = False          # hides the Book button for partners
+        context['user_has_reviewed'] = True    # hides "Write a Review" button for partners
+        context['is_partner_view'] = True      # template uses this to show the "owner" notice
+        reviews_qs = venue.reviews.filter(
             is_approved=True
-        ).select_related('user', 'user__profile').order_by('-created_at')[:5]
+        ).order_by('-created_at')
+
+        paginator = Paginator(reviews_qs, 5)
+        page_number = self.request.GET.get('page')
+        reviews_page = paginator.get_page(page_number)
+        context['page_obj']     = reviews_page
+        context['is_paginated'] = reviews_page.has_other_pages()
+
+        context['reviews'] = reviews_page
+        context['review_count'] = paginator.count
         
+
+
+        # ── Rating distribution ──────────────────────────────────
+        context['rating_distribution'] = {
+            i: reviews.filter(rating=i).count()
+            for i in range(5, 0, -1)
+        }
+
+         # Partner‑specific flags
+        context['can_access'] = False
+        context['user_has_reviewed'] = True
+        context['is_partner_view'] = True
+
         return context
 
 

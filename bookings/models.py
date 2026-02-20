@@ -237,24 +237,17 @@ class Booking(models.Model):
         if self.venue.status != 'APPROVED':
             errors['venue'] = _('Venue is not currently accepting bookings')
 
-        # 5. Enforce subscription booking limits (new bookings only)
-        if not self.pk:
-            max_allowed = self.subscription.plan.max_bookings_per_month
-            if max_allowed:
-                current_month_bookings = Booking.objects.filter(
-                    subscription=self.subscription,
-                    visit_date__year=timezone.now().year,
-                    visit_date__month=timezone.now().month,
-                    status__in=[
-                        BookingStatus.CONFIRMED,
-                        BookingStatus.CHECKED_IN
-                    ]
-                ).count()
-
-                if current_month_bookings >= max_allowed:
-                    errors['subscription'] = _(
-                        f'You have reached your monthly booking limit ({max_allowed} bookings).'
-                    )
+        # 5. Enforce feature-based booking limits (new bookings only)
+        if not self.pk and self.venue.primary_feature:
+            from subscriptions.utils import can_use_feature
+            
+            can_use, remaining, msg = can_use_feature(
+                self.subscription,
+                self.venue.primary_feature
+            )
+            
+            if not can_use:
+                errors['venue'] = _(msg)
 
         # 6. Prevent modifying completed/cancelled bookings
         if self.pk:

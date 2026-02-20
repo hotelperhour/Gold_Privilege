@@ -229,6 +229,15 @@ class Venue(models.Model):
         blank=True,
         verbose_name=_('amenities')
     )
+    primary_feature = models.ForeignKey(
+        'subscriptions.PlanFeature',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='venues',
+        verbose_name=_('primary feature'),
+        help_text='Which subscription feature does visiting this venue consume? (e.g., Gym Access, Buffet)'
+    )
     
     # Media
     cover_image = models.ImageField(

@@ -79,6 +79,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 'venues.context_processors.mapbox_settings',
+                'subscriptions.context_processors.active_subscription',
             ],
         },
     },
@@ -220,7 +221,7 @@ CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_HTTPONLY = True
 
 # Add these settings
-SESSION_COOKIE_AGE = 3600  # 1 hour for venue creation session
+#SESSION_COOKIE_AGE = 3600
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 

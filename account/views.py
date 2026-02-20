@@ -68,7 +68,7 @@ class UnifiedRegistrationView(TemplateView):
         partner_form = PartnerRegistrationForm()  # Empty form for context
         
         if customer_form.is_valid():
-            user = customer_form.save(commit=False)
+            user = customer_form.save(commit=True)
             user.is_active = False
             user.save()
             
@@ -198,197 +198,30 @@ class PartnerRegisterView(UnifiedRegistrationView):
     pass
 
 
-# class UserRegisterView(CreateView):
-#     """Registration view for subscribers"""
-#     model = CustomUser
-#     form_class = UserRegistrationForm
-#     template_name = 'account/register.html'
-#     success_url = reverse_lazy('account:activation_sent')
-    
-#     def form_valid(self, form):
-#         # Save user but set inactive until email verification
-#         user = form.save(commit=False)
-#         user.is_active = False  # Require email activation
-#         user.save()
-        
-#         # Create profile (will be auto-created by signal, but we ensure it)
-#         from .models import UserProfile
-#         UserProfile.objects.get_or_create(user=user)
-        
-#         # Send activation email
-#         self.send_activation_email(user)
-        
-#         messages.success(
-#             self.request,
-#             'Registration successful! Please check your email to activate your account.'
-#         )
-#         return redirect(self.success_url)
-    
-#     def send_activation_email(self, user):
-#         """Send activation email with HTML template"""
-#         current_site = get_current_site(self.request)
-#         token = default_token_generator.make_token(user)
-#         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        
-#         subject = 'Activate Your Gold Privilege Account'
-        
-#         # Render HTML email
-#         html_message = render_to_string('account/emails/activation_email.html', {
-#             'user': user,
-#             'domain': current_site.domain,
-#             'uid': uid,
-#             'token': token,
-#             'protocol': 'https' if self.request.is_secure() else 'http',
-#         })
-        
-#         plain_message = strip_tags(html_message)
-        
-#         # Create email with HTML alternative
-#         email = EmailMultiAlternatives(
-#             subject=subject,
-#             body=plain_message,
-#             from_email=settings.DEFAULT_FROM_EMAIL,
-#             to=[user.email]
-#         )
-#         email.attach_alternative(html_message, "text/html")
-        
-#         try:
-#             email.send()
-#         except Exception as e:
-#             messages.error(self.request, f"Failed to send activation email: {str(e)}")
-
-
-# class PartnerRegisterView(CreateView):
-#     """Registration view for partners"""
-#     model = CustomUser
-#     form_class = PartnerRegistrationForm
-#     template_name = 'account/register_partner.html'
-#     success_url = reverse_lazy('account:activation_sent')
-    
-#     def form_valid(self, form):
-#         # Save user but set inactive until email verification
-#         user = form.save(commit=False)
-#         user.user_type = CustomUser.UserType.PARTNER  # Ensure user type is set
-#         user.is_active = False  # Require email activation
-#         user.save()
-        
-#         # Create partner profile with business details from the form
-#         partner_profile_data = {
-#             'user': user,
-#             'business_name': form.cleaned_data.get('business_name'),
-#             # Add other partner profile fields from the form
-#         }
-        
-#         # Add optional fields if they exist in the form
-#         optional_fields = ['bank_name', 'account_number', 'account_name']
-#         for field in optional_fields:
-#             if field in form.cleaned_data:
-#                 partner_profile_data[field] = form.cleaned_data.get(field)
-        
-#         # Create the partner profile
-#         from .models import PartnerProfile
-#         partner_profile = PartnerProfile.objects.create(**partner_profile_data)
-        
-#         # Send activation email
-#         self.send_activation_email(user)
-        
-#         # Notify admins about new partner application
-#         self.notify_admins_new_partner(user, partner_profile)
-        
-#         messages.success(
-#             self.request,
-#             'Partnership application submitted! Please check your email to activate your account.'
-#         )
-#         return redirect(self.success_url)
-    
-#     def send_activation_email(self, user):
-#         """Send activation email to partner"""
-#         current_site = get_current_site(self.request)
-#         token = default_token_generator.make_token(user)
-#         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        
-#         subject = 'Activate Your Gold Privilege Partner Account'
-        
-#         html_message = render_to_string('account/emails/activation_email_partner.html', {
-#             'user': user,
-#             'domain': current_site.domain,
-#             'uid': uid,
-#             'token': token,
-#             'protocol': 'https' if self.request.is_secure() else 'http',
-#         })
-        
-#         plain_message = strip_tags(html_message)
-        
-#         email = EmailMultiAlternatives(
-#             subject=subject,
-#             body=plain_message,
-#             from_email=settings.DEFAULT_FROM_EMAIL,
-#             to=[user.email]
-#         )
-#         email.attach_alternative(html_message, "text/html")
-        
-#         try:
-#             email.send()
-#         except Exception as e:
-#             messages.error(self.request, f"Failed to send activation email: {str(e)}")
-    
-#     def notify_admins_new_partner(self, user, partner_profile):
-#         """Notify admins of new partner application"""
-#         admin_emails = CustomUser.objects.filter(
-#             is_staff=True,
-#             is_active=True
-#         ).values_list('email', flat=True)
-        
-#         if admin_emails:
-#             subject = 'New Partner Application - Gold Privilege'
-            
-#             html_message = render_to_string('account/emails/admin_new_partner.html', {
-#                 'user': user,
-#                 'partner_profile': partner_profile,
-#             })
-            
-#             plain_message = strip_tags(html_message)
-            
-#             email = EmailMultiAlternatives(
-#                 subject=subject,
-#                 body=plain_message,
-#                 from_email=settings.DEFAULT_FROM_EMAIL,
-#                 to=list(admin_emails)
-#             )
-#             email.attach_alternative(html_message, "text/html")
-            
-#             try:
-#                 email.send()
-#             except Exception as e:
-#                 print(f"Failed to notify admins: {str(e)}")
-
-
 def activation_sent(request):
     """Confirmation page after registration"""
     return render(request, 'account/activation_sent.html')
 
 
 def activate(request, uidb64, token):
-    """Activate user account"""
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = CustomUser.objects.get(pk=uid)
     except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
         user = None
-    
+
     if user is not None and default_token_generator.check_token(user, token):
+        if user.is_active:
+            messages.info(request, "Your account is already activated. Please log in.")
+            return redirect('account:login')
         user.is_active = True
         user.is_verified = True
         user.save()
-        
-        # Send welcome email
         send_welcome_email(user)
-        
         messages.success(request, "Your account has been activated successfully! Please log in.")
         return redirect('account:login')
     else:
         return render(request, 'account/activation_invalid.html')
-
 
 def send_welcome_email(user):
     """Send welcome email after activation"""
@@ -539,16 +372,15 @@ def dashboard(request):
 
 
 class UserDashboardView(IsSubscriberUserMixin, TemplateView):
-    """Dashboard for subscribers"""
     template_name = 'account/user_dashboard.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         
-        # FIXED: Get active subscription properly
         from subscriptions.models import Subscription
         from bookings.models import Booking, BookingStatus
+        from subscriptions.utils import get_all_feature_usage  # ← ADD
         
         active_subscription = Subscription.objects.filter(
             user=user,
@@ -558,29 +390,9 @@ class UserDashboardView(IsSubscriberUserMixin, TemplateView):
         
         context['active_subscription'] = active_subscription
         
-        # Get booking stats if subscription exists
+        # ── NEW: Feature usage instead of global quota ──
         if active_subscription:
-            today = date.today()
-            
-            # Count bookings used this month (CONFIRMED + CHECKED_IN only)
-            bookings_used = Booking.objects.filter(
-                user=user,
-                visit_date__year=today.year,
-                visit_date__month=today.month,
-                status__in=[BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
-            ).count()
-            
-            context['bookings_used'] = bookings_used
-            
-            # Calculate remaining
-            max_bookings = active_subscription.plan.max_bookings_per_month
-            if max_bookings:
-                context['bookings_remaining'] = max_bookings - bookings_used
-            else:
-                context['bookings_remaining'] = 'Unlimited'
-        else:
-            context['bookings_used'] = 0
-            context['bookings_remaining'] = 0
+            context['feature_usage'] = get_all_feature_usage(active_subscription)
         
         # Get upcoming bookings
         context['upcoming_bookings'] = Booking.objects.filter(
@@ -594,7 +406,7 @@ class UserDashboardView(IsSubscriberUserMixin, TemplateView):
         # Get recent bookings
         context['recent_bookings'] = Booking.objects.filter(
             user=user
-        ).select_related('venue').order_by('-created_at')[:5]
+        ).select_related('venue').order_by('-created_at')[:10]
         
         # Total stats
         context['total_bookings'] = Booking.objects.filter(user=user).count()
@@ -602,7 +414,6 @@ class UserDashboardView(IsSubscriberUserMixin, TemplateView):
             user=user, 
             status=BookingStatus.COMPLETED
         ).count()
-        context['favorite_venues_count'] = 0  # Implement favorites later
         
         return context
 

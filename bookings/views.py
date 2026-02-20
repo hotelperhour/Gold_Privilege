@@ -12,7 +12,7 @@ from datetime import date, timedelta
 import json
 from django.db import transaction
 from account.permissions import subscriber_required, IsApprovedPartnerMixin, approved_partner_required
-
+from subscriptions.utils import get_all_feature_usage, decrement_feature_usage, can_use_feature, increment_feature_usage
 from .models import Booking, BookingStatus, BookingActivity
 from .forms import BookingCreateForm, BookingCancelForm, VenueCheckInForm
 from venues.models import Venue
@@ -21,11 +21,12 @@ from subscriptions.models import Subscription
 
 # ==================== MEMBER VIEWS ====================
 
+
 @login_required
 @subscriber_required
 def booking_create(request, venue_slug=None):
     """
-    Create new booking
+    Create new booking - FEATURE-BASED QUOTA CHECK
     """
     # Get active subscription
     active_subscription = Subscription.objects.filter(
@@ -37,83 +38,100 @@ def booking_create(request, venue_slug=None):
     if not active_subscription:
         messages.error(
             request,
-            'You need an active subscription to make bookings. '
-            'Please subscribe or renew your membership.'
+            'You need an active subscription to make bookings.'
         )
-        return redirect('subscriptions:list')
+        return redirect('subscriptions:plans_list')
     
-    # Check booking quota
-    can_book, remaining, message = Booking.check_booking_available(
-        request.user, 
-        active_subscription
-    )
-    
-    if not can_book:
-        messages.error(request, message)
-        return redirect('bookings:list')
-    
-    # Pre-select venue if slug is provided
+    # Pre-select venue if slug provided
     initial_data = {}
+    selected_venue = None
+    
     if venue_slug:
         try:
-            venue = Venue.objects.get(slug=venue_slug, status='APPROVED')
-            initial_data['venue'] = venue
+            selected_venue = Venue.objects.get(slug=venue_slug, status='APPROVED')
+            initial_data['venue'] = selected_venue
+            
+            # ── FEATURE CHECK for pre-selected venue ──
+            if selected_venue.primary_feature:
+                can_use, remaining, msg = can_use_feature(
+                    active_subscription,
+                    selected_venue.primary_feature
+                )
+                
+                if not can_use:
+                    messages.error(request, msg)
+                    return redirect('venues:detail', slug=venue_slug)
+        
         except Venue.DoesNotExist:
-            messages.error(request, 'Venue not found or not available for booking.')
+            messages.error(request, 'Venue not found.')
             return redirect('venues:list')
     
     if request.method == 'POST':
         form = BookingCreateForm(request.POST, user=request.user)
+        
         if form.is_valid():
+            venue = form.cleaned_data['venue']
+            
+            # ── CRITICAL: Feature quota check ──
+            if venue.primary_feature:
+                can_use, remaining, msg = can_use_feature(
+                    active_subscription,
+                    venue.primary_feature
+                )
+                
+                if not can_use:
+                    messages.error(request, msg)
+                    return redirect('bookings:create')
+            
             try:
-                with transaction.atomic():  # Start transaction
-                    # Check for existing booking for same user, venue, and date
-                    existing_booking = Booking.objects.filter(
+                with transaction.atomic():
+                    # Check duplicate booking
+                    existing = Booking.objects.filter(
                         user=request.user,
-                        venue=form.cleaned_data['venue'],
+                        venue=venue,
                         visit_date=form.cleaned_data['visit_date'],
                         status=BookingStatus.CONFIRMED
                     ).first()
                     
-                    if existing_booking:
+                    if existing:
                         messages.warning(
                             request,
-                            f'You already have a booking for this venue on {existing_booking.visit_date}'
+                            f'You already have a booking for {venue.name} on {existing.visit_date}'
                         )
-                        return redirect('bookings:detail', booking_reference=existing_booking.booking_reference)
+                        return redirect('bookings:detail', booking_reference=existing.booking_reference)
                     
+                    # Create booking
                     booking = form.save(commit=False)
                     booking.user = request.user
                     booking.subscription = active_subscription
                     booking.save()
-                
-                
-                
-                # Send email notification (implement in signals)
-                # send_booking_confirmation_email(booking)
-                
-                messages.success(
-                    request,
-                    f'Booking confirmed! Reference: {booking.booking_reference}'
-                )
-                
-                # Redirect to booking detail or list
-                return redirect('bookings:detail', booking_reference=booking.booking_reference)
+                    
+                    # ── INCREMENT FEATURE USAGE ──
+                    if venue.primary_feature:
+                        increment_feature_usage(
+                            active_subscription,
+                            venue.primary_feature
+                        )
+                    
+                    messages.success(
+                        request,
+                        f'Booking confirmed! Reference: {booking.booking_reference}'
+                    )
+                    return redirect('bookings:detail', booking_reference=booking.booking_reference)
             
             except Exception as e:
                 messages.error(request, f'Error creating booking: {str(e)}')
                 return redirect('bookings:create')
+    
     else:
         form = BookingCreateForm(user=request.user, initial=initial_data)
     
-    # Set min date for date picker
     min_date = date.today()
-    max_date = date.today() + timedelta(days=90)  # 90 days advance
+    max_date = date.today() + timedelta(days=90)
     
     context = {
         'form': form,
         'subscription': active_subscription,
-        'remaining_bookings': remaining,
         'min_date': min_date.isoformat(),
         'max_date': max_date.isoformat(),
         'venue_slug': venue_slug,
@@ -126,10 +144,10 @@ def booking_create(request, venue_slug=None):
 @subscriber_required
 def booking_list(request):
     """
-    Display member's bookings
+    Display member's bookings with feature-based quota tracking
     """
-    # Get bookings for current user
-    bookings = Booking.objects.filter(user=request.user)\
+    # Get all bookings
+    all_bookings = Booking.objects.filter(user=request.user)\
         .select_related('venue', 'subscription')\
         .order_by('-visit_date', '-created_at')
     
@@ -140,105 +158,38 @@ def booking_list(request):
         end_date__gte=timezone.now().date()
     ).first()
     
-    # Get quota info
+    # ── FEATURE USAGE STATS ──
+    feature_usage = {}
     if active_subscription:
-        # Get current month's CONFIRMED bookings (not cancelled or completed)
-        current_month = timezone.now().month
-        current_year = timezone.now().year
-        
-        used_bookings = Booking.objects.filter(
-            user=request.user,
-            subscription=active_subscription,
-            visit_date__year=current_year,
-            visit_date__month=current_month,
-            status__in=['CONFIRMED', 'CHECKED_IN']
-        ).count()
-        
-        max_bookings = active_subscription.plan.max_bookings_per_month
-        
-        if max_bookings:
-            remaining = max(0, max_bookings - used_bookings)
-            can_book = remaining > 0
-            quota_message = f"{remaining} booking(s) remaining this month" if remaining > 0 else "Monthly limit reached"
-        else:
-            remaining = float('inf')  # Unlimited
-            can_book = True
-            quota_message = "Unlimited bookings"
-        
-        # Also update the monthly_stats to reflect active bookings only
-        monthly_stats = {
-            'total': used_bookings,
-            'confirmed': Booking.objects.filter(
-                user=request.user,
-                visit_date__year=current_year,
-                visit_date__month=current_month,
-                status='CONFIRMED'
-            ).count(),
-            'checked_in': Booking.objects.filter(
-                user=request.user,
-                visit_date__year=current_year,
-                visit_date__month=current_month,
-                status='CHECKED_IN'
-            ).count(),
-            'completed': Booking.objects.filter(
-                user=request.user,
-                visit_date__year=current_year,
-                visit_date__month=current_month,
-                status='COMPLETED'
-            ).count(),
-            'cancelled': Booking.objects.filter(
-                user=request.user,
-                visit_date__year=current_year,
-                visit_date__month=current_month,
-                status='CANCELLED'
-            ).count(),
-            'no_show': Booking.objects.filter(
-                user=request.user,
-                visit_date__year=current_year,
-                visit_date__month=current_month,
-                status='NO_SHOW'
-            ).count(),
-        }
-    else:
-        can_book, remaining, quota_message = False, 0, "No active subscription"
+        feature_usage = get_all_feature_usage(active_subscription)
     
-    # Separate bookings by status
+    # Separate bookings by type
     today = date.today()
     
-    upcoming_bookings = bookings.filter(
-        status=BookingStatus.CONFIRMED,
-        visit_date__gte=today
-    )
-    
-    today_bookings = bookings.filter(
+    today_bookings = all_bookings.filter(
         status__in=[BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN],
         visit_date=today
     )
     
-    past_bookings = bookings.filter(
-        Q(status__in=[BookingStatus.COMPLETED, BookingStatus.NO_SHOW]) |
-        Q(visit_date__lt=today, status=BookingStatus.CONFIRMED)  # Past confirmed become no-show candidates
+    upcoming_bookings = all_bookings.filter(
+        status=BookingStatus.CONFIRMED,
+        visit_date__gt=today
     )
     
-    cancelled_bookings = bookings.filter(status=BookingStatus.CANCELLED)
-    
-    # Get monthly stats
-    current_month = today.month
-    current_year = today.year
-    monthly_stats = Booking.get_monthly_stats(request.user, current_year, current_month)
+    # ── PAGINATION (10 per page) ──
+    paginator = Paginator(all_bookings, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
     context = {
-        'upcoming_bookings': upcoming_bookings,
+        'all_bookings': all_bookings,
         'today_bookings': today_bookings,
-        'past_bookings': past_bookings,
-        'cancelled_bookings': cancelled_bookings,
+        'upcoming_bookings': upcoming_bookings,
         'active_subscription': active_subscription,
-        'remaining_bookings': remaining,
-        'quota_message': quota_message,
-        'monthly_stats': monthly_stats,
+        'feature_usage': feature_usage,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
         'today': today,
-        'remaining': remaining,
-        'monthly_stats': monthly_stats,
     }
     
     return render(request, 'bookings/member/list.html', context)
@@ -280,12 +231,13 @@ def booking_detail(request, booking_reference):
     return render(request, 'bookings/member/detail.html', context)
 
 
+
 @login_required
 @subscriber_required
 @require_POST
 def booking_cancel(request, booking_reference):
     """
-    Cancel a booking
+    Cancel a booking - RESTORES FEATURE QUOTA
     """
     booking = get_object_or_404(
         Booking,
@@ -303,30 +255,36 @@ def booking_cancel(request, booking_reference):
         reason = form.cleaned_data.get('cancellation_reason', '')
         
         try:
-            booking.cancel(reason=reason, cancelled_by=request.user)
+            with transaction.atomic():
+                # Cancel booking
+                booking.cancel(reason=reason, cancelled_by=request.user)
+                
+                # ── RESTORE FEATURE QUOTA ──
+                if booking.venue.primary_feature:
+                    decrement_feature_usage(
+                        booking.subscription,
+                        booking.venue.primary_feature
+                    )
+                
+                # Log activity
+                BookingActivity.objects.create(
+                    booking=booking,
+                    action='CANCELLED',
+                    performed_by=request.user,
+                    notes=f'Cancelled: {reason[:100]}'
+                )
             
-            # Create activity log
-            BookingActivity.objects.create(
-                booking=booking,
-                action='CANCELLED',
-                performed_by=request.user,
-                notes=f'Cancelled: {reason[:100]}'
-            )
-            
-            messages.success(request, 'Booking cancelled successfully.')
+            messages.success(request, 'Booking cancelled successfully. Your quota has been restored.')
             return redirect('bookings:list')
         
         except Exception as e:
             messages.error(request, f'Error cancelling booking: {str(e)}')
             return redirect('bookings:detail', booking_reference=booking_reference)
     
-    # If form is invalid, show errors
     for error in form.errors.values():
         messages.error(request, error)
     
     return redirect('bookings:detail', booking_reference=booking_reference)
-
-
 # ==================== PARTNER VIEWS ====================
 
 class PartnerBookingsListView(IsApprovedPartnerMixin, ListView):
@@ -336,7 +294,7 @@ class PartnerBookingsListView(IsApprovedPartnerMixin, ListView):
     model = Booking
     template_name = 'bookings/partner/list.html'
     context_object_name = 'bookings'
-    paginate_by = 2
+    paginate_by = 4
     
     def get_queryset(self):
         # Get partner's venues

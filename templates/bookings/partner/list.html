@@ -109,6 +109,8 @@
         display: flex;
         flex-direction: column;
         align-items: flex-start;
+        align-items: center;
+        text-align: center;
     }
     
     .partner-card .icon-circle {
@@ -551,64 +553,7 @@
 }
     
     
-    /* Pagination - Override Conflicts */
-.bookings-section .custom-pagination {
-    display: flex;
-    list-style: none;
-    padding: 20px 25px;
-    margin: 0;
-    gap: 8px;
-    justify-content: center;
-    align-items: center;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.bookings-section .custom-pagination .page-item {
-    margin: 0;
-}
-
-.bookings-section .custom-pagination .page-link {
-    padding: 8px 16px;
-    border-radius: 8px;
-    border: 1px solid #E5E5E5;
-    background: #FFFFFF;
-    color: var(--black);
-    font-weight: 500;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-family: 'Poppins', sans-serif;
-}
-
-.bookings-section .custom-pagination .page-link:hover {
-    border-color: var(--gold-primary);
-    background-color: rgba(229, 173, 4, 0.1);
-    color: var(--gold-primary);
-}
-
-.bookings-section .custom-pagination .page-item.active .page-link {
-    background-color: var(--gold-primary);
-    border-color: var(--gold-primary);
-    color: var(--black);
-    font-weight: 600;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.bookings-section .custom-pagination .page-item.disabled .page-link {
-    opacity: 0.5;
-    cursor: not-allowed;
-    pointer-events: none;
-    background-color: #f8f9fa;
-}
+    
 
 /* Remove any Bootstrap defaults */
 .bookings-section nav {

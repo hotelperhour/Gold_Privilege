@@ -472,6 +472,14 @@
             <div class="form-section">
                 <div class="form-container">
                     <h1 class="form-title">Sign In</h1>
+                    <!-- Add this after <h1 class="form-title">Sign In</h1> -->
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert-danger">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
                     
                     <!-- Login Form -->
                     <form method="post" id="loginForm">

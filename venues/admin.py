@@ -78,7 +78,7 @@ class VenueAdmin(admin.ModelAdmin):
         ('Basic Information', {
             'fields': (
                 'partner', 'status', 'name', 'slug', 
-                'category', 'tagline', 'description'
+                'category', 'primary_feature', 'tagline', 'description'
             )
         }),
         ('Contact Details', {
@@ -250,7 +250,7 @@ class VenueImageAdmin(admin.ModelAdmin):
 class VenueReviewAdmin(admin.ModelAdmin):
     """Admin interface for venue reviews"""
     list_display = [
-        'user_link', 'venue_link', 'rating_stars', 
+        'title', 'user_link', 'venue_link', 'rating_stars', 
         'is_approved', 'is_verified_visit', 'helpful_count', 'created_at'
     ]
     list_filter = [

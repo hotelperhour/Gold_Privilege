@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Count, Sum
 from .models import (
     PlanFeature, SubscriptionPlan, PlanFeatureAssignment,
-    PromoCode, Subscription, Payment
+    PromoCode, Subscription, Payment, FeatureUsage
 )
 from decimal import Decimal
 
@@ -21,6 +21,7 @@ class PlanFeatureAdmin(admin.ModelAdmin):
     search_fields = ('name', 'description')
     list_editable = ('is_active', 'display_order')
     ordering = ('display_order', 'name')
+    autocomplete_fields = []
     
     fieldsets = (
         (_('Feature Details'), {
@@ -56,8 +57,11 @@ class PlanFeatureInline(admin.TabularInline):
     """Inline for managing plan features"""
     model = PlanFeatureAssignment
     extra = 1
-    fields = ('feature', 'custom_value', 'is_highlighted', 'display_order')
+    fields = ('feature', 'usage_limit', 'is_highlighted', 'display_order')
     autocomplete_fields = ['feature']
+
+    verbose_name = "plan Feature"
+    verbose_name_plural = "Plan Features (with usage limits)"
 
 
 @admin.register(SubscriptionPlan)
@@ -86,7 +90,7 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
             'fields': ('price', 'billing_period', 'trial_period_days')
         }),
         (_('Limits & Quotas'), {
-            'fields': ('max_bookings_per_month', 'max_guests_per_booking'),
+            'fields': ('max_guests_per_booking',),
             'description': 'Set booking limits for this plan'
         }),
         (_('Display Settings'), {
@@ -438,6 +442,75 @@ class PaymentAdmin(admin.ModelAdmin):
             obj.get_status_display()
         )
     status_badge.short_description = _('Status')
+
+
+@admin.register(FeatureUsage)
+class FeatureUsageAdmin(admin.ModelAdmin):
+    """Admin for feature usage tracking"""
+    
+    list_display = (
+        'user_email', 'plan_name', 'feature_name',
+        'usage_display', 'period_display', 'last_used_at'
+    )
+    list_filter = ('period_year', 'period_month', 'feature')
+    search_fields = (
+        'subscription__user__email',
+        'feature__name'
+    )
+    readonly_fields = (
+        'subscription', 'feature', 'period_year', 'period_month',
+        'created_at', 'updated_at'
+    )
+    
+    fieldsets = (
+        (_('Subscription & Feature'), {
+            'fields': ('subscription', 'feature')
+        }),
+        (_('Usage'), {
+            'fields': ('used_count', 'last_used_at')
+        }),
+        (_('Period'), {
+            'fields': ('period_year', 'period_month')
+        }),
+        (_('Timestamps'), {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def user_email(self, obj):
+        return obj.subscription.user.email
+    user_email.short_description = _('User')
+    user_email.admin_order_field = 'subscription__user__email'
+    
+    def plan_name(self, obj):
+        return obj.subscription.plan.name
+    plan_name.short_description = _('Plan')
+    
+    def feature_name(self, obj):
+        return obj.feature.name
+    feature_name.short_description = _('Feature')
+    
+    def usage_display(self, obj):
+        limit = obj.get_limit()
+        used = obj.used_count
+        percentage = int((used / limit) * 100) if limit > 0 else 0
+        
+        color = '#28a745' if percentage < 70 else '#ffc107' if percentage < 90 else '#dc3545'
+        
+        return format_html(
+            '<span style="color: {}; font-weight: bold;">{} / {}</span>',
+            color,
+            used,
+            limit
+        )
+    usage_display.short_description = _('Usage')
+    
+    def period_display(self, obj):
+        from datetime import date
+        month_name = date(obj.period_year, obj.period_month, 1).strftime('%B %Y')
+        return month_name
+    period_display.short_description = _('Period')
 
 
 # Customize admin site header

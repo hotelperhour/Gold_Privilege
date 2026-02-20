@@ -110,14 +110,8 @@ class SubscriptionPlan(models.Model):
         blank=True
     )
     
-    # Limits & Quotas
-    max_bookings_per_month = models.IntegerField(
-        _('max bookings per month'),
-        null=True,
-        blank=True,
-        validators=[MinValueValidator(1)],
-        help_text='Leave empty for unlimited bookings'
-    )
+    
+    
     max_guests_per_booking = models.IntegerField(
         _('max guests per booking'),
         default=2,
@@ -255,14 +249,15 @@ class PlanFeatureAssignment(models.Model):
         on_delete=models.CASCADE,
         related_name='plan_assignments'
     )
+    usage_limit = models.IntegerField(
+        _('usage limit'),
+        default=1,
+        validators=[MinValueValidator(1)],
+        help_text='Number of times this feature can be used per billing period (e.g., 5 gym sessions)'
+    )
     
     # Optional: Customize feature for this plan
-    custom_value = models.CharField(
-        _('custom value'),
-        max_length=100,
-        blank=True,
-        help_text='e.g., "10 per month" or "Unlimited"'
-    )
+    
     is_highlighted = models.BooleanField(
         default=False,
         help_text='Highlight this feature for this plan'
@@ -585,16 +580,7 @@ class Subscription(models.Model):
         delta = self.end_date - timezone.now()
         return max(0, delta.days)
     
-    def can_book(self):
-        """Check if user can make more bookings"""
-        if not self.is_active():
-            return False
-        
-        max_bookings = self.plan.max_bookings_per_month
-        if max_bookings is None:  # Unlimited
-            return True
-        
-        return self.bookings_count < max_bookings
+    
     
     def cancel(self, reason=''):
         """Cancel subscription"""
@@ -727,3 +713,100 @@ class Payment(models.Model):
         if self.subscription.status == Subscription.Status.PENDING:
             self.subscription.status = Subscription.Status.ACTIVE
             self.subscription.save()
+
+# ────────────────────────────────────────────────────────────────────
+# ADD THIS to subscriptions/models.py (at the end, after Subscription)
+# ────────────────────────────────────────────────────────────────────
+
+class FeatureUsage(models.Model):
+    """
+    Tracks how many times a user has used each feature in their current subscription period.
+    
+    Example rows:
+    - User A, Gold Subscription, Gym Feature: used 5 / limit 8
+    - User A, Gold Subscription, Buffet Feature: used 2 / limit 5
+    - User B, Family Subscription, Pool Feature: used 3 / limit 5
+    
+    Resets monthly or when subscription period changes.
+    """
+    
+    subscription = models.ForeignKey(
+        Subscription,
+        on_delete=models.CASCADE,
+        related_name='feature_usages'
+    )
+    feature = models.ForeignKey(
+        PlanFeature,
+        on_delete=models.CASCADE,
+        related_name='usages'
+    )
+    
+    # Usage tracking
+    used_count = models.IntegerField(
+        _('times used'),
+        default=0,
+        validators=[MinValueValidator(0)]
+    )
+    
+    # Period tracking (to know when to reset)
+    period_year = models.IntegerField(_('period year'))
+    period_month = models.IntegerField(_('period month'))
+    
+    # Timestamps
+    last_used_at = models.DateTimeField(
+        _('last used at'),
+        null=True,
+        blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = _('feature usage')
+        verbose_name_plural = _('feature usages')
+        unique_together = ['subscription', 'feature', 'period_year', 'period_month']
+        ordering = ['-updated_at']
+        indexes = [
+            models.Index(fields=['subscription', 'period_year', 'period_month']),
+        ]
+    
+    def __str__(self):
+        limit = self.get_limit()
+        return f"{self.subscription.user.email} - {self.feature.name}: {self.used_count}/{limit}"
+    
+    def get_limit(self):
+        """Get the usage limit for this feature from the plan."""
+        try:
+            assignment = PlanFeatureAssignment.objects.get(
+                plan=self.subscription.plan,
+                feature=self.feature
+            )
+            return assignment.usage_limit
+        except PlanFeatureAssignment.DoesNotExist:
+            return 0  # Feature not in plan
+    
+    def can_use(self):
+        """Check if user can still use this feature."""
+        limit = self.get_limit()
+        if limit is None:
+            return True  # Unlimited
+        return self.used_count < limit
+    
+    def remaining(self):
+        """Get remaining uses."""
+        limit = self.get_limit()
+        if limit is None:
+            return float('inf')
+        return max(0, limit - self.used_count)
+    
+    def increment(self):
+        """Increment usage count (called when booking is created)."""
+        self.used_count += 1
+        self.last_used_at = timezone.now()
+        self.save(update_fields=['used_count', 'last_used_at', 'updated_at'])
+    
+    def decrement(self):
+        """Decrement usage count (called when booking is cancelled)."""
+        if self.used_count > 0:
+            self.used_count -= 1
+            self.save(update_fields=['used_count', 'updated_at'])
