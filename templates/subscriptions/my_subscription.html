@@ -366,9 +366,9 @@
         background: var(--gold-primary);
         border: 2px solid var(--gold-primary);
         color: #000;
-        font-weight: 700;
-        font-size: 16px;
-        padding: 14px 40px;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 10px 20px;
         border-radius: 10px;
         text-decoration: none;
         display: inline-flex;
@@ -376,9 +376,11 @@
         gap: 10px;
     }
     
+    
     .btn-view-plans:hover {
-        background: var(--gold-light);
-        border-color: var(--gold-light);
+        background: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+        transform: translateY(-2px);
         color: #000;
     }
     
@@ -605,7 +607,7 @@
         <h3>No Active Subscription</h3>
         <p>You don't have an active membership yet. Subscribe now to access exclusive venues and benefits!</p>
         <a href="{% url 'subscriptions:plans_list' %}" class="btn-view-plans">
-            <i class="fas fa-crown"></i>
+            
             View Plans
         </a>
     </div>

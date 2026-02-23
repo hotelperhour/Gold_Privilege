@@ -1,10 +1,60 @@
-{% extends 'base.html' %}
+{% extends 'base_subscriber.html' %}
 {% load static %}
 
 {% block title %}My Profile - Gold Privilege{% endblock %}
 
-{% block extra_css %}
+{% block subscriber_content %}
 <style>
+    /* Profile Specific Styles */
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-secondary: #F9B036;
+        --dark-bg: #020202;
+        --white: #FFFFFF;
+        --black: #000000;
+        --gray-light: #E5E5E5;
+        --gray-600: #6c757d;
+    }
+    
+    * {
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    /* Profile Container */
+    .profile-container {
+        display: flex;
+        gap: 40px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    /* Profile Form (Left Side) */
+    .profile-form {
+        flex: 1;
+        background: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 40px;
+    }
+    
+    /* Sidebar (Right Side) */
+    .profile-sidebar {
+        width: 320px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+    
+    /* Profile Picture Card */
+    .profile-picture-card {
+        background: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 30px;
+        text-align: center;
+    }
+    
     .profile-picture-container {
         position: relative;
         width: 150px;
@@ -17,15 +67,31 @@
         height: 100%;
         object-fit: cover;
         border-radius: 50%;
-        border: 3px solid var(--primary-color);
+        border: 3px dotted var(--gold-primary);
+    }
+    
+    .profile-picture-placeholder {
+        width: 100%;
+        height: 100%;
+        background: #F8F9FA;
+        border-radius: 50%;
+        border: 3px solid var(--gold-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .profile-picture-placeholder i {
+        font-size: 60px;
+        color: var(--gray-light);
     }
     
     .profile-picture-upload {
         position: absolute;
-        bottom: 0;
-        right: 0;
-        background: var(--primary-color);
-        color: white;
+        bottom: 5px;
+        right: 5px;
+        background: var(--gold-primary);
+        color: var(--black);
         border-radius: 50%;
         width: 40px;
         height: 40px;
@@ -33,331 +99,601 @@
         align-items: center;
         justify-content: center;
         cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .profile-picture-upload:hover {
+        background: var(--gold-secondary);
+        transform: scale(1.1);
     }
     
     .profile-picture-upload i {
-        font-size: 20px;
+        font-size: 18px;
     }
     
-    .card-custom {
-        background: #fff;
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    .profile-name {
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--black);
+        margin: 15px 0 5px 0;
+    }
+    
+    .profile-email {
+        font-size: 14px;
+        color: var(--gray-600);
+        margin-bottom: 15px;
+    }
+    
+    .profile-hint {
+        font-size: 12px;
+        color: var(--gray-600);
+        line-height: 1.6;
+    }
+    
+    /* Preferences Card */
+    .preferences-card {
+        background: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        padding: 25px;
+    }
+    
+    .preferences-card h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--black);
+        margin: 0 0 20px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .preferences-card h3 i {
+        color: var(--gold-primary);
+    }
+    
+    .preference-item {
         margin-bottom: 20px;
     }
     
-    .card-header-custom {
-        background: #f8f9fa;
-        border-bottom: 1px solid #e0e0e0;
-        padding: 15px 20px;
-        border-radius: 10px 10px 0 0;
+    .preference-item:last-child {
+        margin-bottom: 0;
     }
     
-    .card-header-custom h5 {
-        margin: 0;
-        color: #333;
+    .form-check {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .form-check-input {
+        width: 48px;
+        height: 24px;
+        cursor: pointer;
+    }
+        
+    .form-check-input:checked {
+        background-color: var(--gold-primary);
+        border-color: var(--gold-primary);
+    }
+    
+    .form-check-input:focus {
+        box-shadow: 0 0 0 3px rgba(229, 173, 4, 0.1);
+    }
+    
+    .form-check-label {
+        flex: 1;
+        cursor: pointer;
+    }
+    
+    .preference-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--black);
+        display: block;
+        margin-bottom: 4px;
+    }
+    
+    .preference-hint {
+        font-size: 12px;
+        color: var(--gray-600);
+        line-height: 1.4;
+    }
+    
+    /* Form Section */
+    .form-section {
+        padding-bottom: 5px;
+        margin-bottom: 30px;
+        border-bottom: 1px solid var(--gray-light);
+    }
+    
+    .form-section:last-of-type {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    
+    .form-section h3 {
+        font-size: 18px;
         font-weight: 600;
+        color: var(--black);
+        margin: 0 0 20px 0;
     }
     
-    .card-body {
-        padding: 20px;
+    /* Form Fields */
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+        margin-bottom: 20px;
     }
     
-    .btn-gold {
-        background: linear-gradient(135deg, #FFD700 0%, #DAA520 100%);
-        border: none;
-        color: #000;
-        font-weight: 600;
-        padding: 8px 20px;
-        border-radius: 5px;
-        transition: all 0.3s;
+    .form-row.single {
+        grid-template-columns: 1fr;
     }
     
-    .btn-gold:hover {
-        background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
-        color: #000;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(218, 165, 32, 0.3);
-    }
-    
-    .form-control:focus, .form-select:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.2rem rgba(255, 215, 0, 0.25);
+    .form-group {
+        margin-bottom: 0;
     }
     
     .form-label {
+        display: block;
+        font-size: 14px;
         font-weight: 500;
-        color: #555;
-        margin-bottom: 5px;
+        color: var(--black);
+        margin-bottom: 8px;
     }
     
-    .required-field::after {
-        content: " *";
-        color: #dc3545;
+    .form-label .required {
+        color: #DC3545;
+        margin-left: 3px;
     }
     
-    .profile-section {
-        background: #f8f9fa;
+    .form-control, .form-select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid var(--gray-light);
         border-radius: 8px;
-        padding: 20px;
-        margin-bottom: 20px;
+        font-size: 14px;
+        color: var(--black);
+        transition: all 0.3s ease;
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--gold-primary);
+        box-shadow: 0 0 0 3px rgba(229, 173, 4, 0.1);
+    }
+    
+    .form-control.is-invalid {
+        border-color: #DC3545;
+    }
+    
+    .form-control:disabled, .form-control[readonly] {
+        background-color: #F8F9FA;
+        cursor: not-allowed;
+    }
+    
+    .invalid-feedback {
+        color: #DC3545;
+        font-size: 13px;
+        margin-top: 5px;
+        display: block;
+    }
+    
+    .form-text {
+        font-size: 12px;
+        color: var(--gray-600);
+        margin-top: 5px;
+        display: block;
+    }
+    
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 40px;
+    }
+    
+    .btn-cancel {
+        background-color: var(--white);
+        color: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        padding: 12px 32px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .btn-cancel:hover {
+        background-color: rgba(229, 173, 4, 0.1);
+        color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+    }
+    
+    .btn-save {
+        background-color: var(--gold-primary);
+        color: var(--black);
+        border: 2px solid var(--gold-primary);
+        padding: 12px 32px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-save:hover {
+        background-color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+    }
+    
+    /* Alert Messages */
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .alert-success {
+        background-color: rgba(41, 204, 151, 0.1);
+        color: #29CC97;
+        border: 1px solid #29CC97;
+    }
+    
+    .alert-danger {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #DC3545;
+        border: 1px solid #DC3545;
+    }
+    
+    .alert i {
+        font-size: 18px;
+    }
+    
+    /* Hide file input */
+    input[type="file"] {
+        display: none;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 991px) {
+        .profile-container {
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .profile-sidebar {
+            width: 100%;
+        }
+        
+        .profile-form {
+            padding: 25px 20px;
+        }
+        
+        .form-row {
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+    }
+    
+    /* Tablet (iPad) */
+    @media (min-width: 768px) and (max-width: 991px) {
+        .profile-sidebar {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+    }
+    
+    /* Small Mobile */
+    @media (max-width: 576px) {
+        .profile-form {
+            padding: 20px 15px;
+            border-radius: 0;
+        }
+        
+        .profile-picture-card,
+        .preferences-card {
+            padding: 20px;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .btn-cancel,
+        .btn-save {
+            width: 100%;
+        }
     }
 </style>
-{% endblock %}
 
-{% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h1 class="mb-0">
-                        <i class="fas fa-user-circle me-2" style="color: var(--primary-color);"></i>
-                        My Profile
-                    </h1>
-                    <p class="text-muted">
-                        Manage your personal information and preferences
-                    </p>
+<div class="profile-container">
+    <div class="profile-sidebar">
+        <!-- Profile Picture Card -->
+        <div class="profile-picture-card">
+            <div class="profile-picture-container">
+                {% if profile.profile_picture %}
+                    <img src="{{ profile.profile_picture.url }}" 
+                         alt="{{ user.get_full_name }}" 
+                         class="profile-picture" 
+                         id="profile-preview">
+                {% else %}
+                    <div class="profile-picture-placeholder" id="profile-preview">
+                        <i class="fas fa-user"></i>
+                    </div>
+                {% endif %}
+                
+                <label for="{{ form.profile_picture.id_for_label }}" 
+                       class="profile-picture-upload" 
+                       title="Upload new photo">
+                    <i class="fas fa-camera"></i>
+                </label>
+            </div>
+            
+           <input type="file"
+            name="profile_picture"
+            id="{{ form.profile_picture.id_for_label }}"
+            accept="image/*">
+            
+            <div class="profile-name">{{ user.get_full_name|default:"Complete your profile" }}</div>
+            <div class="profile-email">{{ user.email }}</div>
+            <div class="profile-hint">
+                Click the camera icon to upload a new photo<br>
+                Max size: 2MB (JPG, PNG, GIF)
+            </div>
+        </div>
+        
+        <!-- Preferences Card -->
+        <div class="preferences-card">
+            <h3>
+                <i class="fas fa-bell"></i>
+                Preferences
+            </h3>
+            
+            <div class="preference-item">
+                <div class="form-check form-switch">
+                    {{ form.receive_notifications }}
+                    <label class="form-check-label"
+                        for="{{ form.receive_notifications.id_for_label }}">
+                        <span class="preference-label">Receive Notifications</span>
+                        <span class="preference-hint">
+                            Get updates about your bookings and account
+                        </span>
+                    </label>
                 </div>
-                <div>
-                    <a href="{% url 'account:user_dashboard' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
-                    </a>
+            </div>
+
+            <div class="preference-item">
+                <div class="form-check form-switch">
+                    {{ form.receive_marketing_emails }}
+                    <label class="form-check-label"
+                        for="{{ form.receive_marketing_emails.id_for_label }}">
+                        <span class="preference-label">Marketing Emails</span>
+                        <span class="preference-hint">
+                            Receive special offers and promotions
+                        </span>
+                    </label>
                 </div>
             </div>
         </div>
     </div>
-
-    <form method="post" enctype="multipart/form-data" novalidate>
-        {% csrf_token %}
-        
-        {% if form.errors %}
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            <strong>Please correct the errors below:</strong>
-            <ul class="mb-0 mt-2">
-                {% for field, errors in form.errors.items %}
-                    {% for error in errors %}
-                        <li>{{ field|title }}: {{ error }}</li>
-                    {% endfor %}
-                {% endfor %}
-            </ul>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endif %}
-        
+    
+    
+    <!-- Sidebar (Right Side) -->
+    <!-- Profile Form (Left Side) -->
+    <div class="profile-form">
+        <!-- Success/Error Messages -->
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    <i class="fas fa-check-circle me-2"></i>
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                <span>{{ message }}</span>
+            </div>
             {% endfor %}
         {% endif %}
         
-        <div class="row">
-            <!-- Left Column - Profile Picture & Basic Info -->
-            <div class="col-md-4 mb-4">
-                <div class="card card-custom">
-                    <div class="card-header-custom">
-                        <h5><i class="fas fa-user me-2"></i> Profile Picture</h5>
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Please correct the errors below:</strong>
+                <ul style="margin: 8px 0 0 20px; padding: 0;">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        <form method="post" enctype="multipart/form-data" id="profile-form">
+            {% csrf_token %}
+            
+            <!-- Personal Information Section -->
+            <div class="form-section" id="section-personal">
+                <h3>Personal Information</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                            First Name<span class="required">*</span>
+                        </label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.first_name.errors }}
+                        </div>
+                        {% endif %}
                     </div>
-                    <div class="card-body text-center">
-                        <div class="profile-picture-container">
-                            {% if profile.profile_picture %}
-                                <img src="{{ profile.profile_picture.url }}" alt="{{ user.get_full_name }}" class="profile-picture" id="profile-preview">
-                            {% else %}
-                                <div class="profile-picture bg-light d-flex align-items-center justify-content-center" id="profile-preview">
-                                    <i class="fas fa-user text-muted" style="font-size: 60px;"></i>
-                                </div>
-                            {% endif %}
-                            <label for="{{ form.profile_picture.id_for_label }}" class="profile-picture-upload" title="Upload new photo">
-                                <i class="fas fa-camera"></i>
-                            </label>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                            Last Name<span class="required">*</span>
+                        </label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.last_name.errors }}
                         </div>
-                        <div class="d-none">
-                            {{ form.profile_picture }}
-                        </div>
-                        <h5 class="mt-3">{{ user.get_full_name }}</h5>
-                        <p class="text-muted mb-3">{{ user.email }}</p>
-                        <p class="small text-muted">
-                            Click the camera icon to upload a new photo<br>
-                            Max size: 2MB (JPG, PNG, GIF)
-                        </p>
+                        {% endif %}
                     </div>
                 </div>
                 
-                <!-- Preferences Card -->
-                <div class="card card-custom">
-                    <div class="card-header-custom">
-                        <h5><i class="fas fa-bell me-2"></i> Preferences</h5>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            Email Address<span class="required">*</span>
+                        </label>
+                        <input type="email" class="form-control" 
+                               value="{{ user.email }}" readonly>
+                        <small class="form-text">Contact support to change email</small>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                {{ form.receive_notifications }}
-                                <label class="form-check-label" for="{{ form.receive_notifications.id_for_label }}">
-                                    Receive notifications
-                                </label>
-                                <small class="form-text text-muted d-block">
-                                    Get updates about your bookings and account
-                                </small>
-                            </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.phone_number.id_for_label }}" class="form-label">
+                            Phone Number
+                        </label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.phone_number.errors }}
                         </div>
-                        
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                {{ form.receive_marketing_emails }}
-                                <label class="form-check-label" for="{{ form.receive_marketing_emails.id_for_label }}">
-                                    Receive marketing emails
-                                </label>
-                                <small class="form-text text-muted d-block">
-                                    Get special offers and promotions
-                                </small>
-                            </div>
+                        {% endif %}
+                        <small class="form-text">For booking confirmations</small>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">
+                            Date of Birth
+                        </label>
+                        {{ form.date_of_birth }}
+                        {% if form.date_of_birth.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.date_of_birth.errors }}
                         </div>
+                        {% endif %}
+                        <small class="form-text">Used for personalized offers</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.gender.id_for_label }}" class="form-label">
+                            Gender
+                        </label>
+                        {{ form.gender }}
+                        {% if form.gender.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.gender.errors }}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             
-            <!-- Right Column - Profile Information -->
-            <div class="col-md-8 mb-4">
-                <div class="card card-custom">
-                    <div class="card-header-custom">
-                        <h5><i class="fas fa-id-card me-2"></i> Personal Information</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.email.id_for_label }}" class="form-label">Email Address</label>
-                                    {{ form.email }}
-                                    <small class="form-text text-muted">
-                                        Contact support to change your email
-                                    </small>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.phone_number.id_for_label }}" class="form-label">Phone Number</label>
-                                    {{ form.phone_number }}
-                                    <small class="form-text text-muted">
-                                        For booking confirmations and updates
-                                    </small>
-                                </div>
-                            </div>
+            <!-- Address Information Section -->
+            <div class="form-section" id="section-address">
+                <h3>Address Information</h3>
+                
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label for="{{ form.address_line1.id_for_label }}" class="form-label">
+                            Address Line 1
+                        </label>
+                        {{ form.address_line1 }}
+                        {% if form.address_line1.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.address_line1.errors }}
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.first_name.id_for_label }}" class="form-label required-field">First Name</label>
-                                    {{ form.first_name }}
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.last_name.id_for_label }}" class="form-label required-field">Last Name</label>
-                                    {{ form.last_name }}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.date_of_birth.id_for_label }}" class="form-label">Date of Birth</label>
-                                    {{ form.date_of_birth }}
-                                    <small class="form-text text-muted">
-                                        Used for personalized offers
-                                    </small>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.gender.id_for_label }}" class="form-label">Gender</label>
-                                    {{ form.gender }}
-                                </div>
-                            </div>
-                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 
-                <!-- Address Information -->
-                <div class="card card-custom mt-4">
-                    <div class="card-header-custom">
-                        <h5><i class="fas fa-home me-2"></i> Address Information</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="mb-3">
-                                    <label for="{{ form.address_line1.id_for_label }}" class="form-label">Address Line 1</label>
-                                    {{ form.address_line1 }}
-                                </div>
-                            </div>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label for="{{ form.address_line2.id_for_label }}" class="form-label">
+                            Address Line 2
+                        </label>
+                        {{ form.address_line2 }}
+                        {% if form.address_line2.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.address_line2.errors }}
                         </div>
-                        
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="mb-3">
-                                    <label for="{{ form.address_line2.id_for_label }}" class="form-label">Address Line 2</label>
-                                    {{ form.address_line2 }}
-                                    <small class="form-text text-muted">
-                                        Apartment, suite, unit, building, floor, etc.
-                                    </small>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.city.id_for_label }}" class="form-label">City</label>
-                                    {{ form.city }}
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.state.id_for_label }}" class="form-label">State</label>
-                                    {{ form.state }}
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="mb-3">
-                                    <label for="{{ form.country.id_for_label }}" class="form-label">Country</label>
-                                    {{ form.country }}
-                                </div>
-                            </div>
-                        </div>
+                        {% endif %}
+                        <small class="form-text">Apartment, suite, unit, etc.</small>
                     </div>
                 </div>
                 
-                <!-- Form Actions -->
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="d-flex justify-content-end">
-                            <a href="{% url 'account:user_dashboard' %}" class="btn btn-outline-secondary me-3">
-                                <i class="fas fa-times me-1"></i> Cancel
-                            </a>
-                            <button type="submit" class="btn btn-gold">
-                                <i class="fas fa-save me-1"></i> Save Changes
-                            </button>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.city.id_for_label }}" class="form-label">
+                            City
+                        </label>
+                        {{ form.city }}
+                        {% if form.city.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.city.errors }}
                         </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="{{ form.state.id_for_label }}" class="form-label">
+                            State
+                        </label>
+                        {{ form.state }}
+                        {% if form.state.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.state.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label for="{{ form.country.id_for_label }}" class="form-label">
+                            Country
+                        </label>
+                        {{ form.country }}
+                        {% if form.country.errors %}
+                        <div class="invalid-feedback">
+                            {{ form.country.errors }}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
-        </div>
-    </form>
+            
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a href="{% url 'account:user_dashboard' %}" class="btn-cancel">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-save">
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}
 
@@ -367,93 +703,45 @@ document.addEventListener('DOMContentLoaded', function() {
     // Profile picture preview
     const profilePictureInput = document.getElementById('{{ form.profile_picture.id_for_label }}');
     const profilePreview = document.getElementById('profile-preview');
-    const uploadButton = document.querySelector('.profile-picture-upload');
     
-    uploadButton.addEventListener('click', function() {
-        profilePictureInput.click();
-    });
-    
-    profilePictureInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                if (profilePreview.tagName === 'IMG') {
-                    profilePreview.src = e.target.result;
-                } else {
-                    // Replace the div with an img
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.alt = 'Profile Preview';
-                    img.className = 'profile-picture';
-                    profilePreview.parentNode.replaceChild(img, profilePreview);
-                    img.id = 'profile-preview';
+    if (profilePictureInput) {
+        profilePictureInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file size (2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('File size must be less than 2MB');
+                    this.value = '';
+                    return;
                 }
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-    
-    // Character counters for text inputs
-    const textInputs = document.querySelectorAll('input[type="text"], textarea');
-    textInputs.forEach(input => {
-        const maxLength = input.getAttribute('maxlength');
-        if (maxLength) {
-            const counter = document.createElement('small');
-            counter.className = 'form-text text-end text-muted';
-            counter.innerHTML = `<span class="char-count">0</span>/${maxLength}`;
-            input.parentNode.appendChild(counter);
-            
-            input.addEventListener('input', function() {
-                const count = input.value.length;
-                const charCount = input.parentNode.querySelector('.char-count');
-                charCount.textContent = count;
                 
-                if (count > maxLength * 0.9) {
-                    charCount.style.color = '#dc3545';
-                } else {
-                    charCount.style.color = '#6c757d';
+                // Validate file type
+                const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Please upload a valid image file (JPG, PNG, or GIF)');
+                    this.value = '';
+                    return;
                 }
-            });
-            
-            // Trigger initial count
-            input.dispatchEvent(new Event('input'));
-        }
-    });
-    
-    // Form validation
-    const form = document.querySelector('form');
-    form.addEventListener('submit', function(e) {
-        let isValid = true;
-        const requiredFields = form.querySelectorAll('[required]');
-        
-        requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                isValid = false;
-                field.classList.add('is-invalid');
                 
-                // Create error message if not exists
-                if (!field.parentNode.querySelector('.invalid-feedback')) {
-                    const errorDiv = document.createElement('div');
-                    errorDiv.className = 'invalid-feedback';
-                    errorDiv.textContent = 'This field is required.';
-                    field.parentNode.appendChild(errorDiv);
-                }
-            } else {
-                field.classList.remove('is-invalid');
+                // Preview image
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (profilePreview.tagName === 'IMG') {
+                        profilePreview.src = e.target.result;
+                    } else {
+                        // Replace placeholder div with img
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.alt = 'Profile Preview';
+                        img.className = 'profile-picture';
+                        img.id = 'profile-preview';
+                        profilePreview.parentNode.replaceChild(img, profilePreview);
+                    }
+                };
+                reader.readAsDataURL(file);
             }
         });
-        
-        if (!isValid) {
-            e.preventDefault();
-            
-            // Scroll to first error
-            const firstError = form.querySelector('.is-invalid');
-            if (firstError) {
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
-    });
+    }
 });
 </script>
 {% endblock %}

@@ -99,8 +99,58 @@
     .subscription-badge i {
         font-size: 12px;
     }
+    .subscription-badge.expired {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
     
     /* Alert Box */
+
+    /* Alert Boxes */
+    .alert-box {
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: start;
+        gap: 12px;
+    }
+    
+    .alert-box.warning {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+    }
+    
+    .alert-box.danger {
+        background: #f8d7da;
+        border: 1px solid #dc3545;
+    }
+    
+    .alert-box i {
+        font-size: 24px;
+        margin-top: 2px;
+    }
+    
+    .alert-box.warning i { color: #856404; }
+    .alert-box.danger i { color: #721c24; }
+    
+    .alert-content h5 {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 6px 0;
+    }
+    
+    .alert-box.warning h5 { color: #856404; }
+    .alert-box.danger h5 { color: #721c24; }
+    
+    .alert-content p {
+        font-size: 14px;
+        margin: 0;
+        line-height: 1.6;
+    }
+    
+    .alert-box.warning p { color: #856404; }
+    .alert-box.danger p { color: #721c24; }
     .no-subscription-alert {
         background: #fff3cd;
         border: 1px solid #ffc107;
@@ -322,7 +372,7 @@
     }
     
     .empty-state i {
-        font-size: 64px;
+        font-size: 48px;
         color: #dee2e6;
         margin-bottom: 16px;
     }
@@ -338,6 +388,32 @@
         font-size: 14px;
         color: #6c757d;
         margin-bottom: 20px;
+    }
+    .empty-state .btn-action {
+        font-size: 14px;
+        padding: 10px 24px;
+    }
+    .btn-action {
+        background: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        color: #000;
+        font-weight: 600;
+        font-size: 14px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+    }
+    
+    .btn-action:hover {
+        background: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+        transform: translateY(-2px);
+        color: #000;
     }
     
     /* Responsive */
@@ -453,7 +529,7 @@
     </h1>
     
     <div class="header-actions">
-        {% if active_subscription %}
+        {% if subscription_state.has_active %}
             <!-- Active Subscription State -->
             <span class="subscription-badge">
                 <i class="fas fa-check-circle"></i>
@@ -462,6 +538,14 @@
             <a href="{% url 'venues:list' %}" class="btn-book-venue">
                 <i class="fas fa-calendar-plus"></i>
                 Book a Venue
+            </a>
+            {% elif subscription_state.has_expired %}
+            <span class="subscription-badge expired">
+                <i class="fas fa-exclamation-circle"></i>
+                Subscription Expired
+            </span>
+            <a href="{% url 'subscriptions:plans_list' %}" class="btn-action">
+                Renew Now
             </a>
         {% else %}
             <!-- No Subscription State -->
@@ -473,13 +557,24 @@
     </div>
 </div>
 
-<!-- No Subscription Alert (only if no active subscription) -->
-{% if not active_subscription %}
-<div class="no-subscription-alert">
-    <i class="fas fa-exclamation-circle"></i>
+<!-- Alert: Expired Subscription -->
+{% if subscription_state.has_expired %}
+<div class="alert-box danger">
+    <i class="fas fa-exclamation-triangle"></i>
     <div class="alert-content">
-        <h5>No Active Subscription</h5>
-        <p>You don't have an active membership yet. Subscribe now to access exclusive venues and benefits!</p>
+        <h5>Your Subscription Has Expired</h5>
+        <p>Renew your {{ subscription_state.subscription.plan.name }} membership to continue accessing exclusive venues and benefits.</p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Alert: No Subscription -->
+{% if subscription_state.never_subscribed %}
+<div class="alert-box warning">
+    <i class="fas fa-info-circle"></i>
+    <div class="alert-content">
+        <h5>Get Started with Gold Privilege</h5>
+        <p>Choose a subscription plan to unlock access to premium venues across Lagos.</p>
     </div>
 </div>
 {% endif %}
@@ -569,11 +664,26 @@
         <!-- Empty State -->
         <div class="empty-state">
             <i class="far fa-calendar-times"></i>
-            <h5>No recent activity yet</h5>
-            <p>Subscribe to start booking venues</p>
-            <a href="{% url 'subscriptions:plans_list' %}" class="btn-choose-plan">
-                <i class="fas fa-crown"></i>
-                View Plans
+            <h5>
+                {% if subscription_state.has_expired %}
+                    Your Bookings Are Waiting
+                {% elif subscription_state.never_subscribed %}
+                    Start Your Journey
+                {% else %}
+                    No Recent Activity
+                {% endif %}
+            </h5>
+            <p>
+                {% if subscription_state.has_expired %}
+                    Renew your subscription to start booking again
+                {% elif subscription_state.never_subscribed %}
+                    Subscribe to unlock exclusive venue access
+                {% else %}
+                    Book your first venue to get started
+                {% endif %}
+            </p>
+            <a href="{% if subscription_state.has_active %}{% url 'venues:list' %}{% else %}{% url 'subscriptions:plans_list' %}{% endif %}" class="btn-action">
+                {% if subscription_state.has_active %}Book a Venue{% else %}View Plans{% endif %}
             </a>
         </div>
     {% endif %}

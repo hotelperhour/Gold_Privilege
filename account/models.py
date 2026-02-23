@@ -5,6 +5,51 @@ from django.utils.translation import gettext_lazy as _
 from .managers import CustomUserManager
 
 
+NIGERIAN_STATES = [
+    ('AB', 'Abia'),
+    ('AD', 'Adamawa'),
+    ('AK', 'Akwa Ibom'),
+    ('AN', 'Anambra'),
+    ('BA', 'Bauchi'),
+    ('BY', 'Bayelsa'),
+    ('BE', 'Benue'),
+    ('BO', 'Borno'),
+    ('CR', 'Cross River'),
+    ('DE', 'Delta'),
+    ('EB', 'Ebonyi'),
+    ('ED', 'Edo'),
+    ('EK', 'Ekiti'),
+    ('EN', 'Enugu'),
+    ('FC', 'FCT (Abuja)'),
+    ('GO', 'Gombe'),
+    ('IM', 'Imo'),
+    ('JI', 'Jigawa'),
+    ('KD', 'Kaduna'),
+    ('KN', 'Kano'),
+    ('KT', 'Katsina'),
+    ('KE', 'Kebbi'),
+    ('KO', 'Kogi'),
+    ('KW', 'Kwara'),
+    ('LA', 'Lagos'),
+    ('NA', 'Nasarawa'),
+    ('NI', 'Niger'),
+    ('OG', 'Ogun'),
+    ('ON', 'Ondo'),
+    ('OS', 'Osun'),
+    ('OY', 'Oyo'),
+    ('PL', 'Plateau'),
+    ('RI', 'Rivers'),
+    ('SO', 'Sokoto'),
+    ('TA', 'Taraba'),
+    ('YO', 'Yobe'),
+    ('ZA', 'Zamfara'),
+]
+
+COUNTRY_CHOICES = [
+    ('NG', 'Nigeria')
+]
+
+
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     """
     Custom user model - Base authentication for all users
@@ -107,8 +152,8 @@ class UserProfile(models.Model):
     address_line1 = models.CharField(_('address line 1'), max_length=255, blank=True)
     address_line2 = models.CharField(_('address line 2'), max_length=255, blank=True)
     city = models.CharField(_('city'), max_length=100, blank=True)
-    state = models.CharField(_('state'), max_length=100, blank=True)
-    country = models.CharField(_('country'), max_length=100, default='Nigeria')
+    state = models.CharField(_('state'), max_length=2, choices=NIGERIAN_STATES, default='LA', help_text="Select the state where you are located")
+    country = models.CharField(_('country'), max_length=100, choices=COUNTRY_CHOICES, default='NG', help_text='Select the country where you are located')
     
     # Preferences
     receive_notifications = models.BooleanField(default=True)

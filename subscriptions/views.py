@@ -15,7 +15,7 @@ from decimal import Decimal
 import logging
 import requests
 import secrets
-
+from subscriptions.utils import get_subscription_state, can_subscribe_to_plan
 from account.permissions import subscriber_required
 from .models import SubscriptionPlan, PromoCode, Subscription, Payment
 
@@ -23,13 +23,11 @@ logger = logging.getLogger(__name__)
 
 
 class PlanListView(ListView):
-    """Display all available subscription plans"""
     model = SubscriptionPlan
     template_name = 'subscriptions/plans_list.html'
     context_object_name = 'plans'
     
     def get_queryset(self):
-        """Get only available plans"""
         return SubscriptionPlan.objects.filter(
             is_active=True
         ).prefetch_related(
@@ -39,17 +37,25 @@ class PlanListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Check if user has active subscription
         if self.request.user.is_authenticated:
-            context['has_active_subscription'] = Subscription.objects.filter(
-                user=self.request.user,
-                status__in=['ACTIVE', 'TRIAL']
-            ).exists()
+            # Get subscription state
+            sub_state = get_subscription_state(self.request.user)
+            context['subscription_state'] = sub_state
             
-            context['current_subscription'] = Subscription.objects.filter(
-                user=self.request.user,
-                status__in=['ACTIVE', 'TRIAL']
-            ).first()
+            # Check subscription action for each plan
+            plan_actions = {}
+            for plan in context['plans']:
+                can_sub, reason, action = can_subscribe_to_plan(
+                    self.request.user,
+                    plan
+                )
+                plan_actions[plan.id] = {
+                    'can_subscribe': can_sub,
+                    'reason': reason,
+                    'action': action
+                }
+            
+            context['plan_actions'] = plan_actions
         
         return context
 
@@ -90,49 +96,43 @@ class PlanDetailView(DetailView):
 @require_http_methods(["GET", "POST"])
 def subscribe_to_plan(request, slug):
     """
-    Subscribe user to a plan with comprehensive security
-    
-    FIXED: Promo code is only incremented AFTER successful payment
-    Security Features:
-    - Rate limiting per user
-    - Atomic transactions
-    - Race condition prevention
-    - Promo code reserved (not consumed) until payment succeeds
+    Subscribe with expired pending cleanup & upgrade support
     """
+    plan = get_object_or_404(SubscriptionPlan, slug=slug, is_active=True)
     
-    # SECURITY: Rate limiting - max 3 subscription attempts per 5 minutes
+    if not plan.is_available():
+        messages.error(request, 'This plan is currently not available.')
+        return redirect('subscriptions:plans_list')
+    
+    # ── CLEAN UP EXPIRED PENDING SUBSCRIPTIONS (15+ minutes old) ──
+    expired_pending = Subscription.objects.filter(
+        user=request.user,
+        status='PENDING',
+        created_at__lt=timezone.now() - timedelta(minutes=15)
+    )
+    
+    if expired_pending.exists():
+        count = expired_pending.update(status='EXPIRED')
+        logger.info(f"Auto-expired {count} pending subscription(s) for user {request.user.id}")
+    
+    # ── CHECK SUBSCRIPTION STATE ──
+    state = get_subscription_state(request.user)
+    can_sub, reason, action = can_subscribe_to_plan(request.user, plan)
+    
+    if not can_sub:
+        messages.warning(request, reason)
+        return redirect('subscriptions:plans_list')
+    
+    # ── RATE LIMITING ──
     rate_limit_key = f"subscription_attempt:{request.user.id}"
     attempts = cache.get(rate_limit_key, 0)
     
     if attempts >= 3:
         messages.error(request, 'Too many subscription attempts. Please try again later.')
-        logger.warning(f"Rate limit exceeded for user {request.user.id}")
         return redirect('subscriptions:plans_list')
-    
-    plan = get_object_or_404(SubscriptionPlan, slug=slug, is_active=True)
-    
-    # SECURITY: Check plan availability
-    if not plan.is_available():
-        messages.error(request, 'This plan is currently not available.')
-        return redirect('subscriptions:plans_list')
-    
-    # SECURITY: Atomic check for existing subscription
-    with transaction.atomic():
-        existing_subscription = Subscription.objects.select_for_update().filter(
-            user=request.user,
-            status__in=['ACTIVE', 'TRIAL', 'PENDING']
-        ).first()
-        
-        if existing_subscription:
-            messages.warning(
-                request,
-                'You already have an active subscription. Please cancel it first.'
-            )
-            return redirect('subscriptions:my_subscription')
     
     if request.method == 'POST':
-        # Increment rate limit counter
-        cache.set(rate_limit_key, attempts + 1, timeout=300)  # 5 minutes
+        cache.set(rate_limit_key, attempts + 1, timeout=300)
         
         promo_code = request.POST.get('promo_code', '').strip()
         
@@ -141,31 +141,24 @@ def subscribe_to_plan(request, slug):
         discount = Decimal('0')
         promo_code_obj = None
         
-        # FIXED: Validate promo code WITHOUT incrementing usage
         if promo_code:
-            promo_validation = _validate_promo_code_internal(
-                promo_code, 
-                plan, 
-                request.user
-            )
-            
+            promo_validation = _validate_promo_code_internal(promo_code, plan, request.user)
             if promo_validation['valid']:
                 promo_code_obj = promo_validation['promo_code']
                 discount = Decimal(str(promo_validation['discount']))
             else:
                 messages.warning(request, promo_validation['message'])
         
-        # SECURITY: Ensure non-negative final price
         final_price = max(Decimal('0'), price - discount)
         
-        # Calculate subscription dates
+        # Calculate dates
         start_date = timezone.now()
         duration_days = plan.get_duration_in_days()
         
-        # Check for trial period (prevent trial abuse)
         is_trial = plan.trial_period_days > 0 and not Subscription.objects.filter(
             user=request.user, 
-            is_trial=True
+            is_trial=True,
+            status__in=['ACTIVE', 'TRIAL', 'COMPLETED']  # ← Only count successful trials
         ).exists()
         
         trial_end_date = None
@@ -175,15 +168,13 @@ def subscribe_to_plan(request, slug):
         else:
             end_date = start_date + timedelta(days=duration_days)
         
-        # SECURITY: Use atomic transaction for entire subscription creation
         try:
             with transaction.atomic():
-                # Double-check no subscription was created during transaction
-                if Subscription.objects.filter(
-                    user=request.user,
-                    status__in=['ACTIVE', 'TRIAL', 'PENDING']
-                ).exists():
-                    raise ValueError("Duplicate subscription detected")
+                # ── UPGRADE: Cancel old subscription ──
+                if action == 'upgrade':
+                    old_sub = state['subscription']
+                    old_sub.cancel(reason='Upgraded to higher plan')
+                    messages.info(request, f'Your {old_sub.plan.name} plan has been cancelled.')
                 
                 # Create subscription
                 subscription = Subscription.objects.create(
@@ -194,39 +185,26 @@ def subscribe_to_plan(request, slug):
                     is_trial=is_trial,
                     trial_end_date=trial_end_date,
                     price_paid=final_price,
-                    promo_code_used=promo_code_obj,  # Store reference but DON'T increment
+                    promo_code_used=promo_code_obj,
                     discount_amount=discount,
                     status=Subscription.Status.PENDING if final_price > 0 else Subscription.Status.ACTIVE
                 )
                 
-                logger.info(f"Subscription created: {subscription.subscription_id} for user {request.user.id}")
-                payment_reference = f"SUB-{secrets.token_hex(10).upper()}"
-                
-                # If free (after discount) or trial, activate immediately
-                if final_price == 0 or (is_trial and final_price == 0):
+                # Free subscription
+                if final_price == 0:
                     subscription.status = Subscription.Status.TRIAL if is_trial else Subscription.Status.ACTIVE
                     subscription.save()
                     
-                    # FIXED: Only increment promo code for FREE subscriptions that activate immediately
                     if promo_code_obj:
                         PromoCode.objects.filter(pk=promo_code_obj.pk).update(
                             uses_count=F('uses_count') + 1
                         )
                     
-                    messages.success(
-                        request,
-                        f'Successfully subscribed to {plan.name}! {"Enjoy your trial period." if is_trial else ""}'
-                    )
-                    
-                    # Clear rate limit on success
+                    messages.success(request, f'Successfully subscribed to {plan.name}!')
                     cache.delete(rate_limit_key)
-                    
                     return redirect('subscriptions:my_subscription')
                 
-                
-                
-                # Create payment record
-                # NOTE: Promo code is NOT incremented yet - will be done in webhook after payment success
+                # Create payment
                 payment = Payment.objects.create(
                     subscription=subscription,
                     user=request.user,
@@ -236,23 +214,20 @@ def subscribe_to_plan(request, slug):
                 payment.gateway_reference = payment.payment_reference
                 payment.save()
                 
-                logger.info(f"Payment created: {payment.payment_id} for subscription {subscription.subscription_id}")
-                
-                # Clear rate limit on successful creation
                 cache.delete(rate_limit_key)
-                
-                # Redirect to payment page
                 return redirect('subscriptions:payment', payment_id=payment.payment_id)
         
         except Exception as e:
-            logger.error(f"Subscription creation failed for user {request.user.id}: {str(e)}", exc_info=True)
-            messages.error(request, 'An error occurred while processing your subscription. Please try again.')
+            logger.error(f"Subscription creation failed: {str(e)}", exc_info=True)
+            messages.error(request, 'An error occurred. Please try again.')
             return redirect('subscriptions:plan_detail', slug=slug)
     
-    # GET request - show subscription form
+    # GET: Show form
     return render(request, 'subscriptions/subscribe.html', {
         'plan': plan,
+        'action': action,  # ← Pass action type to template
     })
+
 
 
 def _validate_promo_code_internal(code, plan, user):

@@ -35,7 +35,9 @@ from .permissions import (
     IsApprovedPartnerMixin,
     
 )
-
+from subscriptions.models import Subscription
+from bookings.models import Booking, BookingStatus
+from subscriptions.utils import get_all_feature_usage
 from django.views.generic import UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
@@ -370,45 +372,37 @@ def dashboard(request):
     else:
         return redirect('account:user_dashboard')
 
+from subscriptions.utils import get_subscription_state, get_all_feature_usage
 
 class UserDashboardView(IsSubscriberUserMixin, TemplateView):
+    """Dashboard for subscribers with precise state handling"""
     template_name = 'account/user_dashboard.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         
-        from subscriptions.models import Subscription
         from bookings.models import Booking, BookingStatus
-        from subscriptions.utils import get_all_feature_usage  # ← ADD
         
-        active_subscription = Subscription.objects.filter(
-            user=user,
-            status__in=['ACTIVE', 'TRIAL'],
-            end_date__gte=timezone.now().date()
-        ).first()
+        # ── SUBSCRIPTION STATE ──
+        sub_state = get_subscription_state(user)
+        context['subscription_state'] = sub_state
         
-        context['active_subscription'] = active_subscription
+        # Feature usage if active
+        if sub_state['has_active']:
+            context['feature_usage'] = get_all_feature_usage(sub_state['subscription'])
         
-        # ── NEW: Feature usage instead of global quota ──
-        if active_subscription:
-            context['feature_usage'] = get_all_feature_usage(active_subscription)
-        
-        # Get upcoming bookings
-        context['upcoming_bookings'] = Booking.objects.filter(
-            user=user,
-            status=BookingStatus.CONFIRMED,
-            visit_date__gte=date.today()
-        ).select_related('venue').order_by('visit_date')[:5]
-        
-        context['upcoming_bookings_count'] = context['upcoming_bookings'].count()
-        
-        # Get recent bookings
+        # ── BOOKING STATS ──
         context['recent_bookings'] = Booking.objects.filter(
             user=user
         ).select_related('venue').order_by('-created_at')[:10]
         
-        # Total stats
+        context['upcoming_bookings_count'] = Booking.objects.filter(
+            user=user,
+            status=BookingStatus.CONFIRMED,
+            visit_date__gte=date.today()
+        ).count()
+        
         context['total_bookings'] = Booking.objects.filter(user=user).count()
         context['completed_visits'] = Booking.objects.filter(
             user=user, 

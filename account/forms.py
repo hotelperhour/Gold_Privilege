@@ -7,7 +7,7 @@ from django.contrib.auth.forms import (
     SetPasswordForm
 )
 from django.utils.translation import gettext_lazy as _
-from .models import CustomUser, UserProfile, PartnerProfile
+from .models import CustomUser, UserProfile, PartnerProfile, NIGERIAN_STATES, COUNTRY_CHOICES
 import os
 
 
@@ -462,14 +462,25 @@ class UserProfileUpdateForm(forms.ModelForm):
         label=_('City')
     )
     
-    state = forms.CharField(
-        max_length=100,
+    state = forms.ChoiceField(
+        choices=NIGERIAN_STATES,
         required=False,
-        widget=forms.TextInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'State'
+        widget=forms.Select(attrs={
+            'class': 'form-select'
         }),
-        label=_('State')
+        label=_('State'),
+        initial='LA',
+        help_text=_("Select the state where you are located")
+    )
+    country = forms.ChoiceField(
+        choices=COUNTRY_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'data-live-search': 'true'
+        }),
+        label=_('Country'),
+        help_text=_('Select the country where you are located')
     )
     
     # Preferences
@@ -508,7 +519,6 @@ class UserProfileUpdateForm(forms.ModelForm):
             self.fields['email'].initial = self.user.email
         
         # Set default country to Nigeria
-        self.fields['country'].widget = forms.HiddenInput()
         if not self.instance.pk or not self.instance.country:
             self.instance.country = 'Nigeria'
     
