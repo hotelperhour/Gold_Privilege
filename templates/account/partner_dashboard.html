@@ -607,7 +607,7 @@
                             {% for booking in recent_bookings|slice:":8" %}
                             <tr>
                                 <td>
-                                    <span style="color: var(--gray-600); font-size: 13px;">{{ booking.booking_reference }}</span>
+                                    <span style="color: var(--gray-600); font-size: 13px;">{{ booking.display_reference }}</span>
                                 </td>
                                 <td>
                                     <strong style="color: var(--black);">{{ booking.venue.name|truncatechars:20 }}</strong>
@@ -637,7 +637,7 @@
                                 </td>
                                 <td>
                                     <div class="action-buttons" style="justify-content: center; gap: 8px;">
-                                        <a href="{% url 'bookings:partner_detail' booking.id %}" 
+                                        <a href="{% url 'bookings:partner_detail' booking.booking_id %}" 
                                            class="action-btn" 
                                            title="View Details">
                                             <i class="fas fa-eye"></i>

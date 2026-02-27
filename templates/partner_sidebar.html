@@ -24,12 +24,12 @@
                 <span>Venues</span>
             </a>
             <a href="{% url 'bookings:bookings_list' %}" 
-               class="nav-item {% if 'booking' in request.path or request.resolver_match.url_name == 'bookings_list' %}active{% endif %}">
+            class="nav-item {% if request.resolver_match.url_name == 'bookings_list' %}active{% endif %}">
                 <i class="fas fa-calendar-check"></i>
                 <span>Bookings</span>
             </a>
             <a href="{% url 'bookings:partner_check_in' %}" 
-               class="nav-item {% if 'check_in' in request.path %}active{% endif %}">
+            class="nav-item {% if request.resolver_match.url_name == 'partner_check_in' %}active{% endif %}">
                 <i class="fas fa-qrcode"></i>
                 <span>Check-ins</span>
             </a>
@@ -74,12 +74,12 @@
                 <span class="mobile-tooltip">Venues</span>
             </a>
             <a href="{% url 'bookings:bookings_list' %}" 
-               class="mobile-nav-item {% if 'bookings_list' in request.resolver_match.url_name %}active{% endif %}">
+            class="mobile-nav-item {% if request.resolver_match.url_name == 'bookings_list' %}active{% endif %}">
                 <i class="fas fa-calendar-check"></i>
                 <span class="mobile-tooltip">Bookings</span>
             </a>
             <a href="{% url 'bookings:partner_check_in' %}" 
-               class="mobile-nav-item {% if 'check_in' in request.path %}active{% endif %}">
+            class="mobile-nav-item {% if request.resolver_match.url_name == 'partner_check_in' %}active{% endif %}">
                 <i class="fas fa-qrcode"></i>
                 <span class="mobile-tooltip">Check-in</span>
             </a>

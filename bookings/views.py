@@ -8,133 +8,158 @@ from django.views.decorators.http import require_POST, require_GET
 from django.db.models import Q, Count
 from django.utils import timezone
 from django.core.paginator import Paginator
+from django import forms
 from datetime import date, timedelta
 import json
 from django.db import transaction
 from account.permissions import subscriber_required, IsApprovedPartnerMixin, approved_partner_required
-from subscriptions.utils import get_all_feature_usage, decrement_feature_usage, can_use_feature, increment_feature_usage
+from subscriptions.utils import get_all_feature_usage, decrement_feature_usage, can_use_feature, increment_feature_usage,get_or_create_feature_usage
 from .models import Booking, BookingStatus, BookingActivity
 from .forms import BookingCreateForm, BookingCancelForm, VenueCheckInForm
 from venues.models import Venue
 from subscriptions.models import Subscription
+from django.core.cache import cache
+from django.http import HttpResponse
 
+
+
+def check_rate_limit(request, action='checkin', limit=10, period=60):
+    """
+    Rate limit check-in attempts to prevent abuse
+    Returns None if OK, HttpResponse if rate limited
+    """
+    key = f'{action}_attempts_{request.user.id}'
+    attempts = cache.get(key, 0)
+    
+    if attempts >= limit:
+        return HttpResponse(
+            f'Too many {action} attempts. Please wait a moment.',
+            status=429
+        )
+    
+    cache.set(key, attempts + 1, period)
+    return None
 
 # ==================== MEMBER VIEWS ====================
 
 
 @login_required
 @subscriber_required
-def booking_create(request, venue_slug=None):
+def booking_create(request, venue_slug):
     """
-    Create new booking - FEATURE-BASED QUOTA CHECK
+    Create a booking with feature-based quota validation
     """
+    venue = get_object_or_404(
+        Venue.objects.select_related('partner', 'primary_feature'),
+        slug=venue_slug,
+        status='APPROVED'
+    )
+    
     # Get active subscription
-    active_subscription = Subscription.objects.filter(
+    subscription = Subscription.objects.filter(
         user=request.user,
         status__in=['ACTIVE', 'TRIAL'],
         end_date__gte=timezone.now().date()
     ).first()
     
-    if not active_subscription:
-        messages.error(
-            request,
-            'You need an active subscription to make bookings.'
-        )
+    if not subscription:
+        messages.error(request, 'You need an active subscription to book venues.')
         return redirect('subscriptions:plans_list')
     
-    # Pre-select venue if slug provided
-    initial_data = {}
-    selected_venue = None
+    # ── CHECK FEATURE QUOTA ──
+    feature_name = None
+    can_book = True
+    remaining = None
+    used = None
+    limit = None
     
-    if venue_slug:
-        try:
-            selected_venue = Venue.objects.get(slug=venue_slug, status='APPROVED')
-            initial_data['venue'] = selected_venue
-            
-            # ── FEATURE CHECK for pre-selected venue ──
-            if selected_venue.primary_feature:
-                can_use, remaining, msg = can_use_feature(
-                    active_subscription,
-                    selected_venue.primary_feature
-                )
-                
-                if not can_use:
-                    messages.error(request, msg)
-                    return redirect('venues:detail', slug=venue_slug)
+    if venue.primary_feature:
+        can_book, remaining, msg = can_use_feature(
+            subscription,
+            venue.primary_feature
+        )
         
-        except Venue.DoesNotExist:
-            messages.error(request, 'Venue not found.')
-            return redirect('venues:list')
+        if not can_book:
+            messages.error(request, msg)
+            return redirect('venues:detail', slug=venue_slug)
+        
+        # Get usage stats for display
+        from subscriptions.utils import get_or_create_feature_usage
+        feature_usage, _ = get_or_create_feature_usage(
+            subscription,
+            venue.primary_feature
+        )
+        
+        feature_name = venue.primary_feature.name
+        used = feature_usage.used_count
+        limit = feature_usage.get_limit()
+    
+    # Max guests from plan
+    max_guests = subscription.plan.max_guests_per_booking
     
     if request.method == 'POST':
         form = BookingCreateForm(request.POST, user=request.user)
         
         if form.is_valid():
-            venue = form.cleaned_data['venue']
-            
-            # ── CRITICAL: Feature quota check ──
+            # Double-check quota (race condition prevention)
             if venue.primary_feature:
-                can_use, remaining, msg = can_use_feature(
-                    active_subscription,
+                can_book, remaining, msg = can_use_feature(
+                    subscription,
                     venue.primary_feature
                 )
                 
-                if not can_use:
+                if not can_book:
                     messages.error(request, msg)
-                    return redirect('bookings:create')
+                    return redirect('venues:detail', slug=venue_slug)
             
             try:
                 with transaction.atomic():
-                    # Check duplicate booking
-                    existing = Booking.objects.filter(
-                        user=request.user,
-                        venue=venue,
-                        visit_date=form.cleaned_data['visit_date'],
-                        status=BookingStatus.CONFIRMED
-                    ).first()
-                    
-                    if existing:
-                        messages.warning(
-                            request,
-                            f'You already have a booking for {venue.name} on {existing.visit_date}'
-                        )
-                        return redirect('bookings:detail', booking_reference=existing.booking_reference)
-                    
-                    # Create booking
                     booking = form.save(commit=False)
                     booking.user = request.user
-                    booking.subscription = active_subscription
+                    booking.venue = venue  # ← Override venue from form
+                    booking.subscription = subscription
                     booking.save()
                     
-                    # ── INCREMENT FEATURE USAGE ──
+                    # Increment feature usage
                     if venue.primary_feature:
                         increment_feature_usage(
-                            active_subscription,
+                            subscription,
                             venue.primary_feature
                         )
                     
                     messages.success(
                         request,
-                        f'Booking confirmed! Reference: {booking.booking_reference}'
+                        f'Booking confirmed for {venue.name} on {booking.visit_date.strftime("%B %d, %Y")}'
                     )
-                    return redirect('bookings:detail', booking_reference=booking.booking_reference)
+                    
+                    return redirect('bookings:list')
             
             except Exception as e:
-                messages.error(request, f'Error creating booking: {str(e)}')
-                return redirect('bookings:create')
+                messages.error(request, 'An error occurred while creating your booking. Please try again.')
     
     else:
-        form = BookingCreateForm(user=request.user, initial=initial_data)
+        # Initialize form with venue pre-selected
+        form = BookingCreateForm(
+            user=request.user,
+            initial={'venue': venue.id, 'guests_count': 1}  # ← Pass venue ID in initial
+        )
+        # Hide venue field since it's already selected
+        form.fields['venue'].widget = forms.HiddenInput()
     
-    min_date = date.today()
-    max_date = date.today() + timedelta(days=90)
+    feature_icon = None
+    if venue.primary_feature:
+        feature_icon = venue.primary_feature.icon
     
     context = {
         'form': form,
-        'subscription': active_subscription,
-        'min_date': min_date.isoformat(),
-        'max_date': max_date.isoformat(),
-        'venue_slug': venue_slug,
+        'venue': venue,
+        'subscription': subscription,
+        'max_guests': max_guests,
+        'feature_name': feature_name,
+        'feature_icon': feature_icon,
+        'remaining': remaining,
+        'used': used,
+        'limit': limit,
     }
     
     return render(request, 'bookings/member/create.html', context)
@@ -175,12 +200,42 @@ def booking_list(request):
         status=BookingStatus.CONFIRMED,
         visit_date__gt=today
     )
-    
+
     # ── PAGINATION (10 per page) ──
     paginator = Paginator(all_bookings, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+
+    bookings_with_details = []
+    for booking in page_obj:
+        bookings_with_details.append({
+            'booking': booking,
+            'qr_data': booking.get_qr_code_data(),
+            'can_cancel': booking.can_cancel(),
+            'map_url': f"https://www.google.com/maps?q={booking.venue.latitude},{booking.venue.longitude}" if booking.venue.latitude else None,
+        })
     
+    
+
+    # Add Remaining Quota for each booking's venue feature
+    bookings_with_quota = []
+    for booking in page_obj:
+        booking_data = {
+            'booking': booking,
+            'remaining_quota': None,
+        }
+        
+        # Calculate remaining quota if booking has primary feature
+        if booking.venue.primary_feature and booking.subscription:
+            feature_usage_obj, _ = get_or_create_feature_usage(
+                booking.subscription,
+                booking.venue.primary_feature
+            )
+            # Calculate what remaining will be AFTER cancellation (current + 1)
+            booking_data['remaining_quota'] = feature_usage_obj.get_limit() - feature_usage_obj.used_count + 1
+        
+        bookings_with_quota.append(booking_data)
+
     context = {
         'all_bookings': all_bookings,
         'today_bookings': today_bookings,
@@ -188,6 +243,7 @@ def booking_list(request):
         'active_subscription': active_subscription,
         'feature_usage': feature_usage,
         'page_obj': page_obj,
+        'bookings_with_quota': bookings_with_quota, 
         'is_paginated': page_obj.has_other_pages(),
         'today': today,
     }
@@ -247,7 +303,7 @@ def booking_cancel(request, booking_reference):
     
     if not booking.can_cancel():
         messages.error(request, 'This booking cannot be cancelled.')
-        return redirect('bookings:detail', booking_reference=booking_reference)
+        return redirect('bookings:list')
     
     form = BookingCancelForm(request.POST)
     
@@ -279,12 +335,12 @@ def booking_cancel(request, booking_reference):
         
         except Exception as e:
             messages.error(request, f'Error cancelling booking: {str(e)}')
-            return redirect('bookings:detail', booking_reference=booking_reference)
+            return redirect('bookings:list')
     
     for error in form.errors.values():
         messages.error(request, error)
     
-    return redirect('bookings:detail', booking_reference=booking_reference)
+    return redirect('bookings:list')
 # ==================== PARTNER VIEWS ====================
 
 class PartnerBookingsListView(IsApprovedPartnerMixin, ListView):
@@ -359,6 +415,16 @@ class PartnerBookingsListView(IsApprovedPartnerMixin, ListView):
                 visit_date__month=today.month
             ).count(),
         }
+
+        # Mask Booking References 
+        bookings = context['bookings']
+        for booking in bookings:
+            if booking.status == BookingStatus.CONFIRMED:
+                # Hide reference until check-in
+                booking.display_reference = '••••••' + booking.booking_reference[-4:]
+            else:
+                # Show full reference after check-in
+                booking.display_reference = booking.booking_reference
         
         context.update({
             'partner_venues': partner_venues,
@@ -373,11 +439,13 @@ class PartnerBookingsListView(IsApprovedPartnerMixin, ListView):
         
         return context
 
+
 @approved_partner_required
 @login_required
 def partner_check_in(request):
     """
-    Check in a booking via QR scan or manual entry
+    Check in a booking via QR scan, upload, or manual entry
+    SECURE: No quick check-in, rate limited, audit logged
     """
     # Verify user is a partner
     if not hasattr(request.user, 'partner_profile'):
@@ -387,30 +455,63 @@ def partner_check_in(request):
     partner_venues = request.user.partner_profile.venues.all()
     
     if request.method == 'POST':
+        # ── RATE LIMITING ──
+        rate_limit_response = check_rate_limit(request, 'checkin', limit=10, period=60)
+        if rate_limit_response:
+            messages.error(request, 'Too many check-in attempts. Please wait a moment.')
+            return redirect('bookings:partner_check_in')
+        
         form = VenueCheckInForm(request.POST)
         
         if form.is_valid():
             booking = form.cleaned_data['booking']
-            notes = form.cleaned_data.get('check_in_notes', '')
+            notes = form.cleaned_data.get('check_in_notes', '')[:500]  # ← LIMIT LENGTH
             
             # Verify booking is for partner's venue
             if booking.venue not in partner_venues:
+                # ── LOG FAILED ATTEMPT ──
+                BookingActivity.objects.create(
+                    booking=booking,
+                    action='CHECKIN_FAILED',
+                    performed_by=request.user,
+                    notes='Attempted check-in for wrong venue'
+                )
                 messages.error(request, 'This booking is not for one of your venues.')
                 return redirect('bookings:partner_check_in')
             
+            # Check if already checked in
+            if booking.status != BookingStatus.CONFIRMED:
+                messages.warning(request, f'This booking is already {booking.get_status_display()}.')
+                return redirect('bookings:partner_check_in')
+            
             try:
-                booking.check_in(
-                    checked_in_by=request.user,
-                    notes=notes
-                )
-                
-                # Create activity log
-                BookingActivity.objects.create(
-                    booking=booking,
-                    action='CHECKED_IN',
-                    performed_by=request.user,
-                    notes=f'Checked in by partner: {notes[:100]}'
-                )
+                with transaction.atomic():
+                    booking.check_in(
+                        checked_in_by=request.user,
+                        notes=notes
+                    )
+                    
+                    # ── AUDIT LOG SUCCESS ──
+                    BookingActivity.objects.create(
+                        booking=booking,
+                        action='CHECKED_IN',
+                        performed_by=request.user,
+                        notes=f'Checked in by partner: {notes[:100]}'
+                    )
+                    
+                    # ── EMAIL NOTIFICATION (Optional) ──
+                    try:
+                        from django.core.mail import send_mail
+                        send_mail(
+                            subject='Check-in Confirmed',
+                            message=f'You have been checked in at {booking.venue.name}',
+                            from_email='noreply@goldprivilege.com',
+                            recipient_list=[booking.user.email],
+                            fail_silently=True
+                        )
+                    except Exception as e:
+                        # Don't fail check-in if email fails
+                        pass
                 
                 messages.success(
                     request,
@@ -423,20 +524,38 @@ def partner_check_in(request):
                 
             except Exception as e:
                 messages.error(request, f'Error checking in: {str(e)}')
+        else:
+            # ── LOG FORM ERRORS ──
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     
     else:
         form = VenueCheckInForm()
     
-    # Get today's bookings for quick reference
-    today_bookings = Booking.objects.filter(
+    # Get today's bookings with pagination
+    today_bookings_all = Booking.objects.filter(
         venue__in=partner_venues,
-        visit_date=date.today(),
-        status=BookingStatus.CONFIRMED
-    ).select_related('user').order_by('created_at')
+        visit_date=date.today()
+    ).select_related('user', 'venue').order_by('-created_at')
+    
+    # ── MASK REFERENCES IN TODAY'S LIST TOO ──
+    for booking in today_bookings_all:
+        if booking.status == BookingStatus.CONFIRMED:
+            booking.display_reference = '••••••' + booking.booking_reference[-4:]
+        else:
+            booking.display_reference = booking.booking_reference
+    
+    # Pagination (10 per page)
+    paginator = Paginator(today_bookings_all, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     
     context = {
         'form': form,
-        'today_bookings': today_bookings,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'today_bookings': page_obj,
         'partner_venues': partner_venues,
         'today': date.today(),
     }
@@ -444,8 +563,9 @@ def partner_check_in(request):
     return render(request, 'bookings/partner/check_in.html', context)
 
 
+
 @login_required
-def partner_booking_detail(request, booking_reference):
+def partner_booking_detail(request, booking_uuid):
     """
     Partner view of a specific booking
     """
@@ -455,8 +575,12 @@ def partner_booking_detail(request, booking_reference):
     
     booking = get_object_or_404(
         Booking.objects.select_related('user', 'venue', 'subscription'),
-        booking_reference=booking_reference
+        booking_id=booking_uuid
     )
+    if booking.status == BookingStatus.CONFIRMED:
+        booking.display_reference = '••••••' + booking.booking_reference[-4:]
+    else:
+        booking.display_reference = booking.booking_reference
     
     # Verify booking is for partner's venue
     if booking.venue not in request.user.partner_profile.venues.all():
@@ -476,65 +600,6 @@ def partner_booking_detail(request, booking_reference):
 
 # ==================== AJAX ENDPOINTS ====================
 
-@login_required
-@require_POST
-def quick_check_in(request):
-    """
-    AJAX endpoint for quick check-in
-    """
-    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
-        return JsonResponse({'success': False, 'error': 'Invalid request'})
-    
-    try:
-        data = json.loads(request.body)
-        booking_reference = data.get('booking_reference', '').upper().strip()
-        
-        # Get booking
-        booking = Booking.objects.get(booking_reference=booking_reference)
-        
-        # Verify user is a partner and has permission
-        if not hasattr(request.user, 'partner_profile'):
-            return JsonResponse({
-                'success': False,
-                'error': 'Partner access required'
-            })
-        
-        if booking.venue not in request.user.partner_profile.venues.all():
-            return JsonResponse({
-                'success': False,
-                'error': 'Booking not for your venue'
-            })
-        
-        # Check in
-        booking.check_in(checked_in_by=request.user)
-        
-        # Create activity log
-        BookingActivity.objects.create(
-            booking=booking,
-            action='CHECKED_IN',
-            performed_by=request.user,
-            notes='Quick check-in via dashboard'
-        )
-        
-        return JsonResponse({
-            'success': True,
-            'booking_reference': booking.booking_reference,
-            'member_name': booking.user.get_full_name(),
-            'status': booking.get_status_display(),
-            'checked_in_at': booking.checked_in_at.strftime('%I:%M %p')
-        })
-    
-    except Booking.DoesNotExist:
-        return JsonResponse({
-            'success': False,
-            'error': 'Booking not found'
-        })
-    
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        })
 
 
 @login_required

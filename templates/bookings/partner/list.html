@@ -716,7 +716,7 @@
                 {% for booking in bookings %}
                 <tr>
                     <td>
-                        <span class="booking-ref">{{ booking.booking_reference }}</span>
+                        <span class="booking-ref">{{ booking.display_reference }}</span>
                         {% if booking.visit_date == today %}
                         <span class="status-confirmed" style="font-size: 11px; padding: 3px 8px; margin-left: 5px;">Today</span>
                         {% endif %}
@@ -751,18 +751,12 @@
                     </td>
                     <td>
                         <div class="action-buttons">
-                            <a href="{% url 'bookings:partner_detail' booking.booking_reference %}" 
+                            <a href="{% url 'bookings:partner_detail' booking.booking_id %}" 
                                class="action-btn" 
                                title="View Details">
                                 <i class="fas fa-eye"></i>
                             </a>
-                            {% if booking.status == 'CONFIRMED' and booking.visit_date == today %}
-                            <button class="action-btn success quick-checkin-btn" 
-                                    data-booking="{{ booking.booking_reference }}"
-                                    title="Check In">
-                                <i class="fas fa-check"></i>
-                            </button>
-                            {% endif %}
+        
                         </div>
                     </td>
                 </tr>
@@ -849,8 +843,6 @@ function loadBookings(queryString) {
         if (newContent) {
             document.getElementById('bookings-container').innerHTML = newContent.innerHTML;
             
-            // Reinitialize quick check-in buttons
-            initQuickCheckIn();
         }
         
         // Update URL without reload
@@ -865,37 +857,6 @@ function loadBookings(queryString) {
     });
 }
 
-// Quick Check-In
-function initQuickCheckIn() {
-    document.querySelectorAll('.quick-checkin-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const ref = this.dataset.booking;
-            
-            if (confirm(`Check in booking ${ref}?`)) {
-                fetch('{% url "bookings:quick_check_in" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        booking_reference: ref
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(`✅ Successfully checked in ${data.member_name}`);
-                        location.reload();
-                    } else {
-                        alert(`❌ Error: ${data.error}`);
-                    }
-                });
-            }
-        });
-    });
-}
 
 // Print Today's List
 function printTodaysList() {

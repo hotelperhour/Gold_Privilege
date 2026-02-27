@@ -18,8 +18,7 @@ urlpatterns = [
 
     path('partner_bookings/', views.PartnerBookingsListView.as_view(), name='bookings_list'),
     path('partner_check-in/', views.partner_check_in, name='partner_check_in'),
-    path('partner/api/quick-check-in/', views.quick_check_in, name='quick_check_in'),
-    path('partner/<str:booking_reference>/', views.partner_booking_detail, name='partner_detail'),
+    path('partner/<uuid:booking_uuid>/', views.partner_booking_detail, name='partner_detail'),
     
     # ==================== GENERIC DETAIL (MUST BE LAST!) ====================
     

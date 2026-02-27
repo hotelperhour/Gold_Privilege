@@ -85,15 +85,6 @@ class BookingCreateForm(forms.ModelForm):
                     'You need an active subscription to book venues. '
                     'Please subscribe or renew your membership.'
                 )
-            
-            # Check booking quota
-            can_book, remaining, message = Booking.check_booking_available(
-                self.user, 
-                active_sub
-            )
-            
-            if not can_book:
-                raise ValidationError(message)
         
         return cleaned_data
 

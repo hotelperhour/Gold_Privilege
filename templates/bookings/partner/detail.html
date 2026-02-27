@@ -1,181 +1,352 @@
-{% extends 'base.html' %}
+{% extends 'base_partner.html' %}
 {% load static %}
 
 {% block title %}Booking {{ booking.booking_reference }} - Partner View{% endblock %}
 
-{% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-lg-8">
-            <!-- Booking Header -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h4 class="mb-0">
-                                <i class="bi bi-receipt"></i> Booking Details
-                            </h4>
-                            <small>{{ booking.booking_reference }}</small>
-                        </div>
-                        <span class="badge bg-{{ booking.get_status_badge_color }} fs-6">
-                            {{ booking.get_status_display }}
-                        </span>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6><i class="bi bi-person"></i> Customer Information</h6>
-                            <p class="mb-2">
-                                <strong>Name:</strong> {{ booking.user.get_full_name }}<br>
-                                <strong>Email:</strong> {{ booking.user.email }}<br>
-                                {% if booking.user.profile.phone_number %}
-                                <strong>Phone:</strong> {{ booking.user.profile.phone_number }}
-                                {% endif %}
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6><i class="bi bi-calendar"></i> Visit Details</h6>
-                            <p class="mb-2">
-                                <strong>Date:</strong> {{ booking.visit_date|date:"l, F j, Y" }}<br>
-                                <strong>Guests:</strong> {{ booking.guests_count }} person{{ booking.guests_count|pluralize }}<br>
-                                <strong>Booked:</strong> {{ booking.created_at|date:"M j, Y g:i A" }}
-                            </p>
-                        </div>
-                    </div>
-                    
-                    {% if booking.special_requests %}
-                    <div class="mt-3 p-3 bg-light rounded">
-                        <h6><i class="bi bi-chat-text"></i> Special Requests</h6>
-                        <p class="mb-0">{{ booking.special_requests }}</p>
-                    </div>
-                    {% endif %}
-                    
-                    {% if booking.check_in_notes %}
-                    <div class="mt-3 p-3 bg-info bg-opacity-10 rounded">
-                        <h6><i class="bi bi-info-circle"></i> Check-in Notes</h6>
-                        <p class="mb-0">{{ booking.check_in_notes }}</p>
-                        <small class="text-muted">
-                            Checked in by {{ booking.checked_in_by.get_full_name }} 
-                            at {{ booking.checked_in_at|date:"M j, Y g:i A" }}
-                        </small>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
+{% block extra_css %}
+<style>
+    * { 
+        font-family: 'Poppins', sans-serif;
+        box-sizing: border-box;
+    }
 
-            <!-- Activity Timeline -->
-            {% if activities %}
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Activity History</h6>
-                </div>
-                <div class="card-body">
-                    <div class="timeline">
-                        {% for activity in activities %}
-                        <div class="timeline-item">
-                            <div class="timeline-marker"></div>
-                            <div class="timeline-content">
-                                <h6 class="mb-0">{{ activity.get_action_display }}</h6>
-                                <small class="text-muted">
-                                    {{ activity.created_at|date:"M j, Y g:i A" }}
-                                    {% if activity.performed_by %}
-                                    by {{ activity.performed_by.get_full_name }}
-                                    {% endif %}
-                                </small>
-                                {% if activity.notes %}
-                                <p class="mb-0 mt-1"><small>{{ activity.notes }}</small></p>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
+    :root {
+        --gold-primary: #E5AD04;
+        --black: #000000;
+        --white: #FFFFFF;
+        --light-gray: #F1F1F1;
+        --border-gray: #E5E5E5;
+        --gray-600: #6c757d;
+    }
+
+    /* Page Header */
+    .page-header { margin-bottom: 30px; }
+    .page-header h1 { font-size: 28px; font-weight: 700; color: var(--black); margin: 0 0 5px 0; }
+    .page-header p { font-size: 14px; color: var(--black); margin: 0; }
+
+    /* Status Strip */
+    .status-strip {
+        background: var(--light-gray);
+        border: 1px solid var(--border-gray);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .booking-status-text { font-size: 20px; font-weight: 600; color: var(--black); margin-bottom: 8px; }
+
+    .ref-pill {
+        display: inline-block;
+        padding: 8px 16px;
+        background: rgba(229, 173, 4, 0.12);
+        border: 1px solid var(--gold-primary);
+        border-radius: 8px;
+        color: var(--gold-primary);
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .status-pill { padding: 10px 24px; border-radius: 50px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+    .status-pill.confirmed   { background: rgba(255,193,7,0.15);   color: #FFC107; border: 1px solid #FFC107; }
+    .status-pill.checked_in  { background: rgba(40,167,69,0.15);   color: #28a745; border: 1px solid #28a745; }
+    .status-pill.completed   { background: rgba(108,117,125,0.15); color: #6c757d; border: 1px solid #6c757d; }
+    .status-pill.cancelled   { background: rgba(220,53,69,0.15);   color: #DC3545; border: 1px solid #DC3545; }
+    .status-pill.no_show     { background: rgba(108,117,125,0.15); color: #6c757d; border: 1px solid #6c757d; }
+
+    /* Customer Information Section */
+    .customer-info {
+        background: var(--light-gray);
+        border: 1px solid var(--border-gray);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 30px;
+    }
+    .customer-info h4 { font-size: 18px; font-weight: 600; color: var(--black); margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; }
+    .customer-info h4 i { color: var(--gold-primary); font-size: 20px; }
+    .customer-info p { font-size: 14px; color: var(--black); margin-bottom: 8px; }
+    .customer-info strong { font-weight: 600; }
+
+    /* ══════════════════════════════════════════════
+       GRID LAYOUT
+       Left col:  Row1=Venue Info (tall) | Row2=Visit Date (short)
+       Right col: Row1=Special Requests + Guests stacked | Row2=Plan
+       ══════════════════════════════════════════════ */
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 24px;
+        margin-bottom: 30px;
+        width: 100%;
+    }
+
+    /* Column 1, Row 1 — Venue Info */
+    .venue-info-box {
+        grid-column: 1;
+        grid-row: 1;
+        height: 100%;
+    }
+
+    /* Column 2, Row 1 — right top stack (Special Requests + Guests) */
+    .right-top-stack {
+        grid-column: 2;
+        grid-row: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        height: 100%;
+    }
+
+    /* Special requests grows to fill remaining space in right-top-stack */
+    .special-requests-box {
+        flex: 1;
+    }
+
+    /* Guests stays natural height */
+    .guests-box {
+        flex: 0 0 auto;
+    }
+
+    /* Column 1, Row 2 — Visit Date */
+    .visit-date-box {
+        grid-column: 1;
+        grid-row: 2;
+        height: 100%;
+    }
+
+    /* Column 2, Row 2 — Membership Plan */
+    .plan-box {
+        grid-column: 2;
+        grid-row: 2;
+        height: 100%;
+    }
+
+    /* Info Boxes */
+    .info-box {
+        background: var(--light-gray);
+        border: 1px solid var(--border-gray);
+        border-radius: 12px;
+        padding: 28px;
+        width: 100%;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .info-box-title { display: flex; flex-direction: column; margin-bottom: 20px; align-items: flex-start; flex-shrink: 0; }
+    .info-box-title i { font-size: 29px; color: var(--gold-primary); margin-bottom: 8px; }
+    .info-box-title h3 { font-size: 23px; font-weight: 600; color: var(--black); margin: 0; text-align: left; }
+    .info-box-content { color: var(--black); text-align: left; word-wrap: break-word; flex: 1; }
+
+    /* Venue Info */
+    .venue-name { font-size: 20px; font-weight: 500; color: var(--black); margin-bottom: 8px; }
+    .venue-address { font-size: 14px; color: var(--black); margin-bottom: 20px; line-height: 1.6; }
+    .divider { border: none; border-top: 2px solid var(--white); margin: 20px 0; }
+    .contact-section h4 { font-size: 14px; font-weight: 600; color: var(--black); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .contact-list { list-style: none; padding: 0; margin: 0; }
+    .contact-list li { font-size: 14px; color: var(--black); margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+    .contact-list i { color: var(--gold-primary); width: 16px; flex-shrink: 0; }
+    .contact-list a { color: var(--black); text-decoration: underline; word-break: break-word; }
+
+    /* Visit Date */
+    .visit-day { font-size: 20px; font-weight: 500; color: var(--black); margin-bottom: 2px; }
+    .visit-full-date { font-size: 14px; color: var(--black); }
+
+    /* Special Requests */
+    .special-requests-content { font-size: 14px; color: var(--black); line-height: 1.7; word-wrap: break-word; }
+    .fallback-text { font-size: 14px; color: var(--gray-600); font-style: italic; }
+
+    /* Guests & Plan */
+    .value-display { font-size: 24px; font-weight: 500; color: var(--black); margin-top: 8px; }
+    .plan-name { font-size: 18px; font-weight: 500; color: var(--black); margin-top: 8px; }
+
+    /* Tablet: keep 2-column layout */
+    @media (min-width: 768px) and (max-width: 1199px) {
+        .detail-grid { gap: 20px; }
+        .info-box { padding: 24px; }
+        .info-box-title h3 { font-size: 20px; }
+        .info-box-title i { font-size: 26px; }
+    }
+
+    /* Mobile: stack everything */
+    @media (max-width: 767px) {
+        .detail-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .venue-info-box,
+        .right-top-stack,
+        .visit-date-box,
+        .plan-box {
+            grid-column: auto;
+            grid-row: auto;
+            height: auto;
+        }
+
+        .special-requests-box { flex: none; }
+
+        .status-strip { flex-wrap: nowrap; padding: 16px 20px; }
+        .booking-status-text { font-size: 18px; }
+        .ref-pill { padding: 6px 12px; font-size: 13px; }
+        .status-pill { padding: 6px 16px; font-size: 13px; }
+        .page-header h1 { font-size: 24px; }
+        .info-box { padding: 24px; height: auto; }
+        .info-box-title h3 { font-size: 20px; }
+        .info-box-title i { font-size: 24px; }
+    }
+</style>
+{% endblock %}
+
+{% block partner_content %}
+<!-- Page Header -->
+<div class="page-header">
+    <h1>Booking Details</h1>
+    <p>manage your bookings</p>
+</div>
+
+<!-- Status Strip -->
+<div class="status-strip">
+    <div>
+        <div class="booking-status-text">Booking Status</div>
+        <span class="ref-pill">{{ booking.display_reference }}</span>
+    </div>
+    <span class="status-pill {{ booking.status|lower }}">
+        {{ booking.get_status_display }}
+    </span>
+</div>
+
+<!-- Customer Information -->
+<div class="customer-info">
+    <h4>
+        <i class="fas fa-user"></i>
+        Customer Information
+    </h4>
+    <p><strong>Name:</strong> {{ booking.user.get_full_name }}</p>
+    <p><strong>Email:</strong> {{ booking.user.email }}</p>
+    {% if booking.user.profile.phone_number %}
+    <p><strong>Phone:</strong> {{ booking.user.profile.phone_number }}</p>
+    {% endif %}
+    <p><strong>Booked On:</strong> {{ booking.created_at|date:"M j, Y g:i A" }}</p>
+</div>
+
+<!-- Grid Layout -->
+<div class="detail-grid">
+
+    <!-- Column 1, Row 1: Venue Information -->
+    <div class="info-box venue-info-box">
+        <div class="info-box-title">
+            <i class="fas fa-building"></i>
+            <h3>Venue Information</h3>
         </div>
-
-        <!-- Sidebar -->
-        <div class="col-lg-4">
-            {% if booking.status == 'CONFIRMED' and booking.visit_date == today %}
-            <div class="card mb-4 border-success">
-                <div class="card-header bg-success text-white">
-                    <h6 class="mb-0"><i class="bi bi-check-circle"></i> Check-in Ready</h6>
-                </div>
-                <div class="card-body">
-                    <p class="mb-3">This booking is ready for check-in today.</p>
-                    <form method="post" action="{% url 'bookings:partner_check_in' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="booking_reference" value="{{ booking.booking_reference }}">
-                        <div class="mb-3">
-                            <label class="form-label">Check-in Notes (optional)</label>
-                            <textarea name="check_in_notes" class="form-control" rows="2"></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="bi bi-check2-circle"></i> Check In Customer
-                        </button>
-                    </form>
-                </div>
+        <div class="info-box-content">
+            <div class="venue-name">{{ booking.venue.name }}</div>
+            <div class="venue-address">
+                {{ booking.venue.address }}<br>
+                {{ booking.venue.city }}, {{ booking.venue.state }}
             </div>
-            {% endif %}
-
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Quick Actions</h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{% url 'bookings:partner_list' %}" class="btn btn-outline-primary">
-                            <i class="bi bi-arrow-left"></i> Back to Dashboard
-                        </a>
-                        <button onclick="window.print()" class="btn btn-outline-secondary">
-                            <i class="bi bi-printer"></i> Print Details
-                        </button>
-                    </div>
-                </div>
+            <hr class="divider">
+            <div class="contact-section">
+                <h4>Contact</h4>
+                <ul class="contact-list">
+                    {% if booking.venue.phone %}
+                    <li><i class="fas fa-phone"></i> {{ booking.venue.phone }}</li>
+                    {% endif %}
+                    {% if booking.venue.email %}
+                    <li><i class="fas fa-envelope"></i> {{ booking.venue.email }}</li>
+                    {% endif %}
+                    {% if booking.venue.website %}
+                    <li>
+                        <i class="fas fa-globe"></i>
+                        <a href="{{ booking.venue.website }}" target="_blank">{{ booking.venue.website }}</a>
+                    </li>
+                    {% endif %}
+                </ul>
             </div>
         </div>
     </div>
+
+    <!-- Column 2, Row 1: Special Requests + Guests stacked -->
+    <div class="right-top-stack">
+        <!-- Special Requests -->
+        <div class="info-box special-requests-box">
+            <div class="info-box-title">
+                <i class="fas fa-comment-dots"></i>
+                <h3>Special Requests</h3>
+            </div>
+            <div class="info-box-content">
+                {% if booking.special_requests %}
+                    <div class="special-requests-content">{{ booking.special_requests }}</div>
+                {% else %}
+                    <div class="fallback-text">No special requests provided</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Number of Guests -->
+        <div class="info-box guests-box">
+            <div class="info-box-title">
+                <i class="fas fa-users"></i>
+                <h3>Number of Guests</h3>
+            </div>
+            <div class="info-box-content">
+                <div class="value-display">{{ booking.guests_count }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Column 1, Row 2: Visit Date -->
+    <div class="info-box visit-date-box">
+        <div class="info-box-title">
+            <i class="fas fa-calendar"></i>
+            <h3>Visit Date</h3>
+        </div>
+        <div class="info-box-content">
+            <div class="visit-day">{{ booking.visit_date|date:"l" }}</div>
+            <div class="visit-full-date">{{ booking.visit_date|date:"F j, Y" }}</div>
+        </div>
+    </div>
+
+    <!-- Column 2, Row 2: Membership Plan -->
+    <div class="info-box plan-box">
+        <div class="info-box-title">
+            <i class="fas fa-crown"></i>
+            <h3>Membership Plan</h3>
+        </div>
+        <div class="info-box-content">
+            <div class="plan-name">
+                {% if booking.subscription and booking.subscription.plan %}
+                    {{ booking.subscription.plan.name }}
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<style>
-.timeline {
-    position: relative;
-    padding-left: 40px;
-}
+<!-- Check-in Notes (if exists) -->
+{% if booking.check_in_notes %}
+<div class="info-box" style="margin-bottom: 30px;">
+    <div class="info-box-title">
+        <i class="fas fa-sticky-note"></i>
+        <h3>Check-in Notes</h3>
+    </div>
+    <div class="info-box-content">
+        <p style="font-size: 14px; color: var(--black); margin-bottom: 8px;">{{ booking.check_in_notes }}</p>
+        <small style="color: #6c757d;">
+            Checked in by {{ booking.checked_in_by.get_full_name }} 
+            at {{ booking.checked_in_at|date:"M j, Y g:i A" }}
+        </small>
+    </div>
+</div>
+{% endif %}
 
-.timeline-item {
-    position: relative;
-    padding-bottom: 20px;
-}
-
-.timeline-item:before {
-    content: '';
-    position: absolute;
-    left: -33px;
-    top: 8px;
-    bottom: 0;
-    width: 2px;
-    background: #dee2e6;
-}
-
-.timeline-item:last-child:before {
-    height: 20px;
-}
-
-.timeline-marker {
-    position: absolute;
-    left: -40px;
-    top: 0;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #0d6efd;
-    border: 3px solid white;
-}
-
-.timeline-content {
-    padding-left: 15px;
-}
-</style>
 {% endblock %}

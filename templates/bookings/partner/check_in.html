@@ -1,302 +1,901 @@
-{% extends 'base.html' %}
+{% extends 'base_partner.html' %}
 {% load static %}
 
-{% block title %}Check-in Guest - {{ site_name }}{% endblock %}
+{% block title %}Check-in Guest - Gold Privilege{% endblock %}
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-10">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="bi bi-qr-code-scan me-2"></i>
-                        Guest Check-in
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <!-- QR Scanner Section -->
-                        <div class="col-lg-6 mb-4 mb-lg-0">
-                            <div class="card h-100">
-                                <div class="card-header">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-camera me-1"></i>
-                                        Scan QR Code
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <div id="scanner-container" class="text-center">
-                                        <div id="reader" style="width: 300px; height: 300px; margin: 0 auto;"></div>
-                                        <p class="text-muted mt-3">
-                                            Point camera at guest's QR code to scan
-                                        </p>
-                                    </div>
-                                    
-                                    <div id="scanner-result" class="d-none">
-                                        <div class="alert alert-success">
-                                            <h6>QR Code Scanned Successfully!</h6>
-                                            <p id="scan-details" class="mb-0"></p>
-                                        </div>
-                                        <button onclick="processScannedCode()" class="btn btn-success w-100">
-                                            <i class="bi bi-check-circle me-1"></i>
-                                            Process Check-in
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+{% block partner_content %}
+<style>
+    * { font-family: 'Poppins', sans-serif; }
+    
+    :root {
+        --gold-primary: #E5AD04;
+        --form-border: rgba(63, 61, 86, 0.75);
+        --form-bg: rgba(63, 61, 86, 0.08);
+    }
+    
+    .check-in-wrapper {
+        background: #fff;
+        min-height: calc(100vh - 80px);
+        padding: 30px 0;
+    }
+    
+    .check-in-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+    
+    /* Page Header */
+    .page-header {
+        margin-bottom: 30px;
+    }
+    
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: #000;
+        margin: 0;
+    }
+    
+    /* Two Column Layout */
+    .check-in-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+    
+    /* ============================================ */
+    /* LEFT SIDE - QR SCANNER/UPLOAD */
+    /* ============================================ */
+    
+    .qr-section {
+        background: #fff;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    
+    .qr-section h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #000;
+        margin: 0 0 24px 0;
+    }
+    
+    /* QR Scanner Container */
+    .scanner-container {
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 12px;
+        padding: 40px 20px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .scanner-icon {
+        width: 80px;
+        height: 80px;
+        background: #000;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+    }
+    
+    .scanner-icon i {
+        font-size: 40px;
+        color: #fff;
+    }
+    
+    .scanner-text {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 16px;
+        line-height: 1.6;
+    }
+    
+    /* Camera Scanner (Mobile/Tablet Only) */
+    #camera-scanner {
+        display: none;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
+    
+    #reader {
+        width: 100% !important;
+        min-height: 300px;
+    }
+    
+    .btn-start-camera {
+        background: var(--gold-primary);
+        color: #000;
+        border: none;
+        padding: 12px 32px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-start-camera:hover {
+        background: #F9B036;
+        transform: translateY(-2px);
+    }
+    
+    .btn-stop-camera {
+        background: #dc3545;
+        color: #fff;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        margin-top: 12px;
+    }
+    
+    /* File Upload */
+    .upload-container {
+        margin-top: 20px;
+        text-align: center;
+    }
+    
+    .upload-divider {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin: 20px 0;
+    }
+    
+    .upload-divider::before,
+    .upload-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #dee2e6;
+    }
+    
+    .upload-divider span {
+        font-size: 13px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+    
+    .upload-box {
+        background: #fff;
+        border: 2px dashed #dee2e6;
+        border-radius: 12px;
+        padding: 30px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-box:hover {
+        border-color: var(--gold-primary);
+        background: rgba(229, 173, 4, 0.05);
+    }
+    
+    .upload-icon {
+        width: 60px;
+        height: 60px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+    
+    .upload-icon i {
+        font-size: 28px;
+        color: var(--gold-primary);
+    }
+    
+    .upload-text {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 4px;
+    }
+    
+    .upload-hint {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    #qr-file-input {
+        display: none;
+    }
+    
+    .file-selected {
+        margin-top: 12px;
+        padding: 12px;
+        background: rgba(40, 167, 69, 0.1);
+        border: 1px solid #28a745;
+        border-radius: 8px;
+        color: #28a745;
+        font-size: 13px;
+        display: none;
+    }
+    
+    /* ============================================ */
+    /* RIGHT SIDE - MANUAL ENTRY FORM */
+    /* ============================================ */
+    
+    .manual-section {
+        background: #fff;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    
+    .manual-section h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #000;
+        margin: 0 0 24px 0;
+    }
+    
+    .form-container {
+        background: var(--form-bg);
+        border: 2px solid var(--form-border);
+        border-radius: 12px;
+        padding: 24px;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #3F3D56;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 16px;
+        border: 1px solid var(--form-border);
+        border-radius: 8px;
+        font-size: 14px;
+        color: #000;
+        background: #fff;
+        transition: all 0.3s ease;
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--gold-primary);
+        box-shadow: 0 0 0 3px rgba(229, 173, 4, 0.1);
+    }
+    
+    .form-control.text-uppercase {
+        text-transform: uppercase;
+    }
+    
+    .form-hint {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 6px;
+    }
+    
+    .btn-check-in {
+        background: var(--gold-primary);
+        color: #fff;
+        border: none;
+        padding: 14px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        width: 100%;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .btn-check-in:hover {
+        background: #F9B036;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+    }
+    
+    /* ============================================ */
+    /* TODAY'S BOOKINGS TABLE */
+    /* ============================================ */
+    
+    .bookings-section {
+        background: #fff;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        margin-top: 40px;
+    }
+    
+    .bookings-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+    
+    .bookings-header h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #000;
+        margin: 0;
+    }
+    
+    .date-badge {
+        background: rgba(229, 173, 4, 0.12);
+        color: var(--gold-primary);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    .bookings-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+    
+    .bookings-table thead th {
+        background: #f8f9fa;
+        padding: 14px 16px;
+        text-align: left;
+        font-size: 12px;
+        font-weight: 700;
+        color: #000;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .bookings-table tbody td {
+        padding: 16px;
+        border-bottom: 1px solid #f1f3f4;
+        font-size: 14px;
+        color: #495057;
+        vertical-align: middle;
+    }
+    
+    .bookings-table tbody tr:hover {
+        background: #f8f9fa;
+    }
+    
+    .booking-ref {
+        font-family: 'Courier New', monospace;
+        background: #f8f9fa;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    .member-info {
+        line-height: 1.5;
+    }
+    
+    .member-name {
+        font-weight: 600;
+        color: #000;
+    }
+    
+    .member-email {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .status-badge.confirmed {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+    }
+    
+    .status-badge.checked-in {
+        background: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+    }
+    
+    .btn-action {
+        background: #28a745;
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-action:hover {
+        background: #218838;
+    }
+    
+    .btn-action:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+    
+    .empty-state i {
+        font-size: 64px;
+        color: #dee2e6;
+        margin-bottom: 16px;
+    }
+    
+    .empty-state h5 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 8px;
+    }
+    
+    .empty-state p {
+        font-size: 14px;
+        color: #6c757d;
+    }
+    
+    /* Alert Messages */
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .alert-success {
+        background: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+        border: 1px solid #28a745;
+    }
+    
+    .alert-danger {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+        border: 1px solid #dc3545;
+    }
+    
+    .alert i {
+        font-size: 18px;
+    }
+    
+    /* Device Visibility */
+    .mobile-only {
+        display: none;
+    }
+    
+    @media (max-width: 991px) {
+        .desktop-only {
+            display: none;
+        }
+        
+        .mobile-only {
+            display: block;
+        }
+    }
+    
+    /* Responsive */
+    @media (max-width: 991px) {
+        .check-in-grid {
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+    }
+    
+    @media (max-width: 767px) {
+        .check-in-wrapper {
+            padding: 20px 0;
+        }
+        
+        .qr-section,
+        .manual-section,
+        .bookings-section {
+            padding: 20px;
+        }
+        
+        .page-header h1 {
+            font-size: 24px;
+        }
+        
+        .bookings-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .bookings-table {
+            font-size: 13px;
+        }
+        
+        .bookings-table thead th,
+        .bookings-table tbody td {
+            padding: 12px 8px;
+        }
+    }
+</style>
 
-                        <!-- Manual Entry Section -->
-                        <div class="col-lg-6">
-                            <div class="card h-100">
-                                <div class="card-header">
-                                    <h6 class="mb-0">
-                                        <i class="bi bi-keyboard me-1"></i>
-                                        Manual Entry
-                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                    <form method="post">
-                                        {% csrf_token %}
-                                        
-                                        <div class="mb-3">
-                                            <label for="{{ form.booking_reference.id_for_label }}" 
-                                                   class="form-label">
-                                                Booking Reference
-                                            </label>
-                                            <input type="text" 
-                                                   name="{{ form.booking_reference.name }}"
-                                                   id="{{ form.booking_reference.id_for_label }}"
-                                                   class="form-control text-uppercase"
-                                                   placeholder="GP-BKABCD12"
-                                                   required>
-                                            {% if form.booking_reference.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.booking_reference.errors|join:", " }}
-                                            </div>
-                                            {% endif %}
-                                        </div>
-                                        
-                                        <div class="mb-3">
-                                            <label for="{{ form.check_in_notes.id_for_label }}" 
-                                                   class="form-label">
-                                                Notes (Optional)
-                                            </label>
-                                            <textarea name="{{ form.check_in_notes.name }}"
-                                                      id="{{ form.check_in_notes.id_for_label }}"
-                                                      class="form-control"
-                                                      rows="2"
-                                                      placeholder="Any special notes for this check-in..."></textarea>
-                                        </div>
-                                        
-                                        <div class="d-grid">
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="bi bi-check-circle me-1"></i>
-                                                Check In Guest
-                                            </button>
-                                        </div>
-                                    </form>
-                                    
-                                    <!-- Recent Check-ins -->
-                                    <hr class="my-4">
-                                    <h6>Recent Check-ins</h6>
-                                    {% if today_bookings %}
-                                    <div class="list-group">
-                                        {% for booking in today_bookings|slice:":3" %}
-                                        <div class="list-group-item">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-1">{{ booking.user.get_full_name }}</h6>
-                                                    <small class="text-muted">{{ booking.booking_reference }}</small>
-                                                </div>
-                                                {% if booking.status == 'CHECKED_IN' %}
-                                                <span class="badge bg-success">
-                                                    <i class="bi bi-check-circle me-1"></i>
-                                                    Checked In
-                                                </span>
-                                                {% else %}
-                                                <form method="post" class="d-inline">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="booking_reference" 
-                                                           value="{{ booking.booking_reference }}">
-                                                    <button type="submit" class="btn btn-sm btn-success">
-                                                        Check In
-                                                    </button>
-                                                </form>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                    {% else %}
-                                    <p class="text-muted">No bookings scheduled for today.</p>
-                                    {% endif %}
-                                </div>
-                            </div>
+<div class="check-in-wrapper">
+    <div class="check-in-container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>
+                <i class="fas fa-qrcode" style="color: var(--gold-primary);"></i>
+                Guest Check-in
+            </h1>
+        </div>
+        
+        <!-- Success/Error Messages -->
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% else %}exclamation-circle{% endif %}"></i>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        {% endif %}
+        
+        <!-- QR Scanner & Manual Entry -->
+        <div class="check-in-grid">
+            <!-- Left: QR Scanner/Upload -->
+            <div class="qr-section">
+                <h2>
+                    <i class="fas fa-qrcode"></i>
+                    Scan QR Code
+                </h2>
+                
+                <!-- Scanner Container -->
+                <div class="scanner-container">
+                    <div class="scanner-icon">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    
+                    <!-- Mobile/Tablet: Camera Scanner -->
+                    <div class="mobile-only">
+                        <p class="scanner-text">
+                            Point your camera at the guest's QR code to check them in instantly.
+                        </p>
+                        <button type="button" class="btn-start-camera" onclick="startCamera()">
+                            <i class="fas fa-camera"></i>
+                            Start Camera
+                        </button>
+                        
+                        <div id="camera-scanner">
+                            <div id="reader"></div>
+                            <button type="button" class="btn-stop-camera" onclick="stopCamera()">
+                                Stop Camera
+                            </button>
                         </div>
                     </div>
-
-                    <!-- Today's Bookings Table -->
-                    <div class="card mt-4">
-                        <div class="card-header">
-                            <h6 class="mb-0">
-                                <i class="bi bi-calendar-day me-1"></i>
-                                Today's Bookings ({{ today|date:"F j, Y" }})
-                            </h6>
+                    
+                    <!-- Desktop: Info Message -->
+                    <div class="desktop-only">
+                        <p class="scanner-text">
+                            Use your mobile device to scan QR codes with the camera.<br>
+                            On desktop, you can upload a QR code image below.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Upload QR Image -->
+                <div class="upload-container">
+                    <div class="upload-divider">
+                        <span>OR UPLOAD QR CODE IMAGE</span>
+                    </div>
+                    
+                    <label for="qr-file-input" class="upload-box">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
                         </div>
-                        <div class="card-body">
-                            {% if today_bookings %}
-                            <div class="table-responsive">
-                                <table class="table table-sm">
-                                    <thead>
-                                        <tr>
-                                            <th>Time</th>
-                                            <th>Reference</th>
-                                            <th>Member</th>
-                                            <th>Guests</th>
-                                            <th>Status</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for booking in today_bookings %}
-                                        <tr>
-                                            <td>{{ booking.created_at|time:"g:i A" }}</td>
-                                            <td>
-                                                <code>{{ booking.booking_reference }}</code>
-                                            </td>
-                                            <td>
-                                                {{ booking.user.get_full_name }}<br>
-                                                <small class="text-muted">{{ booking.user.email }}</small>
-                                            </td>
-                                            <td>{{ booking.guests_count }}</td>
-                                            <td>
-                                                <span class="badge bg-{{ booking.get_status_badge_color }}">
-                                                    {{ booking.get_status_display }}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                {% if booking.status == 'CONFIRMED' %}
-                                                <form method="post" class="d-inline">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="booking_reference" 
-                                                           value="{{ booking.booking_reference }}">
-                                                    <button type="submit" class="btn btn-sm btn-success">
-                                                        <i class="bi bi-check-circle me-1"></i>Check In
-                                                    </button>
-                                                </form>
-                                                {% elif booking.status == 'CHECKED_IN' %}
-                                                <button class="btn btn-sm btn-secondary" disabled>
-                                                    <i class="bi bi-check2-all me-1"></i>Checked In
-                                                </button>
-                                                {% endif %}
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {% else %}
-                            <div class="text-center py-4">
-                                <i class="bi bi-calendar-x fs-1 text-muted mb-3"></i>
-                                <h5>No bookings scheduled for today</h5>
-                                <p class="text-muted">Check your bookings for other dates.</p>
-                            </div>
-                            {% endif %}
-                        </div>
+                        <div class="upload-text">Click to upload QR code image</div>
+                        <div class="upload-hint">Supports JPG, PNG (Max 5MB)</div>
+                    </label>
+                    <input type="file" id="qr-file-input" accept="image/*" onchange="handleQRUpload(event)">
+                    
+                    <div class="file-selected" id="file-selected">
+                        <i class="fas fa-check-circle"></i>
+                        <span id="file-name"></span>
                     </div>
                 </div>
             </div>
+            
+            <!-- Right: Manual Entry -->
+            <div class="manual-section">
+                <h2>
+                    <i class="fas fa-keyboard"></i>
+                    Manual Entry
+                </h2>
+                
+                <div class="form-container">
+                    <form method="post" id="check-in-form">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="{{ form.booking_reference.id_for_label }}" class="form-label">
+                                Booking Reference *
+                            </label>
+                            <input 
+                                type="text" 
+                                name="{{ form.booking_reference.name }}"
+                                id="{{ form.booking_reference.id_for_label }}"
+                                class="form-control text-uppercase"
+                                placeholder="GP-BKABCD12"
+                                required>
+                            <div class="form-hint">Enter the guest's booking reference code</div>
+                            {% if form.booking_reference.errors %}
+                            <div style="color: #dc3545; font-size: 13px; margin-top: 6px;">
+                                {{ form.booking_reference.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.check_in_notes.id_for_label }}" class="form-label">
+                                Check-in Notes (Optional)
+                            </label>
+                            <textarea 
+                                name="{{ form.check_in_notes.name }}"
+                                id="{{ form.check_in_notes.id_for_label }}"
+                                class="form-control"
+                                rows="3"
+                                placeholder="Any special notes or requests..."></textarea>
+                            <div class="form-hint">Optional notes for this check-in</div>
+                        </div>
+                        
+                        <button type="submit" class="btn-check-in">
+                            <i class="fas fa-check-circle"></i>
+                            Check In Guest
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Today's Bookings Table -->
+        <div class="bookings-section">
+            <div class="bookings-header">
+                <h2>
+                    <i class="fas fa-calendar-day"></i>
+                    Today's Bookings
+                </h2>
+                <span class="date-badge">{{ today|date:"F d, Y" }}</span>
+            </div>
+            
+            {% if page_obj %}
+            <div class="table-responsive">
+                <table class="bookings-table">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Member</th>
+                            <th>Venue</th>
+                            <th>Guests</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in page_obj %}
+                        <tr>
+                            <td>
+                                <span class="booking-ref">{{ booking.booking_reference }}</span>
+                            </td>
+                            <td>
+                                <div class="member-info">
+                                    <div class="member-name">{{ booking.user.get_full_name }}</div>
+                                    <div class="member-email">{{ booking.user.email }}</div>
+                                </div>
+                            </td>
+                            <td>{{ booking.venue.name }}</td>
+                            <td>{{ booking.guests_count }}</td>
+                            <td>
+                                {% if booking.status == 'CONFIRMED' %}
+                                    <span class="status-badge confirmed">Confirmed</span>
+                                {% elif booking.status == 'CHECKED_IN' %}
+                                    <span class="status-badge checked-in">Checked In</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if booking.status == 'CONFIRMED' %}
+                                <form method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="booking_reference" value="{{ booking.booking_reference }}">
+                                    <button type="submit" class="btn-action">
+                                        <i class="fas fa-check"></i> Check In
+                                    </button>
+                                </form>
+                                {% else %}
+                                <button class="btn-action" disabled>
+                                    <i class="fas fa-check-double"></i> Checked In
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="pagination-wrapper" style="margin-top: 20px;">
+                {% include 'partials/pagination.html' with page_obj=page_obj %}
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="empty-state">
+                <i class="far fa-calendar-times"></i>
+                <h5>No bookings for today</h5>
+                <p>Check back later or view your bookings for other dates.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<!-- QR Code Scanner Library -->
 <script src="https://unpkg.com/html5-qrcode"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
-let html5QrcodeScanner;
-let scannedData = null;
+let html5QrcodeScanner = null;
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize QR scanner
+// Start camera scanner (mobile/tablet only)
+function startCamera() {
+    const cameraScanner = document.getElementById('camera-scanner');
+    cameraScanner.style.display = 'block';
+    
     html5QrcodeScanner = new Html5QrcodeScanner(
-        "reader", 
+        "reader",
         { 
-            fps: 10, 
-            qrbox: { width: 250, height: 250 } 
+            fps: 10,
+            qrbox: { width: 250, height: 250 }
         },
-        /* verbose= */ false
+        false
     );
     
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-});
+    html5QrcodeScanner.render(onScanSuccess, onScanError);
+}
 
+// Stop camera scanner
+function stopCamera() {
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear();
+        document.getElementById('camera-scanner').style.display = 'none';
+    }
+}
+
+// Handle successful QR scan
 function onScanSuccess(decodedText, decodedResult) {
+    console.log('QR Code scanned:', decodedText);
+    
     // Stop scanner
-    html5QrcodeScanner.clear();
+    stopCamera();
     
-    // Parse QR data (format: GP-BKABCD12|VenueID|Date)
-    const parts = decodedText.split('|');
+    // Extract booking reference from QR data
+    const bookingRef = extractBookingReference(decodedText);
     
-    if (parts.length === 3) {
-        scannedData = {
-            reference: parts[0],
-            venueId: parts[1],
-            date: parts[2]
-        };
+    if (bookingRef) {
+        // Auto-fill form and submit
+        document.getElementById('{{ form.booking_reference.id_for_label }}').value = bookingRef;
         
-        // Show result
-        document.getElementById('scanner-container').classList.add('d-none');
-        document.getElementById('scanner-result').classList.remove('d-none');
+        // Show success message
+        alert('QR Code scanned successfully! Checking in...');
         
-        document.getElementById('scan-details').innerHTML = `
-            <strong>Reference:</strong> ${parts[0]}<br>
-            <strong>Date:</strong> ${new Date(parts[2]).toLocaleDateString()}
-        `;
+        // Auto-submit form
+        document.getElementById('check-in-form').submit();
     } else {
-        alert('Invalid QR code format. Please scan a valid booking QR code.');
-        html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        alert('Invalid QR code format. Please try again.');
     }
 }
 
-function onScanFailure(error) {
-    // Handle scan failure, ignore if it's just "not found"
-    console.warn(`QR scan failed: ${error}`);
+function onScanError(error) {
+    // Ignore continuous scan errors
+    console.warn('QR scan error:', error);
 }
 
-function processScannedCode() {
-    if (!scannedData) return;
+// Handle QR image upload
+function handleQRUpload(event) {
+    const file = event.target.files[0];
     
-    // Auto-fill manual form
-    document.getElementById('{{ form.booking_reference.id_for_label }}').value = scannedData.reference;
+    if (!file) return;
     
-    // Validate date
-    const today = new Date().toISOString().split('T')[0];
-    if (scannedData.date !== today) {
-        alert('This booking is not for today. Please check the date.');
-        return;
-    }
+    // Show file name
+    document.getElementById('file-name').textContent = file.name;
+    document.getElementById('file-selected').style.display = 'block';
     
-    // Validate venue
-    const partnerVenueIds = [{% for venue in partner_venues %}{{ venue.id }}{% if not forloop.last %}, {% endif %}{% endfor %}];
-    if (!partnerVenueIds.includes(parseInt(scannedData.venueId))) {
-        alert('This booking is not for one of your venues.');
-        return;
-    }
+    // Read and decode QR from image
+    const reader = new FileReader();
     
-    // Submit form
-    document.querySelector('form').submit();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            // Create canvas to read image
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            // Try to decode QR code using jsQR
+            const code = jsQR(imageData.data, imageData.width, imageData.height);
+            
+            if (code) {
+                console.log('QR Code found:', code.data);
+                
+                const bookingRef = extractBookingReference(code.data);
+                
+                if (bookingRef) {
+                    // Auto-fill form
+                    document.getElementById('{{ form.booking_reference.id_for_label }}').value = bookingRef;
+                    alert('QR Code decoded successfully! Reference: ' + bookingRef);
+                } else {
+                    alert('Invalid QR code format.');
+                }
+            } else {
+                alert('No QR code found in image. Please try a clearer image.');
+            }
+        };
+        img.src = e.target.result;
+    };
+    
+    reader.readAsDataURL(file);
 }
 
-// Restart scanner
-function restartScanner() {
-    document.getElementById('scanner-container').classList.remove('d-none');
-    document.getElementById('scanner-result').classList.add('d-none');
-    scannedData = null;
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+// Extract booking reference from QR data
+function extractBookingReference(qrData) {
+    // QR format: "GP-BKABCD12|VenueID|Date" or just "GP-BKABCD12"
+    const parts = qrData.split('|');
+    const reference = parts[0].trim().toUpperCase();
+    
+    // Validate format (GP-BKxxxxxx)
+    if (/^GP-BK[A-Z0-9]{6}$/.test(reference)) {
+        return reference;
+    }
+    
+    return null;
 }
+
+// Auto-uppercase booking reference input
+document.getElementById('{{ form.booking_reference.id_for_label }}').addEventListener('input', function() {
+    this.value = this.value.toUpperCase();
+});
 </script>
 {% endblock %}

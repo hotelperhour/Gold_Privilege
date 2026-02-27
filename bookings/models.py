@@ -410,35 +410,7 @@ class Booking(models.Model):
             'no_show': bookings.filter(status=BookingStatus.NO_SHOW).count(),
         }
     
-    @classmethod
-    def check_booking_available(cls, user, subscription):
-        """
-        Check if user can create new booking this month
-        Returns: (can_book: bool, remaining: int, message: str)
-        """
-        if not subscription or not subscription.is_active():
-            return False, 0, "No active subscription"
-        
-        max_bookings = subscription.plan.max_bookings_per_month
-        
-        # Unlimited bookings
-        if max_bookings is None:
-            return True, float('inf'), "Unlimited bookings"
-        
-        # Count current month bookings
-        current_bookings = cls.objects.filter(
-            subscription=subscription,
-            visit_date__year=timezone.now().year,
-            visit_date__month=timezone.now().month,
-            status__in=[BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN]
-        ).count()
-        
-        remaining = max_bookings - current_bookings
-        
-        if remaining <= 0:
-            return False, 0, f"Monthly limit reached ({max_bookings} bookings)"
-        
-        return True, remaining, f"{remaining} booking(s) remaining this month"
+    
 
 
 class BookingActivity(models.Model):

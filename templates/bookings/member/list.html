@@ -49,11 +49,6 @@
         white-space: nowrap;
     }
     
-    .subscription-badge i {
-        font-size: 12px;
-    }
-    
-    
     .btn-book-venue {
         background: var(--gold-primary);
         border: 2px solid var(--gold-primary);
@@ -121,6 +116,7 @@
         margin: 0;
         font-weight: 500;
     }
+    
     .icon-circle {
         width: 50px;
         height: 50px;
@@ -128,13 +124,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        flex-shrink: 0;  /* prevents shrinking in flex layouts */
+        flex-shrink: 0;
     }
+    
     .icon-circle i {
-        line-height: 1;        /* remove extra line height */
-        margin: 0;             /* ensure no default margins */
-        font-size: 24px;       /* adjust size to fit nicely inside 50px */
-}
+        line-height: 1;
+        margin: 0;
+        font-size: 24px;
+    }
     
     /* Feature Quota Section */
     .quota-section {
@@ -297,14 +294,14 @@
         gap: 6px;
         transition: all 0.3s ease;
         white-space: nowrap;
+        cursor: pointer;
+        border-style: solid;
     }
     
     .btn-view:hover {
         background: var(--gold-primary);
         color: #000;
     }
-    
-   
     
     /* Empty State */
     .empty-state {
@@ -331,6 +328,706 @@
         margin-bottom: 20px;
     }
     
+    /* ============================================ */
+    /* BOOKING DETAILS MODAL */
+    /* ============================================ */
+    
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 5000 !important;
+        display: none;
+    }
+    
+    .modal-overlay.active {
+        display: block;
+    }
+    
+    .booking-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 900px;
+        max-height: 90vh;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        z-index: 5010 !important;
+        display: none;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .booking-modal.active {
+        display: block;
+    }
+    
+    .modal-scroll {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    /* Modal Header with Image Background */
+    .modal-header-image {
+        position: relative;
+        height: 180px;
+        background-size: cover;
+        background-position: center;
+        padding: 20px 24px;
+    }
+    
+    .modal-header-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+    }
+    
+    .modal-header-content {
+        position: relative;
+        z-index: 1;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+    
+    .modal-header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+    
+    .modal-title-small {
+        font-size: 12px;
+        font-weight: 500;
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .btn-close-modal {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-close-modal:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .modal-header-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+    
+    .modal-venue-name {
+        font-size: 24px;
+        font-weight: 700;
+        color: #fff;
+        margin: 0;
+    }
+    
+    .modal-status-badge {
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #fff;
+    }
+    
+    .modal-status-badge.confirmed {
+        background: #28a745;
+        border: 1px solid #28a745;
+    }
+    
+    .modal-status-badge.checked-in {
+        background: #0dcaf0;
+        border: 1px solid #0dcaf0;
+    }
+    
+    .modal-status-badge.completed {
+        background: #6c757d;
+        border: 1px solid #6c757d;
+    }
+    
+    .modal-status-badge.cancelled {
+        background: #dc3545;
+        border: 1px solid #dc3545;
+    }
+    
+    .modal-reference {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 6px 12px;
+        background: rgba(229, 173, 4, 0.18);
+        border: 1px solid var(--gold-primary);
+        border-radius: 6px;
+        color: var(--gold-primary);
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    /* Modal Body */
+    .modal-body-split {
+        display: grid;
+        grid-template-columns: 60% 40%;
+        position: relative;
+    }
+    
+    .modal-body-divider {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 60%;
+        width: 1px;
+        background: #e0e0e0;
+    }
+    
+    .modal-left, .modal-right {
+        padding: 24px;
+    }
+    
+    /* Venue Information Section */
+    .info-section {
+        margin-bottom: 24px;
+    }
+    
+    .info-section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .info-box {
+        background: #F1F1F1;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 16px;
+        display: flex;
+        gap: 12px;
+    }
+    
+    .info-icon {
+        color: var(--gold-primary);
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+    
+    .info-content h4 {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6c757d;
+        margin: 0 0 6px 0;
+        text-transform: uppercase;
+    }
+    
+    .info-content .venue-name-text {
+        font-size: 16px;
+        font-weight: 700;
+        color: #000;
+        margin-bottom: 4px;
+    }
+    
+    .info-content .venue-address {
+        font-size: 14px;
+        color: #6c757d;
+        line-height: 1.5;
+    }
+    
+    /* Two Column Info Boxes */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+    
+    .info-box-small {
+        background: #F1F1F1;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        padding: 16px;
+        text-align: center;
+    }
+    
+    .info-box-small .info-icon {
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+    
+    .info-box-small h4 {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6c757d;
+        margin: 0 0 8px 0;
+        text-transform: uppercase;
+    }
+    
+    .info-box-small .value-primary {
+        font-size: 16px;
+        font-weight: 700;
+        color: #000;
+        margin-bottom: 4px;
+    }
+    
+    .info-box-small .value-secondary {
+        font-size: 13px;
+        color: #6c757d;
+    }
+    
+    /* Contact Info */
+    .contact-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .contact-list li {
+        padding: 8px 0;
+        font-size: 14px;
+        color: #495057;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .contact-list i {
+        color: var(--gold-primary);
+        width: 20px;
+    }
+    
+    /* Booking Status Timeline */
+    .timeline {
+        position: relative;
+        padding-left: 40px;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-bottom: 24px;
+    }
+    
+    .timeline-item:last-child {
+        padding-bottom: 0;
+    }
+    
+    .timeline-item:before {
+        content: '';
+        position: absolute;
+        left: -33px;
+        top: 8px;
+        bottom: -24px;
+        width: 2px;
+        background: #dee2e6;
+    }
+    
+    .timeline-item:last-child:before {
+        display: none;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -40px;
+        top: 0;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #dee2e6;
+        border: 3px solid #fff;
+        box-shadow: 0 0 0 1px #dee2e6;
+    }
+    
+    .timeline-item.completed .timeline-marker {
+        background: #28a745;
+        box-shadow: 0 0 0 1px #28a745;
+    }
+    
+    .timeline-item.completed:before {
+        background: #28a745;
+    }
+    
+    .timeline-content h6 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        margin: 0 0 4px 0;
+    }
+    
+    .timeline-content small {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    /* QR Code Section */
+    .qr-section {
+        text-align: center;
+    }
+    
+    .qr-section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .qr-container {
+        background: #000;
+        border: 2px solid #000;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 12px;
+    }
+    
+    .qr-code-display {
+        background: #fff;
+        padding: 12px;
+        border-radius: 8px;
+        display: inline-block;
+    }
+    
+    .qr-hint {
+        color: #fff;
+        font-size: 12px;
+        margin-top: 12px;
+    }
+    
+    .qr-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 16px;
+    }
+    
+    .btn-qr-download {
+        background: var(--gold-primary);
+        color: #000;
+        border: none;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-qr-download:hover {
+        background: var(--gold-secondary);
+    }
+    
+    .btn-qr-share {
+        background: #fff;
+        color: #000;
+        border: 1px solid #e0e0e0;
+        padding: 12px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-qr-share:hover {
+        background: #f8f9fa;
+    }
+    
+    /* Modal Footer */
+    .modal-footer-split {
+        border-top: 1px solid #e0e0e0;
+        padding: 20px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .footer-info-text {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    .footer-buttons {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-cancel-booking {
+        background: #fff;
+        color: #dc3545;
+        border: 1px solid #dc3545;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cancel-booking:hover {
+        background: #dc3545;
+        color: #fff;
+    }
+    
+    .btn-view-venue {
+        background: var(--gold-primary);
+        color: #000;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+    }
+    
+    .btn-view-venue:hover {
+        background: var(--gold-secondary);
+        color: #000;
+    }
+    
+    /* ============================================ */
+    /* CANCEL BOOKING MODAL */
+    /* ============================================ */
+    
+    .cancel-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        background: #fff;
+        border-radius: 16px;
+        overflow: hidden;
+        z-index: 5020 !important;
+        display: none;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    
+    .cancel-modal.active {
+        display: block;
+    }
+    
+    /* Cancel Modal Header */
+    .cancel-modal-header {
+        background: #000;
+        padding: 24px;
+        color: #fff;
+        position: relative;
+    }
+    
+    .cancel-modal-header h3 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0 0 8px 0;
+    }
+    
+    .cancel-modal-header p {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.8);
+        margin: 0;
+        line-height: 1.5;
+    }
+    
+    .btn-close-cancel {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    
+    /* Cancel Modal Body */
+    .cancel-modal-body {
+        padding: 24px;
+        max-height: calc(90vh - 200px);
+        overflow-y: auto;
+    }
+    
+    /* Venue Info Box */
+    .venue-info-cancel {
+        background: rgba(229, 173, 4, 0.12);
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .venue-info-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    
+    .venue-info-header i {
+        color: var(--gold-primary);
+        font-size: 20px;
+    }
+    
+    .venue-info-header h4 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #000;
+        margin: 0;
+    }
+    
+    .venue-info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        font-size: 14px;
+    }
+    
+    .venue-info-label {
+        color: #6c757d;
+        font-weight: 500;
+    }
+    
+    .venue-info-value {
+        color: #000;
+        font-weight: 600;
+        text-align: right;
+    }
+    
+    /* Cancellation Form */
+    .form-group-cancel {
+        margin-bottom: 16px;
+    }
+    
+    .form-label-cancel {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 8px;
+    }
+    
+    .optional-badge {
+        background: #e0e0e0;
+        color: #6c757d;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    
+    .form-control-cancel {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: 'Poppins', sans-serif;
+        resize: vertical;
+    }
+    
+    .form-control-cancel:focus {
+        outline: none;
+        border-color: var(--gold-primary);
+        box-shadow: 0 0 0 3px rgba(229, 173, 4, 0.1);
+    }
+    
+    /* Info Messages */
+    .info-message {
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 12px;
+        line-height: 1.5;
+    }
+    
+    .info-message i {
+        font-size: 16px;
+        margin-top: 2px;
+    }
+    
+    .info-message.success {
+        background: rgba(10, 182, 41, 0.1);
+        color: #0AB629;
+        border: 1px solid rgba(10, 182, 41, 0.2);
+    }
+    
+    .info-message.warning {
+        background: rgba(142, 107, 2, 0.1);
+        color: #8E6B02;
+        border: 1px solid rgba(142, 107, 2, 0.2);
+    }
+    
+    /* Cancel Modal Footer */
+    .cancel-modal-footer {
+        padding: 20px 24px;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+    
+    .btn-keep-booking {
+        background: #fff;
+        color: #6c757d;
+        border: 1px solid #e0e0e0;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    
+    .btn-keep-booking:hover {
+        background: #f8f9fa;
+    }
+    
+    .btn-confirm-cancel {
+        background: #dc3545;
+        color: #fff;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    
+    .btn-confirm-cancel:hover {
+        background: #c82333;
+    }
+    
     /* Responsive */
     @media (max-width: 991px) {
         .stats-grid {
@@ -340,6 +1037,19 @@
         .quota-grid {
             grid-template-columns: repeat(2, 1fr);
         }
+        
+        .modal-body-split {
+            grid-template-columns: 1fr;
+        }
+        
+        .modal-body-divider {
+            display: none;
+        }
+        .info-box-small {
+        padding: 12px;   /* optional smaller padding */
+    }
+        
+        
     }
     
     @media (max-width: 767px) {
@@ -352,29 +1062,6 @@
             font-size: 24px;
         }
         
-        .header-actions {
-            width: 100%;
-            flex-wrap: wrap;
-        }
-        .header-actions .btn-choose-plan,
-        .header-actions .btn-book-venue,
-        .header-actions .subscription-badge {
-            width: auto;                /* revert full width */
-            flex: 1 1 auto;             /* allow buttons to shrink if needed */
-            min-width: 0;               /* prevent overflow */
-            white-space: nowrap;
-        }
-        .header-actions .btn-choose-plan,
-        .header-actions .btn-book-venue {
-            padding: 10px 12px;         /* slightly smaller padding on mobile */
-        }
-        
-        
-        .btn-book-venue {
-            width: 100%;
-            justify-content: center;
-        }
-        
         .stats-grid {
             grid-template-columns: 1fr;
         }
@@ -383,22 +1070,64 @@
             grid-template-columns: 1fr;
         }
         
-        .bookings-table thead th,
-        .bookings-table tbody td {
-            padding: 12px 14px;
-            font-size: 13px;
+        .footer-buttons {
+            flex-direction: column;
+            width: 100%;
         }
         
+        .btn-cancel-booking,
+        .btn-view-venue {
+            width: 100%;
+        }
         
+        .cancel-modal-footer {
+            flex-direction: column;
+        }
         
-        .page-link {
-            width: 32px;
-            height: 32px;
+        .btn-keep-booking,
+        .btn-confirm-cancel {
+            width: 100%;
+        }
+        
+        .modal-venue-name {
+            font-size: 18px;
+        }
+        
+        .booking-modal,
+        .cancel-modal {
+            width: 95%;
+            max-height: 95vh;
+        }
+            .modal-footer-split {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+            padding: 16px 20px;  /* more breathing room */
+        }
+
+        .footer-info-text {
+            text-align: center;   /* or left if you prefer */
+            width: 100%;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .footer-buttons {
+            flex-direction: row;
+            width: 100%;
+            gap: 8px;
+        }
+
+        .footer-buttons .btn-cancel-booking,
+        .footer-buttons .btn-view-venue {
+            flex: 1;               /* 50% each */
+            width: auto;
+            text-align: center;
+            padding: 12px 8px;     /* better touch target */
             font-size: 13px;
+            white-space: nowrap;   /* prevent wrapping */
         }
     }
-
-    
 </style>
 
 <!-- Page Header -->
@@ -424,8 +1153,6 @@
                 Choose a Plan
             </a>
         {% endif %}
-        
-        
     </div>
 </div>
 
@@ -433,7 +1160,7 @@
 <div class="stats-grid">
     <div class="stat-card">
         <div class="icon-circle bg-warning-subtle">
-        <i class="fas fa-calendar-check text-warning"></i>
+            <i class="fas fa-calendar-check text-warning"></i>
         </div>
         <h3>{{ all_bookings.count|default:0 }}</h3>
         <p>Total Bookings</p>
@@ -441,7 +1168,7 @@
     
     <div class="stat-card">
         <div class="icon-circle bg-primary-subtle">
-        <i class="fas fa-calendar-day text-primary"></i>
+            <i class="fas fa-calendar-day text-primary"></i>
         </div>
         <h3>{{ today_bookings.count|default:0 }}</h3>
         <p>Today's Bookings</p>
@@ -449,7 +1176,7 @@
     
     <div class="stat-card">
         <div class="icon-circle bg-info-subtle">
-        <i class="fas fa-calendar-alt text-info"></i>
+            <i class="fas fa-calendar-alt text-info"></i>
         </div>
         <h3>{{ upcoming_bookings.count|default:0 }}</h3>
         <p>Upcoming Bookings</p>
@@ -463,7 +1190,7 @@
         <i class="fas fa-chart-bar"></i>
         Your Monthly Quota
     </h2>
-
+    
     <div class="quota-grid">
         {% for feature_name, usage in feature_usage.items %}
         <div class="quota-card">
@@ -539,11 +1266,10 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'bookings:detail' booking.booking_reference %}" 
-                               class="btn-view">
+                            <button onclick="openBookingModal('{{ booking.booking_reference }}')" class="btn-view">
                                 <i class="fas fa-eye"></i>
                                 View
-                            </a>
+                            </button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -563,12 +1289,366 @@
             <h5>No bookings yet</h5>
             <p>Start exploring and book your first venue</p>
             <a href="{% url 'venues:list' %}" class="btn-book-venue">
-               
                 Book a Venue
             </a>
         </div>
     {% endif %}
 </div>
 
+<!-- Modal Overlay -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
 
+<!-- Booking Details Modals -->
+{% for booking in page_obj %}
+<div class="booking-modal" id="modal-{{ booking.booking_reference }}">
+    <div class="modal-scroll">
+        <!-- Header with Image Background -->
+        <div class="modal-header-image" style="background-image: url('{% if booking.venue.cover_image %}{{ booking.venue.cover_image.url }}{% elif booking.venue.images.exists %}{{ booking.venue.images.first.image.url }}{% else %}{% static 'images/placeholder-venue.jpg' %}{% endif %}');">
+            <div class="modal-header-overlay"></div>
+            <div class="modal-header-content">
+                <div class="modal-header-top">
+                    <div class="modal-title-small">Booking Details</div>
+                    <button class="btn-close-modal" onclick="closeBookingModal('{{ booking.booking_reference }}')">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-header-bottom">
+                    <div>
+                        <h2 class="modal-venue-name">{{ booking.venue.name }}</h2>
+                        <span class="modal-reference">{{ booking.booking_reference }}</span>
+                    </div>
+                    <span class="modal-status-badge {{ booking.status|lower }}">
+                        {{ booking.get_status_display }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Body -->
+        <div class="modal-body-split">
+            <div class="modal-body-divider"></div>
+            
+            <!-- Left Side (60%) -->
+            <div class="modal-left">
+                <!-- Venue Information -->
+                <div class="info-section">
+                    <div class="info-section-title">Venue Information</div>
+                    <div class="info-box">
+                        <i class="fas fa-building info-icon"></i>
+                        <div class="info-content">
+                            <h4>Address</h4>
+                            <div class="venue-name-text">{{ booking.venue.name }}</div>
+                            <div class="venue-address">
+                                {{ booking.venue.address }}<br>
+                                {{ booking.venue.city }}, {{ booking.venue.state }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Visit Date & Category -->
+                <div class="info-grid">
+                    <div class="info-box-small">
+                        <i class="fas fa-calendar info-icon"></i>
+                        <h4>Visit Date</h4>
+                        <div class="value-primary">{{ booking.visit_date|date:"l" }}</div>
+                        <div class="value-secondary">{{ booking.visit_date|date:"F d, Y" }}</div>
+                    </div>
+                    <div class="info-box-small">
+                        {% if booking.venue.primary_feature and booking.venue.primary_feature.icon %}
+                            <i class="fas {{ booking.venue.primary_feature.icon }} info-icon"></i>
+                        {% else %}
+                            <i class="fas fa-star info-icon"></i>
+                        {% endif %}
+                        <h4>Category</h4>
+                        <div class="value-primary">{{ booking.venue.get_category_display }}</div>
+                        <div class="value-secondary">{{ booking.subscription.plan.name }}</div>
+                    </div>
+                </div>
+                
+                <!-- Contact Info -->
+                <div class="info-section">
+                    <div class="info-section-title">Contact Info</div>
+                    <ul class="contact-list">
+                        {% if booking.venue.phone %}
+                        <li>
+                            <i class="fas fa-phone"></i>
+                            {{ booking.venue.phone }}
+                        </li>
+                        {% endif %}
+                        {% if booking.venue.email %}
+                        <li>
+                            <i class="fas fa-envelope"></i>
+                            {{ booking.venue.email }}
+                        </li>
+                        {% endif %}
+                        {% if booking.venue.website %}
+                        <li>
+                            <i class="fas fa-globe"></i>
+                            <a href="{{ booking.venue.website }}" target="_blank">{{ booking.venue.website }}</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;">
+                
+                <!-- Booking Status -->
+                <div class="info-section">
+                    <div class="info-section-title">Booking Status</div>
+                    <div class="timeline">
+                        <div class="timeline-item completed">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6>Booking Confirmed</h6>
+                                <small>{{ booking.created_at|date:"M j, Y g:i A" }}</small>
+                            </div>
+                        </div>
+                        <div class="timeline-item {% if booking.checked_in_at %}completed{% endif %}">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h6>Checked In at Venue</h6>
+                                {% if booking.checked_in_at %}
+                                <small style="color: #28a745;">✓ {{ booking.checked_in_at|date:"M j, Y g:i A" }}</small>
+                                {% else %}
+                                <small>Present QR code on {{ booking.visit_date|date:"M j, Y" }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Side (40%) -->
+            <div class="modal-right">
+                <div class="qr-section">
+                    <div class="qr-section-title">QR Code for Check-in</div>
+                    <div class="qr-container">
+                        <div class="qr-code-display" id="qrcode-{{ booking.booking_reference }}"></div>
+                            <div class="qr-hint">Show this QR code at the venue for check-in</div>
+                            <div class="qr-buttons">
+                            <button class="btn-qr-download" onclick="downloadQR('{{ booking.booking_reference }}')">
+                                <i class="fas fa-download"></i> Download QR Code
+                            </button>
+                            <button class="btn-qr-share" onclick="shareBooking('{{ booking.booking_reference }}')">
+                                <i class="fas fa-share"></i> Share Booking
+                            </button>
+                      </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="modal-footer-split">
+            <div class="footer-info-text">
+                Cancellations accepted up to 24 hours before visit
+            </div>
+            <div class="footer-buttons">
+                {% if booking.can_cancel %}
+                <button class="btn-cancel-booking" onclick="openCancelModal('{{ booking.booking_reference }}')">
+                    Cancel Booking
+                </button>
+                {% endif %}
+                <a href="{% url 'venues:detail' booking.venue.slug %}" class="btn-view-venue">
+                    View Venue Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Cancel Modal for This Booking -->
+{% for booking_data in bookings_with_quota %}
+{% with booking=booking_data.booking remaining=booking_data.remaining_quota %}
+<div class="cancel-modal" id="cancel-modal-{{ booking.booking_reference }}">
+    <div class="cancel-modal-header">
+        <h3>Cancel Booking</h3>
+        <p>This action cannot be undone. Review your booking below before proceeding.</p>
+        <button class="btn-close-cancel" onclick="closeCancelModal('{{ booking.booking_reference }}')">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    
+    <form method="post" action="{% url 'bookings:cancel' booking.booking_reference %}" id="cancel-form-{{ booking.booking_reference }}">
+        {% csrf_token %}
+        <div class="cancel-modal-body">
+            <!-- Venue Info -->
+            <div class="venue-info-cancel">
+                <div class="venue-info-header">
+                    <i class="fas fa-building"></i>
+                    <h4>{{ booking.venue.name }}</h4>
+                </div>
+                <div class="venue-info-row">
+                    <span class="venue-info-label">Category</span>
+                    <span class="venue-info-value">{{ booking.venue.get_category_display }}</span>
+                </div>
+                <div class="venue-info-row">
+                    <span class="venue-info-label">Plan</span>
+                    <span class="venue-info-value">{{ booking.subscription.plan.name }}</span>
+                </div>
+                <div class="venue-info-row">
+                    <span class="venue-info-label">Visit Date</span>
+                    <span class="venue-info-value">{{ booking.visit_date|date:"M d, Y" }}</span>
+                </div>
+                <div class="venue-info-row">
+                    <span class="venue-info-label">Guests</span>
+                    <span class="venue-info-value">{{ booking.guests_count }}</span>
+                </div>
+                {% if remaining %}
+                <div class="venue-info-row">
+                    <span class="venue-info-label">After Cancellation</span>
+                    <span class="venue-info-value">{{ remaining }} bookings available</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Cancellation Reason -->
+            <div class="form-group-cancel">
+                <label class="form-label-cancel">
+                    Reason for Cancellation
+                    <span class="optional-badge">Optional</span>
+                </label>
+                <textarea 
+                    name="cancellation_reason" 
+                    class="form-control-cancel" 
+                    rows="3" 
+                    placeholder="Add more details about your cancellation..."></textarea>
+            </div>
+            
+            <!-- Info Messages -->
+            {% if booking.venue.primary_feature and remaining %}
+            <div class="info-message success">
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    Your {{ booking.venue.primary_feature.name }} quota will be restored - you'll have <strong>{{ remaining }} bookings</strong> remaining this month.
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="info-message warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <div>
+                    Cancellations less than 24 hours before the visit may affect your future booking privileges.
+                </div>
+            </div>
+        </div>
+        
+        <div class="cancel-modal-footer">
+            <button type="button" class="btn-keep-booking" onclick="closeCancelModal('{{ booking.booking_reference }}')">
+                Keep Booking
+            </button>
+            <button type="submit" class="btn-confirm-cancel">
+                Confirm Cancellation
+            </button>
+        </div>
+    </form>
+</div>
+{% endwith %}
+{% endfor %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// Generate QR codes for all bookings
+document.addEventListener('DOMContentLoaded', function() {
+    {% for booking in page_obj %}
+    try {
+        const qrContainer = document.getElementById('qrcode-{{ booking.booking_reference }}');
+        if (qrContainer) {
+            new QRCode(qrContainer, {
+                text: "{{ booking.get_qr_code_data|escapejs }}",
+                width: 160,
+                height: 160,
+                colorDark: "#000000",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+    } catch (error) {
+        console.error('QR generation failed for {{ booking.booking_reference }}:', error);
+    }
+    {% endfor %}
+});
+
+// Modal Functions
+function openBookingModal(reference) {
+    document.getElementById('modalOverlay').classList.add('active');
+    document.getElementById('modal-' + reference).classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBookingModal(reference) {
+    document.getElementById('modal-' + reference).classList.remove('active');
+    document.getElementById('modalOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function openCancelModal(reference) {
+    closeBookingModal(reference);
+    document.getElementById('cancel-modal-' + reference).classList.add('active');
+    document.getElementById('modalOverlay').classList.add('active');
+}
+
+function closeCancelModal(reference) {
+    document.getElementById('cancel-modal-' + reference).classList.remove('active');
+    document.getElementById('modalOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function closeAllModals() {
+    document.querySelectorAll('.booking-modal, .cancel-modal').forEach(modal => {
+        modal.classList.remove('active');
+    });
+    document.getElementById('modalOverlay').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function downloadQR(reference) {
+    try {
+        const qrContainer = document.getElementById('qrcode-' + reference);
+        const img = qrContainer.querySelector('img');
+        
+        if (!img) {
+            alert('QR code not ready. Please wait a moment.');
+            return;
+        }
+        
+        const link = document.createElement('a');
+        link.download = 'booking-qr-' + reference + '.png';
+        link.href = img.src;
+        link.click();
+    } catch (error) {
+        console.error('Download failed:', error);
+        alert('Failed to download QR code.');
+    }
+}
+
+function shareBooking(reference) {
+    const shareData = {
+        title: 'My Booking',
+        text: 'Booking Reference: ' + reference,
+        url: window.location.href
+    };
+    
+    if (navigator.share) {
+        navigator.share(shareData).catch(err => console.error('Share failed:', err));
+    } else {
+        navigator.clipboard.writeText(window.location.href)
+            .then(() => alert('Booking link copied to clipboard!'))
+            .catch(() => alert('Failed to copy link'));
+    }
+}
+
+// Escape key closes modals
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeAllModals();
+    }
+});
+</script>
 {% endblock %}

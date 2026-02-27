@@ -37,7 +37,7 @@ from .permissions import (
 )
 from subscriptions.models import Subscription
 from bookings.models import Booking, BookingStatus
-from subscriptions.utils import get_all_feature_usage
+from subscriptions.utils import get_subscription_state, get_all_feature_usage, get_or_create_feature_usage
 from django.views.generic import UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
@@ -372,8 +372,6 @@ def dashboard(request):
     else:
         return redirect('account:user_dashboard')
 
-from subscriptions.utils import get_subscription_state, get_all_feature_usage
-
 class UserDashboardView(IsSubscriberUserMixin, TemplateView):
     """Dashboard for subscribers with precise state handling"""
     template_name = 'account/user_dashboard.html'
@@ -393,9 +391,34 @@ class UserDashboardView(IsSubscriberUserMixin, TemplateView):
             context['feature_usage'] = get_all_feature_usage(sub_state['subscription'])
         
         # ── BOOKING STATS ──
-        context['recent_bookings'] = Booking.objects.filter(
+        recent_bookings = Booking.objects.filter(
             user=user
-        ).select_related('venue').order_by('-created_at')[:10]
+        ).select_related('venue', 'venue__primary_feature', 'subscription').order_by('-created_at')[:10]
+        
+        context['recent_bookings'] = recent_bookings
+        
+        # ── ADD REMAINING QUOTA FOR EACH BOOKING (for cancel modal) ──
+        bookings_with_quota = []
+        for booking in recent_bookings:
+            booking_data = {
+                'booking': booking,
+                'remaining_quota': None,
+            }
+            
+            # Calculate remaining quota if booking has primary feature
+            if booking.venue.primary_feature and booking.subscription:
+                feature_usage_obj, _ = get_or_create_feature_usage(
+                    booking.subscription,
+                    booking.venue.primary_feature
+                )
+                # Calculate what remaining will be AFTER cancellation (current remaining + 1)
+                # Since used_count will decrease by 1, remaining will increase by 1
+                current_remaining = feature_usage_obj.get_limit() - feature_usage_obj.used_count
+                booking_data['remaining_quota'] = current_remaining + 1
+            
+            bookings_with_quota.append(booking_data)
+        
+        context['bookings_with_quota'] = bookings_with_quota
         
         context['upcoming_bookings_count'] = Booking.objects.filter(
             user=user,
@@ -408,6 +431,9 @@ class UserDashboardView(IsSubscriberUserMixin, TemplateView):
             user=user, 
             status=BookingStatus.COMPLETED
         ).count()
+        
+        # Add active_subscription for convenience
+        context['active_subscription'] = sub_state.get('subscription')
         
         return context
 
@@ -434,6 +460,12 @@ class PartnerDashboardView(IsApprovedPartnerMixin, TemplateView):
         all_bookings = Booking.objects.filter(
             venue__partner=partner_profile
         ).select_related('venue', 'user', 'subscription').order_by('-created_at')
+
+        for booking in all_bookings:
+            if booking.status == BookingStatus.CONFIRMED:
+                booking.display_reference = '••••••' + booking.booking_reference[-4:]
+            else:
+                booking.display_reference = booking.booking_reference
         
         # Total bookings count
         context['total_bookings'] = all_bookings.count()

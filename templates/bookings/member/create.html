@@ -1,279 +1,718 @@
-{% extends 'base.html' %}
+{% extends 'base2.html' %}
 {% load static %}
 
-{% block title %}Book a Venue - {{ site_name }}{% endblock %}
-
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-{% endblock %}
+{% block title %}Book a Venue - Gold Privilege{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="bi bi-calendar-plus me-2"></i>
-                        Book a Venue
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <!-- Booking Quota Alert -->
-                    {% if remaining_bookings %}
-                    <div class="alert alert-info mb-4">
-                        <div class="d-flex align-items-center">
-                            <div class="me-3">
-                                <i class="bi bi-info-circle fs-4"></i>
-                            </div>
-                            <div>
-                                <h6 class="alert-heading mb-1">Booking Quota</h6>
-                                <p class="mb-0">
-                                    You have <strong>{{ remaining_bookings }}</strong> 
-                                    booking{{ remaining_bookings|pluralize }} remaining this month.
-                                    Plan: {{ subscription.plan.name }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
+<style>
+    * { font-family: 'Poppins', sans-serif; }
+    
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-secondary: #F9B036;
+        --dark-bg: #020202;
+        --light-gray: #E5E5E5;
+        --light-yellow: #FFFEF7;
+        --info-blue: #0DCAF0;
+    }
+    
+    /* Container Wrapper */
+    .booking-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+    
+    /* Page Header */
+    .page-header {
+        margin-bottom: 30px;
+    }
+    
+    .page-header h1 {
+        font-size: 32px;
+        font-weight: 700;
+        color: #000;
+        margin: 0;
+    }
+    
+    /* Feature Quota Card */
+    .quota-card {
+        background: var(--light-yellow);
+        border: 2px solid var(--light-gray);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+    }
+    
+    .quota-header {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 12px;
+    }
+    
+    .quota-display {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .quota-icon {
+        font-size: 28px;
+        flex-shrink: 0;
+    }
+    
+    .quota-info {
+        flex: 1;
+    }
+    
+    .quota-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 4px;
+    }
+    
+    .quota-count {
+        font-size: 18px;
+        font-weight: 700;
+        color: green;
+    }
+    
+    /* Venue Info Card */
+    .venue-info-card {
+        border: 2px solid var(--light-gray);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 30px;
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        background: #fff;
+    }
+    
+    .venue-image {
+        width: 120px;
+        height: 120px;
+        border-radius: 12px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    
+    .venue-details {
+        flex: 1;
+    }
+    
+    .venue-name {
+        font-size: 24px;
+        font-weight: 700;
+        color: #000;
+        margin: 0 0 8px 0;
+    }
+    
+    .venue-location {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .venue-location i {
+        color: #000;
+    }
+    
+    .venue-category {
+        display: inline-block;
+        background: rgba(229, 173, 4, 0.18);
+        color: var(--gold-primary);
+        border: 1px solid var(--gold-primary);
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+    
+    
+    /* Booking Container */
+    .booking-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+    
+    /* Booking Form */
+    .booking-form {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .form-group {
+        margin-bottom: 24px;
+    }
+    
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        margin-bottom: 8px;
+    }
+    
+    .form-label .required {
+        color: #DC3545;
+        margin-left: 3px;
+    }
+    
+    .form-control, .form-select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid var(--light-gray);
+        border-radius: 8px;
+        font-size: 14px;
+        color: #000;
+        transition: all 0.3s ease;
+        font-family: 'Poppins', sans-serif;
+        background: #fff;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        outline: none;
+        border-color: var(--gold-primary);
+        box-shadow: 0 0 0 3px rgba(229, 173, 4, 0.1);
+    }
+    
+    .form-control.is-invalid {
+        border-color: #DC3545;
+    }
+    
+    .invalid-feedback {
+        color: #DC3545;
+        font-size: 13px;
+        margin-top: 6px;
+        display: block;
+    }
+    
+    .form-text {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 6px;
+        display: block;
+    }
+    
+    /* Special Info Box */
+    .info-box {
+        background: rgba(229, 173, 4, 0.18);
+        border: 1px solid var(--gold-primary);
+        border-radius: 8px;
+        padding: 12px 16px;
+        font-size: 13px;
+        color: #000;
+        margin-top: 6px;
+    }
+    
+    /* Booking Summary */
+    .booking-summary {
+        border: 2px solid var(--light-gray);
+        border-radius: 12px;
+        padding: 24px;
+        height: fit-content;
+        position: sticky;
+        top: 20px;
+        background: #fff;
+    }
+    
+    .summary-header {
+        font-size: 18px;
+        font-weight: 700;
+        color: #000;
+        margin: 0 0 20px 0;
+        padding-bottom: 16px;
+        border-bottom: 2px solid var(--light-gray);
+    }
+    
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #F5F5F5;
+    }
+    
+    .summary-row:last-child {
+        border-bottom: none;
+    }
+    
+    .summary-label {
+        font-size: 14px;
+        font-weight: 500;
+        color: #6c757d;
+    }
+    
+    .summary-value {
+        font-size: 14px;
+        font-weight: 600;
+        color: #000;
+        text-align: right;
+        max-width: 60%;
+        word-wrap: break-word;
+    }
+    
+    /* Form Actions */
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .btn-cancel {
+        background-color: #fff;
+        color: #6c757d;
+        border: 2px solid var(--light-gray);
+        padding: 12px 32px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-cancel:hover {
+        background-color: #F8F9FA;
+        border-color: #6c757d;
+        color: #6c757d;
+    }
+    
+    .btn-confirm {
+        background-color: var(--gold-primary);
+        color: #000;
+        border: 2px solid var(--gold-primary);
+        padding: 12px 32px;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-style: solid;
+    }
+    
+    .btn-confirm:hover {
+        background-color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229, 173, 4, 0.3);
+    }
+    
+    /* Alert Messages */
+    .alert {
+        padding: 15px 20px;
+        border-radius: 8px;
+        margin-bottom: 25px;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .alert-success {
+        background-color: rgba(41, 204, 151, 0.1);
+        color: #29CC97;
+        border: 1px solid #29CC97;
+    }
+    
+    .alert-danger, .alert-error {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #DC3545;
+        border: 1px solid #DC3545;
+    }
+    
+    .alert-warning {
+        background-color: rgba(255, 193, 7, 0.1);
+        color: #FFC107;
+        border: 1px solid #FFC107;
+    }
+    
+    .alert i {
+        font-size: 18px;
+    }
+    
+    /* Responsive */
+    @media (max-width: 991px) {
+        .booking-wrapper {
+            padding: 30px 15px;
+        }
 
-                    <!-- Venue Selection Card (if no venue_slug) -->
-                    {% if not venue_slug %}
-                    <div class="card mb-4">
-                        <div class="card-body">
-                            <h5 class="card-title">1. Select a Venue</h5>
-                            <div class="row" id="venueSelection">
-                                {% for venue in form.fields.venue.queryset %}
-                                <div class="col-md-6 mb-3">
-                                    <div class="card venue-card h-100 {% if form.venue.value == venue.id %}border-primary{% endif %}"
-                                         onclick="selectVenue({{ venue.id }}, '{{ venue.slug }}')"
-                                         style="cursor: pointer;">
-                                        <div class="card-body">
-                                            <h6 class="card-title">{{ venue.name }}</h6>
-                                            <p class="card-text text-muted small mb-2">
-                                                <i class="bi bi-geo-alt"></i> {{ venue.city }}
-                                            </p>
-                                            <p class="card-text small">{{ venue.short_description|truncatewords:20 }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% empty %}
-                                <div class="col-12">
-                                    <div class="alert alert-warning">
-                                        No venues available for booking at the moment.
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
+        .booking-container {
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
 
-                    <!-- Booking Form -->
-                    <form method="post" id="bookingForm">
-                        {% csrf_token %}
-                        
-                        {% if venue_slug and form.venue.value %}
-                        <div class="card mb-4 border-primary">
-                            <div class="card-body">
-                                <h5 class="card-title">Selected Venue</h5>
-                                <div class="d-flex align-items-center">
-                                    <div class="me-3">
-                                        <i class="bi bi-check-circle-fill text-success fs-4"></i>
-                                    </div>
-                                    <div>
-                                        <h6 class="mb-0">{{ form.venue.value.instance.name }}</h6>
-                                        <small class="text-muted">{{ form.venue.value.instance.address }}</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
+        .booking-summary {
+            position: static;
+        }
 
-                        <input type="hidden" name="venue" id="venueId" value="{{ form.venue.value|default:'' }}">
+        /* Tablet: keep row layout, reduce image size */
+        .venue-info-card {
+            flex-direction: row;        /* keep horizontal */
+            align-items: center;
+            gap: 15px;
+        }
 
-                        <div class="row mb-4">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.visit_date.id_for_label }}" class="form-label">
-                                        <i class="bi bi-calendar3 me-1"></i>Visit Date
-                                    </label>
-                                    <input type="date" 
-                                           name="{{ form.visit_date.name }}"
-                                           id="{{ form.visit_date.id_for_label }}"
-                                           class="form-control {% if form.visit_date.errors %}is-invalid{% endif %}"
-                                           min="{{ min_date }}"
-                                           max="{{ max_date }}"
-                                           required>
-                                    {% if form.visit_date.errors %}
-                                    <div class="invalid-feedback">
-                                        {{ form.visit_date.errors|join:", " }}
-                                    </div>
-                                    {% endif %}
-                                    <div class="form-text">
-                                        Bookings can be made up to 90 days in advance.
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="{{ form.guests_count.id_for_label }}" class="form-label">
-                                        <i class="bi bi-people me-1"></i>Number of Guests
-                                    </label>
-                                    <input type="number" 
-                                           name="{{ form.guests_count.name }}"
-                                           id="{{ form.guests_count.id_for_label }}"
-                                           class="form-control {% if form.guests_count.errors %}is-invalid{% endif %}"
-                                           min="1" max="20" value="1" required>
-                                    {% if form.guests_count.errors %}
-                                    <div class="invalid-feedback">
-                                        {{ form.guests_count.errors|join:", " }}
-                                    </div>
-                                    {% endif %}
-                                    <div class="form-text">
-                                        Including yourself. Maximum 20 guests per booking.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+        .venue-image {
+            width: 100px;               /* smaller image */
+            height: 100px;
+        }
 
-                        <div class="mb-4">
-                            <label for="{{ form.special_requests.id_for_label }}" class="form-label">
-                                <i class="bi bi-chat-text me-1"></i>Special Requests (Optional)
-                            </label>
-                            <textarea name="{{ form.special_requests.name }}"
-                                      id="{{ form.special_requests.id_for_label }}"
-                                      class="form-control {% if form.special_requests.errors %}is-invalid{% endif %}"
-                                      rows="3"
-                                      placeholder="Any dietary restrictions, special occasions, or specific requirements..."></textarea>
-                            {% if form.special_requests.errors %}
-                            <div class="invalid-feedback">
-                                {{ form.special_requests.errors|join:", " }}
-                            </div>
-                            {% endif %}
-                            <div class="form-text">
-                                Let the venue know about any special needs or celebrations.
-                            </div>
-                        </div>
+        .venue-name {
+            font-size: 22px;            /* slightly smaller */
+        }
+    }
+    
+/* Responsive */
+@media (min-width: 768px) and (max-width: 991px) {
+    .booking-wrapper {
+        padding: 30px 15px;
+    }
 
-                        <!-- Summary Card -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5 class="mb-0">Booking Summary</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <p class="mb-1"><strong>Venue:</strong> <span id="summaryVenue">-</span></p>
-                                        <p class="mb-1"><strong>Date:</strong> <span id="summaryDate">-</span></p>
-                                        <p class="mb-1"><strong>Guests:</strong> <span id="summaryGuests">1</span></p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <p class="mb-1"><strong>Plan:</strong> {{ subscription.plan.name }}</p>
-                                        <p class="mb-1"><strong>Remaining this month:</strong> {{ remaining_bookings }}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    /* Keep two columns on tablets */
+    .booking-container {
+        grid-template-columns: 1fr 1fr;
+        gap: 25px;
+    }
 
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{% if venue_slug %}{% url 'venues:detail' venue_slug %}{% else %}{% url 'venues:list' %}{% endif %}" 
-                               class="btn btn-secondary me-md-2">
-                                <i class="bi bi-arrow-left me-1"></i>Back
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i>Confirm Booking
-                            </button>
-                        </div>
-                    </form>
-                </div>
+    .booking-summary {
+        position: static;   /* prevents sticky issues on tablet */
+    }
+
+    /* Venue card: keep row layout, smaller image */
+    .venue-info-card {
+        flex-direction: row;
+        gap: 15px;
+    }
+
+    .venue-image {
+        width: 100px;
+        height: 100px;
+    }
+
+    .venue-name {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 767px) {
+    .booking-wrapper {
+        padding: 20px 10px;
+    }
+    
+    .page-header h1 {
+        font-size: 24px;
+    }
+
+    /* Stack columns on mobile */
+    .booking-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .booking-summary {
+        position: static;
+    }
+
+    /* Venue card: row layout with tiny image */
+    .venue-info-card {
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .venue-image {
+        width: 80px;
+        height: 80px;
+    }
+
+    .venue-details {
+        flex: 1;
+        min-width: 0;               /* allow text to shrink */
+    }
+
+    .venue-name {
+        font-size: 18px;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .venue-location {
+        font-size: 13px;
+        margin-bottom: 4px;
+        flex-wrap: wrap;            /* category can wrap if needed */
+    }
+
+    .venue-category {
+        display: inline-block;
+        margin-left: 4px;           /* sits next to location */
+        font-size: 12px;
+        padding: 3px 8px;
+    }
+
+    .quota-card {
+        padding: 16px 20px;
+    }
+
+    .booking-summary {
+        padding: 20px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn-cancel,
+    .btn-confirm {
+        width: 100%;
+        text-align: center;
+    }
+}
+</style>
+
+<div class="booking-wrapper">
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1>Book This Venue</h1>
+    </div>
+
+    <!-- Success/Error Messages -->
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+            <span>{{ message }}</span>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Feature Quota Card -->
+    {% if feature_name and remaining is not None %}
+    <div class="quota-card">
+        <div class="quota-header">Your Remaining Quota for This Category</div>
+        <div class="quota-display">
+            <span class="quota-icon">
+                {% if feature_icon %}
+                    <i class="fas {{ feature_icon }}" style="font-size: 20px; color: black;"></i>
+                {% else %}
+                    <i class="fas fa-star" style="font-size: 20px; color: var(--gold-primary);"></i>
+                {% endif %}
+            </span>
+            <div class="quota-info">
+                <div class="quota-name">{{ feature_name }}</div>
+                <div class="quota-count">{{ used }}/{{ limit }} visits used</div>
             </div>
         </div>
     </div>
+    {% endif %}
+
+    <!-- Venue Info Card -->
+    <div class="venue-info-card">
+        {% if venue.cover_image %}
+            <img src="{{ venue.cover_image.url }}" alt="{{ venue.name }}" class="venue-image">
+        {% elif venue.images.exists %}
+            <img src="{{ venue.images.first.image.url }}" alt="{{ venue.name }}" class="venue-image">
+        {% else %}
+            <div class="venue-image" style="background: #F0F0F0; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-image" style="font-size: 32px; color: #ccc;"></i>
+            </div>
+        {% endif %}
+        
+        <div class="venue-details">
+            <h2 class="venue-name">{{ venue.name }}</h2>
+            <div class="venue-location">
+                <i class="fas fa-map-marker-alt"></i>
+                {{ venue.city }}, {{ venue.state }}
+            </div>
+            <span class="venue-category">{{ venue.get_category_display }}</span>
+        </div>
+    </div>
+
+    <!-- Booking Form & Summary -->
+    <form method="post" id="booking-form">
+        {% csrf_token %}
+        
+        <!-- Hidden venue field -->
+        {{ form.venue }}
+        
+        <div class="booking-container">
+            <!-- Left: Booking Form -->
+            <div class="booking-form">
+                <!-- Visit Date -->
+                <div class="form-group">
+                    <label for="{{ form.visit_date.id_for_label }}" class="form-label">
+                        Visit Date<span class="required">*</span>
+                    </label>
+                    {{ form.visit_date }}
+                    {% if form.visit_date.errors %}
+                    <div class="invalid-feedback" style="display: block;">
+                        {{ form.visit_date.errors.0 }}
+                    </div>
+                    {% endif %}
+                    <small class="form-text">Select your preferred visit date</small>
+                </div>
+                
+                <!-- Number of Guests -->
+                <div class="form-group">
+                    <label for="{{ form.guests_count.id_for_label }}" class="form-label">
+                        Number of Guests<span class="required">*</span>
+                    </label>
+                    {{ form.guests_count }}
+                    {% if form.guests_count.errors %}
+                    <div class="invalid-feedback" style="display: block;">
+                        {{ form.guests_count.errors.0 }}
+                    </div>
+                    {% endif %}
+                    <small class="form-text">Including yourself (max {{ max_guests }})</small>
+                </div>
+                
+                <!-- Special Requests -->
+                <div class="form-group">
+                    <label for="{{ form.special_requests.id_for_label }}" class="form-label">
+                        Special Requests <span style="font-weight: 400; color: #6c757d;">(Optional)</span>
+                    </label>
+                    {{ form.special_requests }}
+                    {% if form.special_requests.errors %}
+                    <div class="invalid-feedback" style="display: block;">
+                        {{ form.special_requests.errors.0 }}
+                    </div>
+                    {% endif %}
+                    <div class="info-box">
+                        Let the venue know about any special needs or celebrations.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right: Booking Summary -->
+            <div class="booking-summary">
+                <h3 class="summary-header">Booking Summary</h3>
+                
+                <div class="summary-row">
+                    <span class="summary-label">Venue</span>
+                    <span class="summary-value">{{ venue.name }}</span>
+                </div>
+                
+                <div class="summary-row">
+                    <span class="summary-label">Category</span>
+                    <span class="summary-value">{{ venue.get_category_display }}</span>
+                </div>
+                
+                <div class="summary-row">
+                    <span class="summary-label">Plan</span>
+                    <span class="summary-value">{{ subscription.plan.name }}</span>
+                </div>
+                
+                <div class="summary-row">
+                    <span class="summary-label">Visit Date</span>
+                    <span class="summary-value" id="summary-date">Not selected</span>
+                </div>
+                
+                <div class="summary-row">
+                    <span class="summary-label">Guests</span>
+                    <span class="summary-value" id="summary-guests">{{ form.guests_count.value|default:"1" }}</span>
+                </div>
+                
+                {% if feature_name and remaining is not None %}
+                <div class="summary-row">
+                    <span class="summary-label">Remaining Quota</span>
+                    <span class="summary-value" style="color: var(--gold-primary);">{{ remaining }} visits left</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Form Actions -->
+        <div class="form-actions">
+            <a href="{% url 'venues:detail' venue.slug %}" class="btn-cancel">
+                Cancel
+            </a>
+            <button type="submit" class="btn-confirm">
+                Confirm Booking
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
-// Update summary as form changes
 document.addEventListener('DOMContentLoaded', function() {
-    // Get form elements
     const dateInput = document.getElementById('{{ form.visit_date.id_for_label }}');
     const guestsInput = document.getElementById('{{ form.guests_count.id_for_label }}');
-    const venueSelect = document.getElementById('venueId');
+    const summaryDate = document.getElementById('summary-date');
+    const summaryGuests = document.getElementById('summary-guests');
     
-    // Update summary
-    function updateSummary() {
-        // Update date
-        if (dateInput.value) {
-            const date = new Date(dateInput.value);
-            document.getElementById('summaryDate').textContent = 
-                date.toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+    // Update summary when date changes
+    if (dateInput) {
+        dateInput.addEventListener('change', function() {
+            if (this.value) {
+                const date = new Date(this.value + 'T00:00:00');
+                summaryDate.textContent = date.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
                 });
-        }
+            } else {
+                summaryDate.textContent = 'Not selected';
+            }
+        });
         
-        // Update guests
-        if (guestsInput.value) {
-            document.getElementById('summaryGuests').textContent = guestsInput.value;
-        }
-        
-        // Update venue if available
-        if (venueSelect.value) {
-            // This would typically come from a data attribute or API call
-            // For now, we'll just show the selected value
-            document.getElementById('summaryVenue').textContent = 'Selected';
+        // Trigger on load if value exists
+        if (dateInput.value) {
+            dateInput.dispatchEvent(new Event('change'));
         }
     }
     
-    // Attach event listeners
-    dateInput.addEventListener('change', updateSummary);
-    guestsInput.addEventListener('input', updateSummary);
+    // Update summary when guests change
+    if (guestsInput) {
+        guestsInput.addEventListener('input', function() {
+            summaryGuests.textContent = this.value || '1';
+        });
+    }
     
-    // Initialize summary
-    updateSummary();
-});
-
-// Venue selection (if no venue_slug)
-function selectVenue(venueId, venueSlug) {
-    document.getElementById('venueId').value = venueId;
-    
-    // Highlight selected card
-    document.querySelectorAll('.venue-card').forEach(card => {
-        card.classList.remove('border-primary');
-    });
-    event.currentTarget.classList.add('border-primary');
-    
-    // Update summary
-    document.getElementById('summaryVenue').textContent = 
-        event.currentTarget.querySelector('.card-title').textContent;
-}
-
-// Date picker with disabled dates
-flatpickr("#{{ form.visit_date.id_for_label }}", {
-    minDate: "{{ min_date }}",
-    maxDate: "{{ max_date }}",
-    disable: [
-        function(date) {
-            // Disable Sundays (example)
-            return date.getDay() === 0;
-        }
-    ],
-    onChange: function(selectedDates, dateStr, instance) {
-        // Check availability when date changes
-        checkDateAvailability(dateStr);
+    // Form validation
+    const form = document.getElementById('booking-form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            // Check required fields
+            const requiredFields = form.querySelectorAll('[required]');
+            requiredFields.forEach(field => {
+                if (!field.value || !field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                
+                // Scroll to first error
+                const firstError = form.querySelector('.is-invalid');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
+            }
+        });
     }
 });
-
-function checkDateAvailability(dateStr) {
-    // This would make an AJAX call to check venue availability
-    // For now, it's a placeholder
-    console.log('Checking availability for:', dateStr);
-}
 </script>
 {% endblock %}
