@@ -6,7 +6,7 @@ app_name = 'subscriptions'
 
 urlpatterns = [
     # Plan listing and details
-    path('plans/', views.PlanListView.as_view(), name='plans_list'),
+    path('plans/', views.plans_list, name='plans_list'),
     path('plans/<slug:slug>/', views.PlanDetailView.as_view(), name='plan_detail'),
     
     # Subscription management

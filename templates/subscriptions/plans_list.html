@@ -1,276 +1,879 @@
 {% extends 'base.html' %}
 {% load humanize %}
 {% load subscription_extras %}
+{% load static %}
 
 {% block title %}Subscription Plans - Gold Privilege{% endblock %}
 
 {% block extra_css %}
+<!-- Keep all your existing CSS exactly as is -->
 <style>
-    .pricing-header {
-        background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
-        color: white;
-        padding: 80px 0;
-        text-align: center;
-        margin-bottom: 50px;
+    * {
+        font-family: 'Poppins', sans-serif;
+        box-sizing: border-box;
     }
-    
+
+    .plans-page {
+        padding: 80px 0 100px;
+        background: #fff;
+    }
+
+    .page-title {
+        font-size: 40px;
+        font-weight: 600;
+        color: #000000;
+        text-align: center;
+        margin-bottom: 80px;
+        line-height: 1.4;
+    }
+
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 40px;
+        max-width: 1400px;
+        margin: 0 auto 80px;
+    }
+
     .pricing-card {
-        border: 2px solid #e0e0e0;
         border-radius: 20px;
-        padding: 40px 30px;
-        text-align: center;
-        transition: all 0.3s ease;
-        height: 100%;
+        padding: 50px 40px;
+        min-height: 750px;
+        display: flex;
+        flex-direction: column;
         position: relative;
-        background: white;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
-    
+
     .pricing-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        transform: translateY(-8px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
     }
-    
-    .pricing-card.featured {
-        border-color: var(--primary-color);
-        border-width: 3px;
-        box-shadow: 0 10px 30px rgba(212, 175, 55, 0.3);
-    }
-    
-    .featured-badge {
+
+    .tagline-badge {
         position: absolute;
         top: -15px;
         left: 50%;
         transform: translateX(-50%);
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-        color: #000;
+        background: #000000;
+        color: #FFFFFF;
         padding: 8px 20px;
-        border-radius: 20px;
-        font-weight: bold;
-        font-size: 0.9rem;
+        border-radius: 6px;
+        border: 2px solid #000000;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        z-index: 10;
     }
-    
+
     .plan-name {
-        font-size: 2rem;
-        font-weight: bold;
-        margin: 20px 0;
-        color: var(--secondary-color);
+        font-size: 28px;
+        font-weight: 600;
+        color: #FFFFFF;
+        text-align: center;
+        margin-bottom: 12px;
     }
-    
+
+    .plan-name-underline {
+        width: 120px;
+        height: 5px;
+        background: #FFFFFF;
+        margin: 0 auto 20px;
+        border-radius: 3px;
+    }
+
+    .prestige-level {
+        font-size: 16px;
+        font-weight: 600;
+        color: #FFFFFF;
+        text-align: center;
+        margin-bottom: 35px;
+        opacity: 0.95;
+    }
+
     .plan-price {
-        font-size: 3rem;
-        font-weight: bold;
-        color: var(--primary-color);
-        margin: 20px 0;
+        font-size: 42px;
+        font-weight: 700;
+        color: #FFFFFF;
+        text-align: center;
+        margin-bottom: 12px;
+        line-height: 1;
     }
-    
+
     .plan-price small {
-        font-size: 1.2rem;
-        color: #666;
-        font-weight: normal;
+        font-size: 16px;
+        font-weight: 400;
+        opacity: 0.9;
     }
-    
-    .plan-description {
-        color: #666;
-        margin: 20px 0;
-        min-height: 60px;
+
+    .price-underline {
+        width: 100%;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.4);
+        margin: 25px 0 35px;
     }
-    
+
+    .trial-badge {
+        background: rgba(255, 255, 255, 0.25);
+        color: #FFFFFF;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        display: inline-block;
+        margin: 15px auto;
+        text-align: center;
+    }
+
     .features-list {
         list-style: none;
         padding: 0;
-        margin: 30px 0;
-        text-align: left;
+        margin: 0 0 40px 0;
+        flex: 1;
     }
-    
+
     .features-list li {
-        padding: 12px 0;
-        border-bottom: 1px solid #f0f0f0;
+        color: #FFFFFF;
+        font-size: 15px;
+        margin-bottom: 18px;
+        padding-left: 38px;
+        position: relative;
+        line-height: 1.6;
+    }
+
+    .features-list li::before {
+        content: '✓';
+        position: absolute;
+        left: 0;
+        top: -1px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #FFFFFF;
         display: flex;
         align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 700;
+        line-height: 26px;
+        text-align: center;
     }
-    
-    .features-list li i {
-        color: var(--primary-color);
-        margin-right: 10px;
-        font-size: 1.2rem;
+
+    .features-list li.previous-plan-inherit {
+        font-weight: 600;
+        font-style: italic;
+        opacity: 0.95;
+        margin-bottom: 22px;
     }
-    
-    .trial-badge {
-        background: #007bff;
-        color: white;
-        padding: 5px 15px;
-        border-radius: 15px;
-        font-size: 0.9rem;
+
+    .subscribe-btn {
+        background: #FFFFFF;
+        color: #000000;
+        border: none;
+        padding: 18px 36px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 400;
+        cursor: pointer;
+        text-decoration: none;
         display: inline-block;
-        margin: 10px 0;
+        text-align: center;
+        transition: all 0.3s ease;
+        margin-top: auto;
     }
-    
+
+    .subscribe-btn:hover {
+        background: #F5F5F5;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        color: #000000;
+    }
+
+    .subscribe-btn:disabled {
+        background: rgba(255, 255, 255, 0.6);
+        color: rgba(0, 0, 0, 0.5);
+        cursor: not-allowed;
+    }
+
+    .subscribe-btn:disabled:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
     .current-plan-badge {
-        background: #28a745;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 10px;
-        font-weight: bold;
-        display: inline-block;
-        margin: 20px 0;
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.3);
+        color: #FFFFFF;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .comparison-section {
+        max-width: 1400px;
+        margin: 80px auto 60px;
+        padding: 0 20px;
+    }
+
+    .comparison-title {
+        font-size: 32px;
+        font-weight: 600;
+        color: #000000;
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        min-width: 600px;
+    }
+
+    .comparison-table thead {
+        background: #000000;
+        color: #FFFFFF;
+    }
+
+    .comparison-table th {
+        padding: 20px 16px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 16px;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .comparison-table th:first-child {
+        text-align: left;
+        font-size: 18px;
+    }
+
+    .comparison-table tbody tr {
+        border-bottom: 1px solid #E5E5E5;
+        transition: background 0.2s ease;
+    }
+
+    .comparison-table tbody tr:hover {
+        background: #F9F9F9;
+    }
+
+    .comparison-table td {
+        padding: 18px 16px;
+        text-align: center;
+        font-size: 15px;
+        color: #000000;
+        border-right: 1px solid #E5E5E5;
+    }
+
+    .comparison-table td:first-child {
+        text-align: left;
+        font-weight: 600;
+        color: #000000;
+    }
+
+    .quota-value {
+        font-weight: 600;
+        color: #E5AD04;
+    }
+
+    .not-available {
+        color: #ccc;
+        font-size: 18px;
+    }
+
+    .security-section {
+        max-width: 600px;
+        margin: 60px auto 0;
+        padding: 40px;
+        text-align: center;
+        background: #F9F9F9;
+        border-radius: 12px;
+    }
+
+    .security-section h3 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #000000;
+        margin-bottom: 20px;
+    }
+
+    .paystack-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: #011B33;
+        color: #FFFFFF;
+        padding: 16px 32px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .paystack-badge i {
+        font-size: 24px;
+        color: #00C3F7;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 100px 20px;
+    }
+
+    .empty-state i {
+        font-size: 64px;
+        color: #dee2e6;
+        margin-bottom: 20px;
+    }
+
+    .empty-state h3 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #000000;
+        margin-bottom: 10px;
+    }
+
+    .empty-state p {
+        font-size: 16px;
+        color: #6c757d;
+    }
+    /* ── FAQ ── */
+.faq-section { padding: 80px 0; }
+.faq-header { text-align: center; margin-bottom: 60px; }
+.faq-header h2 { font-size: 36px; font-weight: 700; color: #000000; margin-bottom: 15px; }
+.faq-header p { font-size: 18px; color: #6B7280; }
+.faq-list { max-width: 800px; margin: 0 auto; }
+.faq-item { border-bottom: 1px solid #E5E7EB; padding: 25px 0; }
+.faq-question { display: flex; justify-content: space-between; align-items: center; cursor: pointer; gap: 20px; }
+.faq-question h3 { font-size: 18px; font-weight: 600; color: #000000; margin: 0; }
+.faq-toggle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #E5AD04; background: #FFFFFF; color: #E5AD04; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; transition: all 0.3s ease; }
+.faq-question:hover .faq-toggle { background: #E5AD04; color: #FFFFFF; }
+.faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+.faq-answer p { padding-top: 15px; font-size: 16px; line-height: 1.6; color: #000000; }
+.faq-item.active .faq-answer { max-height: 500px; }
+
+/* ── Contact CTA ── */
+.contact-cta { padding: 80px 0 200px; }
+.cta-card { background: #F5F7F9; border-radius: 20px; padding: 40px; text-align: center; max-width: 1000px; margin: 0 auto; }
+.team-avatars { display: flex; justify-content: center; align-items: center; margin-bottom: 30px; position: relative; height: 80px; }
+.avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #F5F7F9; object-fit: cover; }
+.avatar:nth-child(1) { position: absolute; left: calc(50% - 70px); z-index: 1; }
+.avatar:nth-child(2) { position: absolute; left: calc(50% - 30px); z-index: 3; width: 70px; height: 70px; border-width: 4px; }
+.avatar:nth-child(3) { position: absolute; left: calc(50% + 10px); z-index: 1; }
+.cta-card h2 { font-size: 28px; font-weight: 700; color: #000000; margin-bottom: 15px; }
+.cta-card p { font-size: 16px; color: #6B7280; margin-bottom: 30px; }
+.cta-button { background: #E5AD04; color: #FFFFFF; border: none; border-radius: 8px; padding: 15px 40px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+.cta-button:hover { background: #F9B036; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(229,173,4,0.3); }
+
+/* ── Footer Overlay ── */
+.footer-overlay-wrapper { position: relative; margin-top: -80px; padding: 0; z-index: 10; margin-bottom: 0; }
+.footer-overlay-card { background: rgba(229, 173, 4, 0.5); border-radius: 0; height: 350px; width: 100%; position: relative; overflow: visible; display: flex; align-items: flex-end; padding: 0 60px 0; }
+.footer-woman { position: absolute; left: 60px; bottom: 0; height: 130%; width: auto; object-fit: contain; z-index: 2; }
+.footer-semicircle { position: absolute; right: -150px; top: 50%; transform: translateY(-50%); width: 350px; height: 350px; border-radius: 50%; background: #E5AD04; z-index: 1; }
+.footer-overlay-content { position: relative; z-index: 3; margin-left: 420px; width: calc(100% - 480px); text-align: right; }
+.footer-overlay-text { font-size: 48px; font-weight: 600; color: #000000; line-height: 1.2; text-align: right; position: relative; z-index: 2; }
+
+/* ── Tablet overrides for new sections ── */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .footer-overlay-card { height: 300px; padding: 0 40px; }
+    .footer-woman { left: 40px; height: 140%; }
+    .footer-overlay-content { margin-left: 320px; width: calc(100% - 400px); }
+    .footer-overlay-text { font-size: 40px; }
+    .footer-semicircle { right: -140px; width: 300px; height: 300px; }
+}
+
+/* ── Mobile overrides for new sections ── */
+@media (max-width: 767px) {
+    .contact-cta { padding: 60px 0 150px; }
+    .cta-card { padding: 40px 20px; border-radius: 15px; }
+    .team-avatars { height: 70px; margin-bottom: 20px; }
+    .avatar { width: 50px; height: 50px; }
+    .avatar:nth-child(1) { left: calc(50% - 60px); }
+    .avatar:nth-child(2) { width: 60px; height: 60px; }
+    .avatar:nth-child(3) { left: calc(50% + 0px); }
+    .cta-card h2 { font-size: 24px; }
+    .cta-card p { font-size: 15px; }
+    .cta-button { padding: 12px 30px; font-size: 15px; width: 100%; }
+    .faq-section { padding: 60px 20px; }
+    .faq-header h2 { font-size: 28px; }
+    .faq-header p { font-size: 16px; }
+    .faq-item { padding: 20px 0; }
+    .faq-question h3 { font-size: 16px; }
+    .faq-toggle { width: 28px; height: 28px; font-size: 18px; }
+    .faq-answer p { font-size: 15px; }
+    .footer-overlay-wrapper { margin-top: -100px; padding: 0; }
+    .footer-overlay-card { height: 280px; flex-direction: row; align-items: flex-end; justify-content: flex-end; padding: 0 20px 40px; border-radius: 0; }
+    .footer-woman { left: 0; height: 380px; bottom: 0; transform: none; }
+    .footer-overlay-content { margin-left: 0; width: auto; flex: 1; padding-left: 0; }
+    .footer-overlay-text { font-size: 24px; text-align: right; line-height: 1.3; }
+    .footer-semicircle { width: 220px; height: 220px; right: -110px; top: 50%; transform: translateY(-50%); }
+}
+
+    @media (min-width: 768px) and (max-width: 1199px) {
+        .pricing-grid {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .pricing-card {
+            padding: 40px 30px;
+            min-height: 700px;
+        }
+
+        .plan-name {
+            font-size: 24px;
+        }
+
+        .plan-price {
+            font-size: 36px;
+        }
+
+        .features-list li {
+            font-size: 14px;
+        }
+
+        .comparison-title {
+            font-size: 28px;
+        }
+    }
+
+    @media (max-width: 767px) {
+        .plans-page {
+            padding: 60px 0;
+        }
+
+        .page-title {
+            font-size: 28px;
+            margin-bottom: 50px;
+            padding: 0 20px;
+        }
+
+        .pricing-grid {
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .pricing-card {
+            padding: 40px 30px;
+            min-height: auto;
+        }
+
+        .plan-name {
+            font-size: 26px;
+        }
+
+        .plan-price {
+            font-size: 36px;
+        }
+
+        .features-list li {
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .subscribe-btn {
+            padding: 16px 32px;
+            font-size: 15px;
+        }
+
+        .comparison-section {
+            margin: 60px auto 40px;
+            padding: 0 10px;
+        }
+
+        .comparison-title {
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px 8px;
+            font-size: 13px;
+        }
+
+        .security-section {
+            padding: 30px 20px;
+        }
+
+        .security-section h3 {
+            font-size: 20px;
+        }
+
+        .paystack-badge {
+            padding: 12px 24px;
+            font-size: 14px;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="pricing-header">
+<div class="plans-page">
     <div class="container">
-        <h1 class="display-3 mb-4">
-            <i class="fas fa-crown" style="color: var(--primary-color);"></i>
-            Choose Your Plan
+        <h1 class="page-title">
+            Choose a membership plan that<br>suits your lifestyle
         </h1>
-        <p class="lead" style="font-size: 1.5rem;">
-            Access premium venues, exclusive deals, and lifestyle experiences
-        </p>
-        {% if has_active_subscription %}
-            <div class="current-plan-badge">
-                <i class="fas fa-check-circle"></i> You have an active subscription
-            </div>
-        {% endif %}
-    </div>
-</div>
 
-<div class="container mb-5">
-    {% if not plans %}
-        <div class="text-center py-5">
-            <i class="fas fa-inbox fa-5x text-muted mb-4"></i>
-            <h3>No Plans Available</h3>
-            <p class="text-muted">Check back soon for our subscription plans!</p>
-        </div>
-    {% else %}
-        <div class="row g-4">
-            {% for plan in plans %}
-                <div class="col-md-4 mb-4">
-                    <div class="pricing-card {% if plan.is_featured %}featured{% endif %}">
-                        {% if plan.is_featured %}
-                            <div class="featured-badge">
-                                <i class="fas fa-star"></i> {{ plan.tagline|default:"MOST POPULAR" }}
+        {% if not plans %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <h3>No Plans Available</h3>
+                <p>Check back soon for our subscription plans!</p>
+            </div>
+        {% else %}
+            <div class="pricing-grid">
+                {% for plan in plans %}
+                    <div class="pricing-card" style="background-color: {{ plan.highlight_color }};">
+                        {% if plan.tagline %}
+                            <div class="tagline-badge" style="color: {{ plan.highlight_color }};">
+                                {{ plan.tagline }}
                             </div>
                         {% endif %}
-                        
-                        <div class="plan-name">{{ plan.name }}</div>
-                        
+
+                        <div class="plan-name">{{ plan.name }} Plate</div>
+                        <div class="plan-name-underline"></div>
+                        <div class="prestige-level">Prestige Level</div>
+
                         <div class="plan-price">
                             ₦{{ plan.price|floatformat:0|intcomma }}
                             <small>/{{ plan.get_billing_period_display }}</small>
                         </div>
                         
+                        <div class="price-underline"></div>
+
                         {% if plan.trial_period_days > 0 %}
                             <div class="trial-badge">
                                 <i class="fas fa-gift"></i> {{ plan.trial_period_days }} Days Free Trial
                             </div>
                         {% endif %}
-                        
-                        <p class="plan-description">{{ plan.description }}</p>
-                        
+
                         <ul class="features-list">
-                            {% for assignment in plan.feature_assignments.all %}
-                                <li {% if assignment.is_highlighted %}style="font-weight: bold; color: var(--primary-color);"{% endif %}>
-                                    <i class="fas {{ assignment.feature.icon|default:'fa-check' }}"></i>
-                                    <span>
+                            {% if forloop.counter == 1 %}
+                                {% for assignment in plan.feature_assignments.all %}
+                                    <li>
+                                        <span style="color: {{ plan.highlight_color }}; position: absolute; left: 0; top: -1px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">✓</span>
                                         {{ assignment.feature.name }}
-                                        {% if assignment.custom_value %}
-                                            <br><small class="text-muted">{{ assignment.custom_value }}</small>
-                                        {% endif %}
-                                    </span>
-                                </li>
-                            {% empty %}
-                                <li>
-                                    <i class="fas fa-check"></i>
-                                    <span>Access to all venues</span>
-                                </li>
-                                <li>
-                                    <i class="fas fa-check"></i>
-                                    <span>Exclusive member benefits</span>
-                                </li>
-                            {% endfor %}
-                            
-                            {% if plan.max_bookings_per_month %}
-                                <li>
-                                    <i class="fas fa-calendar-check"></i>
-                                    <span>{{ plan.max_bookings_per_month }} bookings per month</span>
-                                </li>
+                                    </li>
+                                {% empty %}
+                                    <li>Access to all venues</li>
+                                    <li>Exclusive member benefits</li>
+                                {% endfor %}
+
+                                <li>Up to {{ plan.max_guests_per_booking }} guests per booking</li>
+
                             {% else %}
-                                <li>
-                                    <i class="fas fa-infinity"></i>
-                                    <span>Unlimited bookings</span>
-                                </li>
+                                {% with previous_index=forloop.counter0|add:"-1" %}
+                                    {% with previous_plan=plans|get_item_at_index:previous_index %}
+                                        {% if previous_plan %}
+                                            <li class="previous-plan-inherit">
+                                                <span style="color: {{ plan.highlight_color }}; position: absolute; left: 0; top: -1px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">✓</span>
+                                                Everything in {{ previous_plan.name }} Plate
+                                            </li>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endwith %}
+
+                                {% with previous_plan_features=previous_plan_features_dict|get_item:forloop.counter0 %}
+                                    {% for assignment in plan.feature_assignments.all %}
+                                        {% if assignment.feature.id not in previous_plan_features %}
+                                            <li>
+                                                <span style="color: {{ plan.highlight_color }}; position: absolute; left: 0; top: -1px; width: 26px; height: 26px; border-radius: 50%; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;">✓</span>
+                                                {{ assignment.feature.name }}
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endwith %}
+
+                                {% with previous_index=forloop.counter0|add:"-1" %}
+                                    {% with previous_plan=plans|get_item_at_index:previous_index %}
+                                        {% if previous_plan and plan.max_guests_per_booking != previous_plan.max_guests_per_booking %}
+                                            <li>Up to {{ plan.max_guests_per_booking }} guests per booking</li>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endwith %}
                             {% endif %}
-                            
-                            <li>
-                                <i class="fas fa-users"></i>
-                                <span>Up to {{ plan.max_guests_per_booking }} guests per booking</span>
-                            </li>
                         </ul>
-                        
+
+                        <!-- ═══════════════════════════════════════════════════════════ -->
+                        <!-- PERFECT BUTTON LOGIC FOR ALL SCENARIOS -->
+                        <!-- ═══════════════════════════════════════════════════════════ -->
                         {% if user.is_authenticated %}
-                            {% with action=plan_actions|get_item:plan.id %}
-                                {% if action.action == 'blocked' %}
-                                    {% if subscription_state.subscription.plan == plan %}
-                                        <button class="btn btn-secondary btn-lg w-100" disabled>
+                        {% if subscription_state.subscription %}
+                            {% with current_subscription=subscription_state.subscription %}
+                                {% if current_subscription.plan == plan %}
+                                    {% if subscription_state.has_active %}
+                                        <button class="subscribe-btn" disabled>
                                             Current Plan
                                         </button>
                                     {% else %}
-                                        <button class="btn btn-outline-secondary btn-lg w-100" disabled>
-                                            {{ action.reason }}
-                                        </button>
+                                        <a href="{% url 'subscriptions:subscribe' plan.slug %}" class="subscribe-btn">
+                                            <i class="fas fa-sync-alt"></i> Renew {{ plan.name }}
+                                        </a>
                                     {% endif %}
-                                {% elif action.action == 'upgrade' %}
-                                    <a href="{% url 'subscriptions:subscribe' plan.slug %}" class="btn btn-gold btn-lg w-100">
-                                        <i class="fas fa-arrow-up"></i> Upgrade to {{ plan.name }}
-                                    </a>
-                                {% elif action.action == 'renew' %}
-                                    <a href="{% url 'subscriptions:subscribe' plan.slug %}" class="btn btn-gold btn-lg w-100">
-                                        <i class="fas fa-sync-alt"></i> Renew {{ plan.name }}
-                                    </a>
+
+                                {% elif plan.price > current_subscription.plan.price %}
+                                    {% if subscription_state.has_active %}
+                                        <!-- Upgrade blocked — show modal on click -->
+                                        <button class="subscribe-btn" onclick="showPlanModal()">
+                                            <i class="fas fa-arrow-up"></i> Upgrade to {{ plan.name }}
+                                        </button>
+                                    {% else %}
+                                        <a href="{% url 'subscriptions:subscribe' plan.slug %}" class="subscribe-btn">
+                                            <i class="fas fa-shopping-cart"></i> Subscribe to {{ plan.name }}
+                                        </a>
+                                    {% endif %}
+
                                 {% else %}
-                                    <a href="{% url 'subscriptions:subscribe' plan.slug %}" class="btn btn-gold btn-lg w-100">
-                                        <i class="fas fa-shopping-cart"></i> Subscribe Now
-                                    </a>
+                                    {% if subscription_state.has_active %}
+                                        <!-- Switch/downgrade blocked — show modal on click -->
+                                        <button class="subscribe-btn" onclick="showPlanModal()">
+                                            <i class="fas fa-arrow-down"></i> Switch to {{ plan.name }}
+                                        </button>
+                                    {% else %}
+                                        <a href="{% url 'subscriptions:subscribe' plan.slug %}" class="subscribe-btn">
+                                            <i class="fas fa-shopping-cart"></i> Subscribe to {{ plan.name }}
+                                        </a>
+                                    {% endif %}
                                 {% endif %}
                             {% endwith %}
+
                         {% else %}
-                            <a href="{% url 'account:login' %}?next={{ request.path }}" class="btn btn-gold btn-lg w-100">
-                                Login to Subscribe
+                            <a href="{% url 'subscriptions:subscribe' plan.slug %}" class="subscribe-btn">
+                                <i class="fas fa-shopping-cart"></i> Subscribe Now
                             </a>
                         {% endif %}
+                    {% else %}
+                        <a href="{% url 'account:login' %}?next={{ request.path }}" class="subscribe-btn">
+                            Login to Subscribe
+                        </a>
+                    {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="comparison-section">
+                <h2 class="comparison-title">Compare Plans & Quotas</h2>
+                
+                <div class="table-wrapper">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Features</th>
+                                {% for plan in plans %}
+                                    <th>{{ plan.name }} Plate</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for feature_data in comparison_features %}
+                                <tr>
+                                    <td>{{ feature_data.name }}</td>
+                                    {% for plan in plans %}
+                                        <td>
+                                            {% with quota=feature_data.quotas|get_item:plan.id %}
+                                                {% if quota %}
+                                                    <span class="quota-value">{{ quota }}</span>
+                                                {% else %}
+                                                    <span class="not-available">—</span>
+                                                {% endif %}
+                                            {% endwith %}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+
+                            <tr>
+                                <td>Max Guests per Booking</td>
+                                {% for plan in plans %}
+                                    <td>
+                                        <span class="quota-value">{{ plan.max_guests_per_booking }}</span>
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        {% endif %}
+
+        <!-- Paystack Security Badge -->
+        <div class="security-section">
+            <h3>Secure Payment Processing</h3>
+            <div class="paystack-badge">
+                <i class="fas fa-shield-alt"></i>
+                Powered by Paystack
+            </div>
+            <p style="margin-top: 20px; font-size: 14px; color: #6c757d;">
+                Your payment information is encrypted and secure
+            </p>
+        </div>
+    </div>
+
+    <!-- ═══ FAQ SECTION (copied from about page) ═══ -->
+    <section class="faq-section">
+        <div class="container">
+            <div class="faq-header">
+                <h2>FAQ</h2>
+                <p>Everything you need to know about subscriptions, payments, and security.</p>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>What payment methods do you accept?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We accept all major credit/debit cards (Visa, Mastercard, Verve), bank transfers, and USSD payments through our secure payment gateway, Paystack. All transactions are encrypted and secure.</p>
                     </div>
                 </div>
-            {% endfor %}
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Is my payment information secure?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Absolutely. We use industry-standard SSL encryption and partner with Paystack, a PCI-DSS compliant payment processor. We never store your card details on our servers – all payment data is handled directly by our secure payment gateway.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>How does the subscription billing work?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Your subscription is billed at the start of each billing period (monthly, quarterly, or annually according to your chosen plan). You’ll receive a receipt via email after each successful payment. You can manage or cancel your subscription anytime from your dashboard.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Can I get a refund if I cancel early?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>We do not offer refunds for partial billing periods. If you cancel, you will continue to have access until the end of your current paid period. No further charges will be made after cancellation.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>What happens if my payment fails?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>If a recurring payment fails, we will notify you by email and attempt the payment again after a few days. Your subscription will remain active during this grace period. After repeated failures, access may be suspended until the payment is successfully processed.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>How do I update my payment method?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>You can update your payment method at any time from your account dashboard under "Payment Methods". Changes will apply to future billing cycles.</p>
+                    </div>
+                </div>
+            </div>
         </div>
-    {% endif %}
-    
-    <div class="row mt-5">
-        <div class="col-12 text-center">
-            <h3 class="mb-4">Why Choose Gold Privilege?</h3>
-            <div class="row g-4">
-                <div class="col-md-3">
-                    <i class="fas fa-shield-alt fa-3x mb-3" style="color: var(--primary-color);"></i>
-                    <h5>Secure Payments</h5>
-                    <p class="text-muted">Your payment information is always secure</p>
+    </section>
+
+    <!-- ═══ CONTACT CTA (copied from about page) ═══ -->
+    <section class="contact-cta">
+        <div class="container">
+            <div class="cta-card">
+                <div class="team-avatars">
+                    <img src="{% static 'images/headshot.webp' %}" alt="Team Member" class="avatar">
+                    <img src="{% static 'images/headshot2.webp' %}" alt="Team Member" class="avatar">
+                    <img src="{% static 'images/headshot3.webp' %}" alt="Team Member" class="avatar">
                 </div>
-                <div class="col-md-3">
-                    <i class="fas fa-sync-alt fa-3x mb-3" style="color: var(--primary-color);"></i>
-                    <h5>Cancel Anytime</h5>
-                    <p class="text-muted">No long-term commitments</p>
-                </div>
-                <div class="col-md-3">
-                    <i class="fas fa-headset fa-3x mb-3" style="color: var(--primary-color);"></i>
-                    <h5>24/7 Support</h5>
-                    <p class="text-muted">We're here to help anytime</p>
-                </div>
-                <div class="col-md-3">
-                    <i class="fas fa-star fa-3x mb-3" style="color: var(--primary-color);"></i>
-                    <h5>Premium Access</h5>
-                    <p class="text-muted">Exclusive venues and experiences</p>
+                <h2>Still Have Questions?</h2>
+                <p>Can't find the answer you're looking for? Please chat to our friendly team.</p>
+                <button class="cta-button" onclick="window.location.href='#contact'">Get in Touch</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ FOOTER OVERLAY CARD (copied from about page) ═══ -->
+    <div class="footer-overlay-wrapper">
+        <div class="footer-overlay-card">
+            <img src="{% static 'images/woman-nobg.png' %}" alt="Connect with us" class="footer-woman">
+            <div class="footer-semicircle"></div>
+            <div class="footer-overlay-content">
+                <div class="footer-overlay-text">
+                    Connect with us at<br>every location
                 </div>
             </div>
         </div>
     </div>
+
 </div>
+
+<!-- Plan Change Warning Modal -->
+<div id="planChangeModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#fff; border-radius:16px; padding:40px 36px; max-width:440px; width:90%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.25);">
+        <div style="width:60px;height:60px;border-radius:50%;background:#fff8e1;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+            <i class="fas fa-exclamation-triangle" style="font-size:26px;color:#E5AD04;"></i>
+        </div>
+        <h3 style="font-size:20px;font-weight:700;color:#000;margin-bottom:12px;">Cancel Current Plan First</h3>
+        <p style="font-size:14px;color:#555;line-height:1.6;margin-bottom:28px;">
+            You already have an active subscription. To switch or upgrade to another plan, you need to cancel your current plan first from your dashboard.
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;">
+            <button onclick="closePlanModal()" style="padding:12px 28px;border-radius:8px;border:2px solid #000;background:transparent;font-size:14px;font-weight:600;cursor:pointer;">
+                Stay on Current Plan
+            </button>
+            <a href="{% url 'subscriptions:my_subscription' %}" style="padding:12px 28px;border-radius:8px;background:#E5AD04;color:#000;font-size:14px;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+                <i class="fas fa-cog"></i> Manage Subscription
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleFaq(element) {
+    const faqItem = element.closest('.faq-item');
+    const toggleIcon = element.querySelector('.faq-toggle');
+    const isActive = faqItem.classList.contains('active');
+    document.querySelectorAll('.faq-item').forEach(item => {
+        item.classList.remove('active');
+        const icon = item.querySelector('.faq-toggle');
+        if (icon) icon.textContent = '+';
+    });
+    if (!isActive) {
+        faqItem.classList.add('active');
+        toggleIcon.textContent = '−';
+    }
+}
+
+function showPlanModal() {
+    const modal = document.getElementById('planChangeModal');
+    modal.style.display = 'flex';
+}
+
+function closePlanModal() {
+    const modal = document.getElementById('planChangeModal');
+    modal.style.display = 'none';
+}
+
+// Close modal on backdrop click
+document.getElementById('planChangeModal').addEventListener('click', function(e) {
+    if (e.target === this) closePlanModal();
+});
+</script>
 {% endblock %}

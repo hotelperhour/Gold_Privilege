@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-
+{% load humanize %}
 {% block title %}Complete Payment - {{ plan.name }}{% endblock %}
 
 {% block extra_css %}
@@ -9,6 +9,7 @@
         max-width: 600px;
         margin: 40px auto;
         padding: 20px;
+        padding-bottom: 100px;
     }
     
     .payment-card {
@@ -68,23 +69,28 @@
     }
     
     .pay-button {
-        width: 100%;
-        padding: 16px;
-        background: linear-gradient(135deg, #d4af37 0%, #f0d97d 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 18px;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s;
-        margin-top: 20px;
-    }
+    width: 100%;
+    padding: 16px;
+    background: var(--gold-primary, #E5AD04); /* solid gold */
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
     
-    .pay-button:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
-    }
+   .pay-button:hover:not(:disabled) {
+    background: var(--gold-secondary, #F9B036);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(229, 173, 4, 0.4);
+}
     
     .pay-button:disabled {
         background: #ccc;
@@ -151,23 +157,58 @@
         animation: spin 1s linear infinite;
         margin: 0 auto 20px;
     }
+    .countdown-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-left: 4px solid #E5AD04;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 14px;
+    color: #7a6000;
+}
+
+.countdown-box i { color: #E5AD04; font-size: 16px; }
+
+.countdown-box strong {
+    font-size: 20px;
+    font-weight: 700;
+    color: #000;
+    font-variant-numeric: tabular-nums;
+    min-width: 46px;
+    text-align: center;
+}
+
+.countdown-box.urgent {
+    background: #fdecea;
+    border-color: #e53935;
+    border-left-color: #e53935;
+    color: #b71c1c;
+}
+
+.countdown-box.urgent i,
+.countdown-box.urgent strong { color: #e53935; }
     
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
     
-    .cancel-link {
-        display: block;
-        text-align: center;
-        margin-top: 20px;
-        color: #666;
-        text-decoration: none;
-    }
     
-    .cancel-link:hover {
-        color: #d4af37;
-    }
+
+    .cancel-link {
+    /* Optional: Smoothly transition color changes */
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  .cancel-link:hover {
+    background-color: #d5d1d1 !important; /* Darker background */
+    color: #000000 !important;           /* Light text */
+    text-decoration: none;
+  }
     
     .plan-badge {
         display: inline-block;
@@ -180,10 +221,44 @@
         margin-bottom: 10px;
     }
 
+    
+/* ── Footer Overlay ── */
+.footer-overlay-wrapper { position: relative; margin-top: -80px; padding: 0; z-index: 10; margin-bottom: 0; }
+.footer-overlay-card { background: rgba(229, 173, 4, 0.5); border-radius: 0; height: 350px; width: 100%; position: relative; overflow: visible; display: flex; align-items: flex-end; padding: 0 60px 0; }
+.footer-woman { position: absolute; left: 60px; bottom: 0; height: 130%; width: auto; object-fit: contain; z-index: 2; }
+.footer-semicircle { position: absolute; right: -150px; top: 50%; transform: translateY(-50%); width: 350px; height: 350px; border-radius: 50%; background: #E5AD04; z-index: 1; }
+.footer-overlay-content { position: relative; z-index: 3; margin-left: 420px; width: calc(100% - 480px); text-align: right; }
+.footer-overlay-text { font-size: 48px; font-weight: 600; color: #000000; line-height: 1.2; text-align: right; position: relative; z-index: 2; }
+
+/* ── Tablet overrides for new sections ── */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .footer-overlay-card { height: 300px; padding: 0 40px; }
+    .footer-woman { left: 40px; height: 140%; }
+    .footer-overlay-content { margin-left: 320px; width: calc(100% - 400px); }
+    .footer-overlay-text { font-size: 40px; }
+    .footer-semicircle { right: -140px; width: 300px; height: 300px; }
+     .payment-container {
+            padding: 10px;
+            margin: 20px auto;
+            padding-bottom: 200px;
+        }
+}
+/* ── Mobile overrides for new sections ── */
+@media (max-width: 767px) {
+    .footer-overlay-wrapper { margin-top: -100px; padding: 0; }
+    .footer-overlay-card { height: 280px; flex-direction: row; align-items: flex-end; justify-content: flex-end; padding: 0 20px 40px; border-radius: 0; }
+    .footer-woman { left: 0; height: 380px; bottom: 0; transform: none; }
+    .footer-overlay-content { margin-left: 0; width: auto; flex: 1; padding-left: 0; }
+    .footer-overlay-text { font-size: 24px; text-align: right; line-height: 1.3; }
+    .footer-semicircle { width: 220px; height: 220px; right: -110px; top: 50%; transform: translateY(-50%); }
+}
+
+
     @media (max-width: 768px) {
         .payment-container {
             padding: 10px;
             margin: 20px auto;
+            padding-bottom: 200px;
         }
         
         .payment-card {
@@ -198,7 +273,7 @@
     <div class="payment-card">
         <div class="payment-header">
             <h1>💳 Complete Your Payment</h1>
-            <span class="plan-badge">{{ plan.name }}</span>
+            <span class="plan-badge">{{ plan.name }} plan</span>
         </div>
 
         <!-- Payment Reference -->
@@ -206,12 +281,15 @@
             <small>Payment Reference</small><br>
             <strong>{{ payment.payment_id }}</strong>
         </div>
+         
 
         <!-- Countdown Timer -->
-        <div class="countdown-timer" id="countdown-container">
-            <p>⏰ Complete payment within: <strong id="countdown-timer">15:00</strong></p>
-            <small>This payment link will expire for security</small>
+        <div class="countdown-box" id="countdown-container">
+            <i class="fas fa-clock"></i>
+            <span>Complete payment within</span>
+            <strong id="countdown-timer">15:00</strong>
         </div>
+        
 
         <!-- Payment Details -->
         <div class="payment-details">
@@ -245,13 +323,13 @@
             
             <div class="detail-row">
                 <span>Total Amount:</span>
-                <span>₦{{ payment.amount|floatformat:2 }}</span>
+                <span>₦{{ payment.amount|floatformat:2| intcomma }}</span>
             </div>
         </div>
 
         <!-- Pay Button -->
         <button type="button" class="pay-button" id="pay-button" onclick="payWithPaystack()">
-            🔒 Pay ₦{{ payment.amount|floatformat:2 }} Securely
+            🔒 Pay ₦{{ payment.amount|floatformat:2| intcomma }} Securely
         </button>
 
         <!-- Security Badge -->
@@ -262,10 +340,24 @@
             <span>Secured by Paystack - Your payment information is encrypted</span>
         </div>
 
-        <!-- Cancel Link -->
-        <a href="{% url 'subscriptions:plans_list' %}" class="cancel-link">Cancel and go back</a>
+        <a href="{% url 'subscriptions:plans_list' %}" class="cancel-link" style="display: block; width: fit-content; margin: 20px auto 0 auto; background: #f0f0f0; color: #333; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 500; text-align: center;">← Cancel and go back</a>
+
     </div>
+
+
 </div>
+<!-- ═══ FOOTER OVERLAY CARD (copied from about page) ═══ -->
+    <div class="footer-overlay-wrapper">
+        <div class="footer-overlay-card">
+            <img src="{% static 'images/woman-nobg.png' %}" alt="Connect with us" class="footer-woman">
+            <div class="footer-semicircle"></div>
+            <div class="footer-overlay-content">
+                <div class="footer-overlay-text">
+                    Connect with us at<br>every location
+                </div>
+            </div>
+        </div>
+    </div>
 
 <!-- Loading Overlay -->
 <div class="loading-overlay" id="loading-overlay">
@@ -335,33 +427,41 @@
 
         handler.openIframe();
     }
-
-    // ================================
-    // COUNTDOWN TIMER (15 MINUTES)
-    // ================================
-    let timeRemaining = 15 * 60; // seconds
+    // ── Countdown Timer (mirrors the 15-min backend expiry) ──
+    const countdownEl  = document.getElementById('countdown-timer');
+    const countdownBox = document.getElementById('countdown-container');
+    let timeRemaining  = 15 * 60; // must match views.py timedelta(minutes=15)
 
     function updateCountdown() {
         const minutes = Math.floor(timeRemaining / 60);
         const seconds = timeRemaining % 60;
 
-        countdownElement.textContent =
-            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        countdownEl.textContent =
+            `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        // Turn red when under 2 minutes
+        if (timeRemaining <= 120) {
+            countdownBox.classList.add('urgent');
+        }
 
         if (timeRemaining <= 0) {
             clearInterval(countdownInterval);
             payButton.disabled = true;
-            payButton.textContent = "⏰ Payment Link Expired";
-            alert("Payment session expired. You will be redirected.");
-            window.location.href = "{% url 'subscriptions:plans_list' %}";
+            payButton.innerHTML = '<i class="fas fa-clock"></i> Payment Session Expired';
+            countdownBox.innerHTML =
+                '<i class="fas fa-times-circle"></i> <span>Session expired — please start again</span>';
+            setTimeout(() => {
+                window.location.href = "{% url 'subscriptions:plans_list' %}";
+            }, 3000);
+            return;
         }
 
         timeRemaining--;
     }
 
     const countdownInterval = setInterval(updateCountdown, 1000);
-    updateCountdown();
+    updateCountdown(); 
 
-    // Rest of your countdown code remains the same...
+    
 </script>
 {% endblock %}

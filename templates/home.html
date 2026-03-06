@@ -1,109 +1,1354 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Welcome to Gold Privilege{% endblock %}
+{% block title %}Gold Privilege – Premium Lifestyle Access{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Override base padding-top for this page only */
+    .main-content {
+        padding-top: 0 !important;
+    }
+
+    /* Hero Section – full viewport, video behind */
+    .hero {
+        position: relative;
+        width: 100%;
+        height: 100vh;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Video container – covers entire hero */
+    .hero-video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 1;
+    }
+
+    /* Dark overlay for text readability */
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.2); /* adjust opacity as needed */
+        z-index: 2;
+    }
+
+    /* Hero content – centred with top padding to clear navbar */
+    .hero-content {
+        position: relative;
+        z-index: 3;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: flex-start;
+        text-align: left;
+        color: white;
+        padding: 0 80px 80px; /* top padding = navbar height */
+        max-width: 100%;
+        margin: 0 auto;
+    }
+
+    .hero-content h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        text-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        max-width: 700px;
+    }
+
+    .hero-content p {
+        font-size: 1.25rem;
+        line-height: 1.6;
+        margin-bottom: 2.5rem;
+        text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+        max-width: 600px;
+    }
+
+    .hero-btn {
+        background: var(--gold-primary);
+        color: var(--black);
+        border: none;
+        padding: 1.2rem 4rem;
+        font-size: 1.3rem;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        display: inline-block;
+        text-align: center;
+    }
+
+    .hero-btn:hover {
+        background: var(--gold-secondary);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        color: var(--black);
+    }
+
+    /* Outline button (for Venues) */
+    .hero-btn-outline {
+        background: transparent;
+        color: white;
+        border: 2px solid white;
+        padding: 1.2rem 4rem;        /* same size */
+        font-size: 1.3rem;
+        font-weight: 600;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+    .hero-btn-outline:hover {
+        background: white;
+        color: var(--black);
+        border-color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+
+
+    /* Adjust spacing for existing content */
+    .after-hero {
+        margin-top: 0;
+        padding-top: 80px;
+        background: #fff;
+    }
+    .hero-buttons {
+        display: flex;
+        gap: 20px;          /* space between buttons */
+        flex-wrap: wrap;    /* prevents breaking on small screens */
+    }
+
+
+    /* ── FAQ ── */
+    .faq-section { padding: 80px 0; }
+    .faq-header { text-align: center; margin-bottom: 60px; }
+    .faq-header h2 { font-size: 36px; font-weight: 700; color: #000000; margin-bottom: 15px; }
+    .faq-header p { font-size: 18px; color: #6B7280; }
+    .faq-list { max-width: 800px; margin: 0 auto; }
+    .faq-item { border-bottom: 1px solid #E5E7EB; padding: 25px 0; }
+    .faq-question { display: flex; justify-content: space-between; align-items: center; cursor: pointer; gap: 20px; }
+    .faq-question h3 { font-size: 18px; font-weight: 600; color: #000000; margin: 0; }
+    .faq-toggle { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #E5AD04; background: #FFFFFF; color: #E5AD04; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; transition: all 0.3s ease; }
+    .faq-question:hover .faq-toggle { background: #E5AD04; color: #FFFFFF; }
+    .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .faq-answer p { padding-top: 15px; font-size: 16px; line-height: 1.6; color: #000000; }
+    .faq-item.active .faq-answer { max-height: 500px; }
+
+    /* ── Contact CTA ── */
+    .contact-cta { padding: 80px 0 200px; }
+    .cta-card { background: #F5F7F9; border-radius: 20px; padding: 40px; text-align: center; max-width: 1000px; margin: 0 auto; }
+    .team-avatars { display: flex; justify-content: center; align-items: center; margin-bottom: 30px; position: relative; height: 80px; }
+    .avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid #F5F7F9; object-fit: cover; }
+    .avatar:nth-child(1) { position: absolute; left: calc(50% - 70px); z-index: 1; }
+    .avatar:nth-child(2) { position: absolute; left: calc(50% - 30px); z-index: 3; width: 70px; height: 70px; border-width: 4px; }
+    .avatar:nth-child(3) { position: absolute; left: calc(50% + 10px); z-index: 1; }
+    .cta-card h2 { font-size: 28px; font-weight: 700; color: #000000; margin-bottom: 15px; }
+    .cta-card p { font-size: 16px; color: #6B7280; margin-bottom: 30px; }
+    .cta-button { background: #E5AD04; color: #FFFFFF; border: none; border-radius: 8px; padding: 15px 40px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; }
+    .cta-button:hover { background: #F9B036; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(229,173,4,0.3); }
+
+    /* ── Footer Overlay ── */
+    .footer-overlay-wrapper { position: relative; margin-top: -80px; padding: 0; z-index: 10; margin-bottom: 0; }
+    .footer-overlay-card { background: rgba(229, 173, 4, 0.5); border-radius: 0; height: 350px; width: 100%; position: relative; overflow: visible; display: flex; align-items: flex-end; padding: 0 60px 0; }
+    .footer-woman { position: absolute; left: 60px; bottom: 0; height: 130%; width: auto; object-fit: contain; z-index: 2; }
+    .footer-semicircle { position: absolute; right: -150px; top: 50%; transform: translateY(-50%); width: 350px; height: 350px; border-radius: 50%; background: #E5AD04; z-index: 1; }
+    .footer-overlay-content { position: relative; z-index: 3; margin-left: 420px; width: calc(100% - 480px); text-align: right; }
+    .footer-overlay-text { font-size: 48px; font-weight: 600; color: #000000; line-height: 1.2; text-align: right; position: relative; z-index: 2; }
+
+   /* ═══ LUXURY SHOWCASE ═══ */
+.luxury-section {
+    position: relative;
+    padding: 100px 0 80px;
+    background: #ffffff;
+    overflow: hidden;
+}
+
+.luxury-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.luxury-bg-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 1;
+}
+
+.luxury-inner {
+    position: relative;
+    z-index: 1;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 60px;
+}
+
+.luxury-header {
+    margin-bottom: 60px;
+    text-align: center;
+
+}
+
+.luxury-title {
+    font-size: 42px;
+    font-weight: 700;
+    color: #000000;
+    margin-bottom: 16px;
+    line-height: 1.2;
+}
+
+.luxury-title span {
+    color: #F9B036;
+}
+
+.luxury-subtitle {
+    font-size: 16px;
+    color: #555555;
+    max-width: 560px;
+    line-height: 1.7;
+    margin: 0 auto;
+}
+
+/* ── Gallery layout ── */
+.luxury-gallery {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    align-items: start;   /* all columns start at the same top */
+}
+
+/* Side columns: card + optional controls stacked */
+.luxury-side-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.luxury-side-card {
+    border-radius: 16px;
+    overflow: hidden;
+    background: #e8e8e8;
+}
+
+.gallery-side-img {
+    width: 100%;
+    height: 360px;        /* portrait height for side cards */
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+    transition: opacity 0.4s ease;
+}
+
+/* Center card — taller than sides */
+.luxury-center-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.luxury-center-card {
+    border-radius: 16px;
+    overflow: hidden;
+    background: #e8e8e8;
+    position: relative;
+}
+
+.gallery-center-img {
+    width: 100%;
+    height: 480px;        /* taller than sides (360 + controls height) */
+    object-fit: cover;
+    object-position: center top;
+    display: block;
+    transition: opacity 0.4s ease;
+}
+
+.luxury-center-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 100%);
+    padding: 30px 24px 24px;
+    color: #FFFFFF;
+}
+
+.luxury-center-overlay h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.luxury-center-overlay p {
+    font-size: 14px;
+    opacity: 0.85;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ── Controls — sit below left card, same visual baseline as center extra height ── */
+.luxury-controls {
+    display: flex;
+    gap: 12px;
+    padding-top: 20px;
+    padding-left: 4px;
+}
+
+.lux-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 3px solid #000000;
+    background: transparent;
+    color: #000000;
+    font-size: 30px;
+    font-weight: 900;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.lux-btn:hover {
+    background: #000000;
+    color: #FFFFFF;
+}
+/* ── Section shell ── */
+.cat-section {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    padding: 100px 0;
+}
+
+/* ── Background layer ── */
+.cat-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.cat-bg-img {
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    filter: blur(18px) brightness(0.45);
+    transform: scale(1.08); /* hide blur edges */
+    transition: background-image 0.7s ease;
+}
+
+.cat-bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        135deg,
+        rgba(0,0,0,0.72) 0%,
+        rgba(0,0,0,0.45) 60%,
+        rgba(0,0,0,0.55) 100%
+    );
+}
+
+/* ── Inner layout ── */
+.cat-inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 80px;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 60px;
+    width: 100%;
+    align-items: center;
+}
+
+/* ── Left: category list ── */
+.cat-eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #E5AD04;
+    margin-bottom: 32px;
+}
+
+.cat-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.cat-item {
+    font-size: 28px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.38);
+    padding: 14px 0;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    transition: color 0.3s ease, font-weight 0.3s ease, padding-left 0.3s ease;
+    line-height: 1.2;
+    position: relative;
+}
+
+.cat-item::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 0;
+    background: #E5AD04;
+    border-radius: 2px;
+    transition: height 0.3s ease;
+}
+
+.cat-item:hover {
+    color: rgba(255,255,255,0.75);
+    padding-left: 8px;
+}
+
+.cat-item.active {
+    font-size: 34px;
+    font-weight: 700;
+    color: #FFFFFF;
+    padding-left: 12px;
+}
+
+.cat-item.active::before {
+    height: 60%;
+}
+
+/* ── Right: image grid ── */
+.cat-gallery-col {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.cat-img-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: center;
+}
+
+/* Column A — two images stacked */
+.cat-col-a {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* Column B — one image vertically centred */
+.cat-col-b {
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+}
+.cat-col-b .cat-frame {
+    width: 100%;
+}
+
+/* Image frames */
+.cat-frame {
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.cat-frame:hover {
+    box-shadow: 0 28px 70px rgba(0,0,0,0.65);
+}
+
+.cat-tilt-left  { transform: rotate(-4deg); }
+.cat-tilt-right { transform: rotate(4deg); }
+
+.cat-tilt-left:hover  { transform: rotate(-4deg) translateY(-6px); }
+.cat-tilt-right:hover { transform: rotate(4deg)  translateY(-6px); }
+
+.cat-img {
+    width: 100%;
+    height: 380px;
+    object-fit: cover;
+    object-position: center center;
+    display: block;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+
+
+/* ── Explore button ── */
+.cat-explore-wrap {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.cat-explore-btn {
+    background: #E5AD04;
+    color: #FFFFFF;
+    text-decoration: none;
+    padding: 16px 36px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(229,173,4,0.35);
+}
+
+.cat-explore-btn:hover {
+    background: #F9B036;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(229,173,4,0.5);
+    color: #FFFFFF;
+}
+
+.cat-arrow {
+    font-size: 14px;
+    transition: transform 0.3s ease;
+}
+
+.cat-explore-btn:hover .cat-arrow { transform: translateX(4px); }
+
+/* ═══ HOW IT WORKS ═══ */
+.hiw-section {
+    padding: 100px 0 80px;
+    background: #ffffff;
+}
+
+.hiw-inner {
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 0 60px;
+}
+
+.hiw-title {
+    font-size: 42px;
+    font-weight: 700;
+    color: #000000;
+    margin-bottom: 60px;
+    text-align: left;
+}
+
+/* ── 3-column grid ── */
+.hiw-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+}
+
+/* ── Card: image + caption stacked ── */
+.hiw-card {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Image wrapper: 1:2 ratio (width:height = 1:2) ── */
+.hiw-img-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1.5;     /* height = 2× width */
+    overflow: hidden;
+    border-radius: 0;         /* no curved edges */
+    flex-shrink: 0;
+}
+
+.hiw-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+}
+
+/* Dark overlay */
+.hiw-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        rgba(0,0,0,0.15) 0%,
+        rgba(0,0,0,0.25) 40%,
+        rgba(0,0,0,0.70) 100%
+    );
+}
+
+/* ── Number container ── */
+.hiw-number {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
+/* Perfect inline number effect */
+.hiw-number span {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 900;
+    font-size: 70px;
+    line-height: 1;
+    color: #FFFFFF;
+
+    /* creates the inner hollow effect */
+    text-shadow:
+        -2px -2px 0 rgba(255,255,255,0.35),
+         2px -2px 0 rgba(255,255,255,0.35),
+        -2px  2px 0 rgba(255,255,255,0.35),
+         2px  2px 0 rgba(255,255,255,0.35);
+}
+.hiw-number span{
+    letter-spacing: -3px;
+}
+
+/* ── Bottom-centre content on image ── */
+.hiw-img-content {
+    position: absolute;
+    bottom: 28px;
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    z-index: 2;
+}
+
+.hiw-step-label {
+    font-size: 22px;
+    font-weight: 600;
+    color: #FFFFFF;
+    margin: 0;
+    text-align: center;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+/* Gold Explore Now button */
+.hiw-btn {
+    background: #E5AD04;
+    color: #000000;
+    text-decoration: none;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 8px;
+    display: inline-block;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 14px rgba(229,173,4,0.4);
+}
+
+.hiw-btn:hover {
+    background: #F9B036;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(229,173,4,0.5);
+    color: #000000;
+}
+
+/* ── Black caption box under each image ── */
+.hiw-caption {
+    background: #000000;
+    color: #FFFFFF;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 18px 20px;
+    text-align: center;
+    flex: 1;
+}
+
+/* ── Tablet ── */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .hiw-inner  { padding: 0 30px; }
+    .hiw-title  { font-size: 32px; margin-bottom: 40px; }
+    .hiw-grid   { gap: 16px; }
+    .hiw-step-label  { font-size: 18px; }
+    .hiw-num-fill    { font-size: 52px; }
+    .hiw-num-stroke  { font-size: 42px; }
+    .hiw-btn    { padding: 10px 20px; font-size: 13px; }
+    .hiw-caption { font-size: 13px; padding: 14px 16px; }
+}
+
+/* ── Mobile ── */
+@media (max-width: 767px) {
+    .hiw-section { padding: 60px 0 50px; }
+    .hiw-inner   { padding: 0 20px; }
+    .hiw-title   { font-size: 28px; margin-bottom: 32px; }
+
+    /* Keep three columns on mobile, with smaller gap */
+    .hiw-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    /* Adjust aspect ratio for thinner cards (portrait) */
+    .hiw-img-wrap { aspect-ratio: 2 / 3; }  /* height = 1.5× width */
+
+    /* Scale down numbers */
+    /* Scale down numbers */
+    .hiw-number {
+        top: 8px;
+        right: 8px;
+        width: auto;
+        height: auto;
+    }
+    .hiw-number span {
+        font-size: 32px;
+    }
+    /* Reduce text sizes and spacing */
+    .hiw-step-label  { font-size: 12px; }
+    .hiw-img-content {
+        bottom: 12px;
+        gap: 6px;
+    }
+    .hiw-btn {
+        padding: 6px 10px;
+        font-size: 10px;
+    }
+
+    /* Caption box */
+    .hiw-caption {
+        font-size: 10px;
+        padding: 8px 6px;
+        line-height: 1.4;
+    }
+}
+
+/* ── Image swap animation ── */
+@keyframes catFadeIn {
+    from { opacity: 0; transform: scale(1.04); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+.cat-img.refreshing {
+    animation: catFadeIn 0.5s ease forwards;
+}
+
+
+/* ═══ TABLET (768px – 1199px) ═══ */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .cat-inner {
+        grid-template-columns: 260px 1fr;
+        gap: 50px;
+        padding: 0 30px;
+    }
+    .cat-section {
+        padding: 60px 0;       /* was 100px – reduces excessive space */
+    }
+
+    .cat-item       { font-size: 22px; }
+    .cat-item.active { font-size: 28px; }
+    .cat-img        { height: 320px; }
+    
+}
+
+
+/* ═══ MOBILE (≤ 767px) ═══ */
+@media (max-width: 767px) {
+    .cat-section { padding: 60px 0 50px; min-height: auto; }
+
+    /* Single column — categories stacked above gallery */
+    .cat-inner {
+        grid-template-columns: 1fr;
+        gap: 36px;
+        padding: 0 20px;
+    }
+
+    /* Category list — stays VERTICAL on mobile, same as desktop */
+    .cat-list {
+        display: block;       /* NOT flex — vertical list */
+        overflow-x: unset;
+        padding-bottom: 0;
+    }
+
+    .cat-item {
+        font-size: 22px;      /* readable on mobile */
+        padding: 12px 0 12px 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        border-radius: 0;
+        background: transparent;
+        white-space: normal;
+        flex-shrink: unset;
+        color: rgba(255,255,255,0.38);
+    }
+
+    .cat-item::before { display: block; } /* restore gold bar */
+
+    .cat-item:hover { padding-left: 8px; }
+
+    .cat-item.active {
+        font-size: 26px;
+        font-weight: 700;
+        color: #FFFFFF;
+        background: transparent;
+        padding-left: 12px;
+    }
+
+    /* Images — same two-column tilt grid, portrait heights */
+    .cat-img-grid   { gap: 12px; }
+    .cat-col-a      { gap: 12px; }
+
+    .cat-img        { height: 260px; }
+    
+
+    /* Explore button full width on mobile */
+    /* Explore button – smaller and centered */
+.cat-explore-wrap {
+    display: flex;
+    justify-content: center;  /* center the button */
+    margin-top: 20px;         /* optional spacing */
+}
+
+.cat-explore-btn {
+    width: auto;              /* not full width */
+    padding: 12px 24px;       /* adjust horizontal padding */
+    font-size: 14px;
+    justify-content: center;
+}
+
+    .cat-eyebrow { text-align: left; }
+}
+
+/* ── Tablet ── */
+@media (min-width: 768px) and (max-width: 1199px) {
+    .luxury-inner { padding: 0 30px; }
+    .luxury-title { font-size: 32px; }
+    .gallery-side-img { height: 280px; }
+    .gallery-center-img { height: 380px; }
+    .luxury-gallery { gap: 14px; }
+}
+
+/* ── Mobile ── */
+@media (max-width: 767px) {
+    .luxury-section { padding: 60px 0 50px; }
+    .luxury-inner { padding: 0 20px; }
+
+    /* Center the header text on mobile */
+    .luxury-header {
+        margin-bottom: 36px;
+        text-align: center;
+    }
+    .luxury-subtitle {
+        font-size: 14px;
+        margin: 0 auto;
+    }
+    .luxury-title { font-size: 26px; }
+
+    /* Single column — only center card + left col (with controls) visible */
+    .luxury-gallery {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    /* Hide right side card entirely */
+    .luxury-side-col:last-child { display: none; }
+
+    /* Left col: hide the side image, show only controls centered */
+    .luxury-side-col:first-child {
+        flex-direction: column;
+        align-items: center;
+        order: 2; /* controls go BELOW the center card */
+    }
+
+    /* Hide the actual side image on mobile — controls only */
+    .luxury-side-col:first-child .luxury-side-card {
+        display: none;
+    }
+
+    /* Center card takes full width, goes first */
+    .luxury-center-col {
+        order: 1;
+    }
+
+    .gallery-center-img { height: 420px; }
+
+    /* Controls centered under the center image */
+    .luxury-controls {
+        padding-top: 16px;
+        padding-left: 0;
+        justify-content: center;
+    }
+
+    .lux-btn { width: 44px; height: 44px; font-size: 27px; }
+}
+
+    /* ── Tablet overrides for new sections ── */
+    @media (min-width: 768px) and (max-width: 1199px) {
+        .footer-overlay-card { height: 300px; padding: 0 40px; }
+        .footer-woman { left: 40px; height: 140%; }
+        .footer-overlay-content { margin-left: 320px; width: calc(100% - 400px); }
+        .footer-overlay-text { font-size: 40px; }
+        .footer-semicircle { right: -140px; width: 300px; height: 300px; }
+    }
+
+    /* ── Mobile overrides for new sections ── */
+    @media (max-width: 767px) {
+        .contact-cta { padding: 60px 0 150px; }
+        .cta-card { padding: 40px 20px; border-radius: 15px; }
+        .team-avatars { height: 70px; margin-bottom: 20px; }
+        .avatar { width: 50px; height: 50px; }
+        .avatar:nth-child(1) { left: calc(50% - 60px); }
+        .avatar:nth-child(2) { width: 60px; height: 60px; }
+        .avatar:nth-child(3) { left: calc(50% + 0px); }
+        .cta-card h2 { font-size: 24px; }
+        .cta-card p { font-size: 15px; }
+        .cta-button { padding: 12px 30px; font-size: 15px; width: 100%; }
+        .faq-section { padding: 60px 20px; }
+        .faq-header h2 { font-size: 28px; }
+        .faq-header p { font-size: 16px; }
+        .faq-item { padding: 20px 0; }
+        .faq-question h3 { font-size: 16px; }
+        .faq-toggle { width: 28px; height: 28px; font-size: 18px; }
+        .faq-answer p { font-size: 15px; }
+        .footer-overlay-wrapper { margin-top: -100px; padding: 0; }
+        .footer-overlay-card { height: 280px; flex-direction: row; align-items: flex-end; justify-content: flex-end; padding: 0 20px 40px; border-radius: 0; }
+        .footer-woman { left: 0; height: 380px; bottom: 0; transform: none; }
+        .footer-overlay-content { margin-left: 0; width: auto; flex: 1; padding-left: 0; }
+        .footer-overlay-text { font-size: 24px; text-align: right; line-height: 1.3; }
+        .footer-semicircle { width: 220px; height: 220px; right: -110px; top: 50%; transform: translateY(-50%); }
+    }
+
+    @media (max-width: 991px) {
+        .hero-buttons {
+            gap: 16px;
+        }
+    }
+
+    /* Responsive */
+    @media (max-width: 767px) {
+    .hero-content {
+        padding: 0 24px 50px;
+        align-items: flex-start;
+    }
+    .hero-content h1 {
+        font-size: 1.9rem;
+        max-width: 100%;
+    }
+    .hero-content p {
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin-bottom: 1.8rem;
+    }
+    
+    .hero-btn-outline {
+        padding: 0.7rem 1.5rem;
+        font-size: 0.9rem;
+        
+    }
+    .hero-btn {
+        padding: 0.7rem 1.5rem;
+        font-size: 0.9rem;
+        gap: 10px;
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="text-center mt-5">
-    <div class="mb-5">
-        <i class="fas fa-crown" style="font-size: 100px; color: var(--primary-color);"></i>
-        <h1 class="display-3 mt-4" style="color: var(--secondary-color); font-weight: bold;">
-            Gold Privilege
-        </h1>
-        <p class="lead" style="color: var(--primary-color); font-size: 1.5rem;">
-            Premium Lifestyle Access Platform
-        </p>
+<!-- Hero Section with Video -->
+<section class="hero">
+    <!-- Video (optimised) -->
+    <video class="hero-video" autoplay muted loop playsinline poster="{% static 'videos/hero-poster.webp' %}">
+        <source src="{% static 'videos/hero.webm' %}" type="video/webm">
+        <source src="{% static 'videos/hero.mp4' %}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="hero-overlay"></div>
+
+    <div class="hero-content">
+        <h1>Manage Your Lifestyle With<br><span style="color: #F9B036; font-weight: 800;">Endless Privileges</span></h1>
+<p>A membership network that accords members exclusive privileges in lifestyle, entertainment, leisure, healthcare and hospitality spheres of life.</p>
+
+    <div class="hero-buttons">
+    <a href="{% url 'subscriptions:plans_list' %}" class="hero-btn">Explore Now</a>
+    <a href="{% url 'venues:list' %}" class="hero-btn-outline">View Venues</a>
     </div>
-    
-    <div class="row justify-content-center mb-5">
-        <div class="col-md-8">
-            <p class="lead">
-                Access exclusive pools, gyms, restaurants, spas, and entertainment venues 
-                across Nigeria with one premium membership.
-            </p>
+
+    </div>
+</section>
+
+<!-- ═══ LUXURY SHOWCASE SECTION ═══ -->
+<section class="luxury-section">
+    <div class="luxury-bg">
+        <img src="{% static 'images/frame2bg.webp' %}" alt="" class="luxury-bg-img">
+    </div>
+
+    <div class="luxury-inner">
+        <div class="luxury-header">
+            <h2 class="luxury-title">Luxury Comes <span>with a Prize</span></h2>
+            <p class="luxury-subtitle">Step into a world of exclusive access — premium venues, curated experiences, and lifestyle privileges designed for those who expect the best.</p>
         </div>
-    </div>
-    
-    <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="card card-custom h-100">
-                <div class="card-body text-center p-4">
-                    <i class="fas fa-swimming-pool" style="font-size: 50px; color: var(--primary-color);"></i>
-                    <h4 class="mt-3">Premium Pools & Gyms</h4>
-                    <p class="text-muted">Access to top-tier fitness centers, pools, and beach clubs</p>
+
+        <div class="luxury-gallery">
+            <!-- Left card + controls below it -->
+            <div class="luxury-side-col">
+                <div class="luxury-side-card">
+                    <img src="" alt="" class="gallery-side-img" id="imgLeft">
+                </div>
+                <div class="luxury-controls">
+                    <button class="lux-btn" onclick="luxSlide(-1)">&#8592;</button>
+                    <button class="lux-btn" onclick="luxSlide(1)">&#8594;</button>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card card-custom h-100">
-                <div class="card-body text-center p-4">
-                    <i class="fas fa-utensils" style="font-size: 50px; color: var(--primary-color);"></i>
-                    <h4 class="mt-3">Restaurant Discounts</h4>
-                    <p class="text-muted">Exclusive deals at premium restaurants and bars</p>
+
+            <!-- Center card — taller -->
+            <div class="luxury-center-col">
+                <div class="luxury-center-card">
+                    <img src="" alt="" class="gallery-center-img" id="imgCenter">
+                    <div class="luxury-center-overlay" id="imgOverlay">
+                        <h3 id="overlayTitle"></h3>
+                        <p id="overlayDesc"></p>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card card-custom h-100">
-                <div class="card-body text-center p-4">
-                    <i class="fas fa-spa" style="font-size: 50px; color: var(--primary-color);"></i>
-                    <h4 class="mt-3">Spa & Wellness</h4>
-                    <p class="text-muted">Rejuvenate at luxury spas and wellness centers</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="mb-5">
-        {% if not user.is_authenticated %}
-            <a href="{% url 'account:register_user' %}" class="btn btn-gold btn-lg me-3">
-                <i class="fas fa-user-plus"></i> Join as Member
-            </a>
-            <a href="{% url 'account:register_partner' %}" class="btn btn-outline-dark btn-lg">
-                <i class="fas fa-handshake"></i> Become a Partner
-            </a>
-        {% else %}
-            <a href="{% url 'account:dashboard' %}" class="btn btn-gold btn-lg">
-                <i class="fas fa-tachometer-alt"></i> Go to Dashboard
-            </a>
-        {% endif %}
-    </div>
-    
-    <div class="row justify-content-center mt-5">
-        <div class="col-md-10">
-            <div class="card card-custom" style="background: linear-gradient(135deg, var(--secondary-color) 0%, #333 100%);">
-                <div class="card-body p-5 text-center text-white">
-                    <h3 class="mb-4" style="color: var(--primary-color);">
-                        <i class="fas fa-building"></i> Are You a Venue Owner?
-                    </h3>
-                    <p class="lead mb-4">
-                        Join our network of premium venues and reach thousands of potential customers.
-                    </p>
-                    <ul class="list-unstyled text-start d-inline-block mb-4">
-                        <li class="mb-2"><i class="fas fa-check-circle" style="color: var(--accent-color);"></i> Increase your visibility</li>
-                        <li class="mb-2"><i class="fas fa-check-circle" style="color: var(--accent-color);"></i> Attract premium customers</li>
-                        <li class="mb-2"><i class="fas fa-check-circle" style="color: var(--accent-color);"></i> Grow your revenue</li>
-                        <li class="mb-2"><i class="fas fa-check-circle" style="color: var(--accent-color);"></i> Easy booking management</li>
-                    </ul>
-                    <br>
-                    <a href="{% url 'account:register_partner' %}" class="btn btn-gold btn-lg">
-                        <i class="fas fa-rocket"></i> Become a Partner Today
-                    </a>
+
+            <!-- Right card -->
+            <div class="luxury-side-col">
+                <div class="luxury-side-card">
+                    <img src="" alt="" class="gallery-side-img" id="imgRight">
                 </div>
             </div>
         </div>
     </div>
+</section>
+
+<!-- ═══ CATEGORY GALLERY SECTION ═══ -->
+<section class="cat-section" id="catSection">
+
+    <!-- Full-bleed background (blurred category image) -->
+    <div class="cat-bg" id="catBg">
+        <div class="cat-bg-img" id="catBgImg"></div>
+        <div class="cat-bg-overlay"></div>
+    </div>
+
+    <div class="cat-inner">
+
+        <!-- LEFT — Category list -->
+        <div class="cat-list-col">
+            <p class="cat-eyebrow">Explore by Category</p>
+            <ul class="cat-list" id="catList">
+                <li class="cat-item active" data-cat="0">Restaurants</li>
+                <li class="cat-item" data-cat="1">Gym &amp; Parks</li>
+                <li class="cat-item" data-cat="2">Bars &amp; Lounges</li>
+                <li class="cat-item" data-cat="3">Hotels &amp; Travel</li>
+                <li class="cat-item" data-cat="4">Pools &amp; Beaches</li>
+                <li class="cat-item" data-cat="5">Spa &amp; Wellness</li>
+                <li class="cat-item" data-cat="6">Family Fun</li>
+            </ul>
+        </div>
+
+        <!-- RIGHT — Tilted image columns + Explore button -->
+        <div class="cat-gallery-col">
+
+            <div class="cat-img-grid">
+                <!-- Column A: two portrait images slanted left -->
+                <div class="cat-col-a">
+                    <div class="cat-frame cat-tilt-left">
+                        <img src="" alt="" class="cat-img" id="catImgA1">
+                    </div>
+                    <div class="cat-frame cat-tilt-left">
+                        <img src="" alt="" class="cat-img" id="catImgA2">
+                    </div>
+                </div>
+
+                <!-- Column B: one portrait image centred, slanted right -->
+                <div class="cat-col-b">
+                    <div class="cat-frame cat-tilt-right">
+                        <img src="" alt="" class="cat-img" id="catImgB1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Explore button — bottom right of image grid -->
+            <div class="cat-explore-wrap">
+                <a href="{% url 'subscriptions:plans_list' %}" class="cat-explore-btn">
+                    Explore Now <span class="cat-arrow">&#10095;</span>
+                </a>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- ═══ HOW IT WORKS SECTION ═══ -->
+<section class="hiw-section">
+    <div class="hiw-inner">
+        <h2 class="hiw-title">How It Works</h2>
+
+        <div class="hiw-grid">
+
+            <!-- Step 01 -->
+            <div class="hiw-card">
+                <div class="hiw-img-wrap">
+                    <img src="{% static 'images/register.webp' %}" alt="Register to Join" class="hiw-img">
+                    <div class="hiw-overlay"></div>
+                    <div class="hiw-number" aria-hidden="true">
+                        <span>01</span>
+                    </div>
+                    <div class="hiw-img-content">
+                        <p class="hiw-step-label">Register to Join</p>
+                        <a href="{% url 'account:register_user' %}" class="hiw-btn">Explore Now</a>
+                    </div>
+                </div>
+                <div class="hiw-caption">
+                    Register on the website to join then go to the plans page and choose a plan that suits your need.
+                </div>
+            </div>
+
+            <!-- Step 02 -->
+            <div class="hiw-card">
+                <div class="hiw-img-wrap">
+                    <img src="{% static 'images/choose.webp' %}" alt="Choose a Plan" class="hiw-img">
+                    <div class="hiw-overlay"></div>
+                    <div class="hiw-number" aria-hidden="true">
+                        <span>02</span>
+                    </div>
+                    <div class="hiw-img-content">
+                        <p class="hiw-step-label">Choose a Plan</p>
+                        <a href="{% url 'subscriptions:plans_list' %}" class="hiw-btn">Explore Now</a>
+                    </div>
+                </div>
+                <div class="hiw-caption">
+                    Click the buy now button to purchase the membership plan that suits you best.
+                </div>
+            </div>
+
+            <!-- Step 03 -->
+            <div class="hiw-card">
+                <div class="hiw-img-wrap">
+                    <img src="{% static 'images/access.webp' %}" alt="Get Your Access" class="hiw-img">
+                    <div class="hiw-overlay"></div>
+                    <div class="hiw-number" aria-hidden="true">
+                        <span>03</span>
+                    </div>
+                    <div class="hiw-img-content">
+                        <p class="hiw-step-label">Get Your Access</p>
+                        <a href="{% url 'subscriptions:plans_list' %}" class="hiw-btn">Explore Now</a>
+                    </div>
+                </div>
+                <div class="hiw-caption">
+                    Access your plan privileges granted after payment and start exploring.
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+
+ <!-- ═══ FAQ SECTION (copied from about page) ═══ -->
+    <section class="faq-section">
+        <div class="container">
+            <div class="faq-header">
+                <h2>FAQ</h2>
+                <p>Everything you need to know about the product and billing.</p>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>What is Gold Privilege membership?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Gold Privilege is an exclusive membership network that provides access to premium lifestyle experiences, entertainment venues, healthcare facilities, and hospitality services with special discounts and privileges.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>How do I become a member?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Simply register on our platform, choose a membership plan that suits your needs, and complete the payment process. You'll get instant access to all member benefits and exclusive privileges.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>What are the membership benefits?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Members enjoy exclusive discounts at partner venues, priority bookings, complimentary upgrades, cashback rewards, and access to premium events and experiences across multiple lifestyle categories.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Can I cancel my membership?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, you can cancel your membership at any time from your account dashboard. Your benefits will remain active until the end of your current billing cycle.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>How do I use my membership benefits?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Simply present your digital membership card or booking reference at any partner venue. You can also book directly through our platform to automatically apply your member discounts and benefits.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question" onclick="toggleFaq(this)">
+                        <h3>Are there different membership tiers?</h3>
+                        <div class="faq-toggle">+</div>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Yes, we offer multiple membership tiers including Silver, Gold, and Platinum, each with increasing levels of benefits, discounts, and exclusive access to premium services.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ CONTACT CTA (copied from about page) ═══ -->
+    <section class="contact-cta">
+        <div class="container">
+            <div class="cta-card">
+                <div class="team-avatars">
+                    <img src="{% static 'images/headshot.webp' %}" alt="Team Member" class="avatar">
+                    <img src="{% static 'images/headshot2.webp' %}" alt="Team Member" class="avatar">
+                    <img src="{% static 'images/headshot3.webp' %}" alt="Team Member" class="avatar">
+                </div>
+                <h2>Still Have Questions?</h2>
+                <p>Can't find the answer you're looking for? Please chat to our friendly team.</p>
+                <button class="cta-button" onclick="window.location.href='#contact'">Get in Touch</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ FOOTER OVERLAY CARD (copied from about page) ═══ -->
+    <div class="footer-overlay-wrapper">
+        <div class="footer-overlay-card">
+            <img src="{% static 'images/woman-nobg.png' %}" alt="Connect with us" class="footer-woman">
+            <div class="footer-semicircle"></div>
+            <div class="footer-overlay-content">
+                <div class="footer-overlay-text">
+                    Connect with us at<br>every location
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<style>
-    .card-custom {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+<script>
+// ═══════════════════════════════════════════
+// 1. FAQ toggle
+// ═══════════════════════════════════════════
+function toggleFaq(element) {
+    const faqItem = element.closest('.faq-item');
+    const toggleIcon = element.querySelector('.faq-toggle');
+    const isActive = faqItem.classList.contains('active');
+    document.querySelectorAll('.faq-item').forEach(item => {
+        item.classList.remove('active');
+        const icon = item.querySelector('.faq-toggle');
+        if (icon) icon.textContent = '+';
+    });
+    if (!isActive) {
+        faqItem.classList.add('active');
+        toggleIcon.textContent = '−';
     }
-    
-    .card-custom:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+}
+
+// ═══════════════════════════════════════════
+// 2. Luxury showcase carousel
+// ═══════════════════════════════════════════
+(function () {
+    const images = [
+        { src: "{% static 'images/gallery/image1.webp' %}",  title: "Gyms",             desc: "Access to top-tier fitness centers, pools, and beach clubs" },
+        { src: "{% static 'images/gallery/image2.webp' %}",  title: "Swimming Pools",   desc: "Enjoy our premium swimming pools and beach clubs" },
+        { src: "{% static 'images/gallery/image3.webp' %}",  title: "Beach Clubs",      desc: "Relax and unwind at our exclusive beach clubs" },
+        { src: "{% static 'images/gallery/image4.webp' %}",  title: "Bars",             desc: "Experience premium bars and lounges" },
+        { src: "{% static 'images/gallery/image5.webp' %}",  title: "Gym & Fitness",    desc: "Access to premium fitness centers and wellness facilities" },
+        { src: "{% static 'images/gallery/image6.webp' %}",  title: "SPA",              desc: "Rejuvenate at luxury spas and wellness centers" },
+        { src: "{% static 'images/gallery/image7.webp' %}",  title: "Exclusive Events", desc: "Access to exclusive events and experiences" },
+        { src: "{% static 'images/gallery/image8.webp' %}",  title: "Club & Lounge",    desc: "Enjoy exclusive club and lounge access" },
+        { src: "{% static 'images/gallery/image9.webp' %}",  title: "Cinema",           desc: "Experience premium cinema venues and shows" },
+        { src: "{% static 'images/gallery/image10.webp' %}", title: "Private Events",   desc: "Host private events in exclusive venues" },
+    ];
+
+    let center = 1;
+    const imgLeft      = document.getElementById('imgLeft');
+    const imgCenter    = document.getElementById('imgCenter');
+    const imgRight     = document.getElementById('imgRight');
+    const overlayTitle = document.getElementById('overlayTitle');
+    const overlayDesc  = document.getElementById('overlayDesc');
+
+    function wrap(i) { return ((i % images.length) + images.length) % images.length; }
+
+    function render() {
+        const l = wrap(center - 1);
+        const r = wrap(center + 1);
+        imgLeft.src  = images[l].src;   imgLeft.alt  = images[l].title;
+        imgCenter.src = images[center].src; imgCenter.alt = images[center].title;
+        imgRight.src = images[r].src;   imgRight.alt = images[r].title;
+        overlayTitle.textContent = images[center].title;
+        overlayDesc.textContent  = images[center].desc;
     }
-</style>
+
+    window.luxSlide = function (dir) { center = wrap(center + dir); render(); };
+    render();
+})();
+
+// ═══════════════════════════════════════════
+// 3. Category gallery
+// ═══════════════════════════════════════════
+(function () {
+    const categories = [
+        { name: 'Restaurants',    images: ["{% static 'images/gallery2/restaurant1.webp' %}", "{% static 'images/gallery2/restaurant2.webp' %}", "{% static 'images/gallery2/restaurant3.webp' %}"] },
+        { name: 'Gym & Parks',    images: ["{% static 'images/gallery2/gym1.webp' %}",        "{% static 'images/gallery2/gym2.webp' %}",        "{% static 'images/gallery2/gym3.webp' %}"] },
+        { name: 'Bars & Lounges', images: ["{% static 'images/gallery2/bar1.webp' %}",        "{% static 'images/gallery2/bar2.webp' %}",        "{% static 'images/gallery2/bar3.webp' %}"] },
+        { name: 'Hotels & Travel',images: ["{% static 'images/gallery2/hotel1.webp' %}",      "{% static 'images/gallery2/hotel2.webp' %}",      "{% static 'images/gallery2/hotel3.webp' %}"] },
+        { name: 'Pools & Beaches',images: ["{% static 'images/gallery2/pool1.webp' %}",       "{% static 'images/gallery2/pool2.webp' %}",       "{% static 'images/gallery2/pool3.webp' %}"] },
+        { name: 'Spa & Wellness', images: ["{% static 'images/gallery2/spa1.webp' %}",        "{% static 'images/gallery2/spa2.webp' %}",        "{% static 'images/gallery2/spa3.webp' %}"] },
+        { name: 'Family Fun',     images: ["{% static 'images/gallery2/resorts1.webp' %}",    "{% static 'images/gallery2/resorts2.webp' %}",    "{% static 'images/gallery2/resorts3.webp' %}"] },
+    ];
+
+    let active = 0;
+    const bgImg = document.getElementById('catBgImg');
+    const imgA1 = document.getElementById('catImgA1');
+    const imgA2 = document.getElementById('catImgA2');
+    const imgB1 = document.getElementById('catImgB1');
+    const items = document.querySelectorAll('.cat-item');
+
+    function refreshImg(el, src) {
+        el.classList.remove('refreshing');
+        void el.offsetWidth;
+        el.src = src;
+        el.classList.add('refreshing');
+    }
+
+    function activate(index) {
+        if (index === active && bgImg.style.backgroundImage) return;
+        active = index;
+        const cat = categories[index];
+        bgImg.style.backgroundImage = `url('${cat.images[0]}')`;
+        refreshImg(imgA1, cat.images[0]);
+        refreshImg(imgA2, cat.images[1]);
+        refreshImg(imgB1, cat.images[2]);
+        items.forEach((item, i) => item.classList.toggle('active', i === index));
+    }
+
+    items.forEach((item, i) => item.addEventListener('click', () => activate(i)));
+    activate(0);
+})();
+</script>
 {% endblock %}

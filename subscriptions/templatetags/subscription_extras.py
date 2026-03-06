@@ -17,7 +17,16 @@ def index(list_obj, i):
         return list_obj[int(i)]
     except (IndexError, TypeError, ValueError):
         return None
-
+@register.filter
+def get_item_at_index(list_obj, index):
+    """
+    Get item at specific index from list
+    Usage: {{ plans|get_item_at_index:2 }}
+    """
+    try:
+        return list_obj[int(index)]
+    except (IndexError, TypeError, ValueError, AttributeError):
+        return None
 
 @register.filter
 def add(value, arg):

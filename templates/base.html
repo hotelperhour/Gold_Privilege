@@ -258,23 +258,19 @@
         }
 
         /* Messages/Alerts */
-        .messages-container {
-            position: fixed;
-            top: 120px;
-            right: 20px;
-            z-index: 999;
-            max-width: 400px;
-        }
+.messages-container {
+    position: fixed;
+    top: 120px;
+    right: 20px;
+    z-index: 999;
+    max-width: 400px;
+}
 
-        .alert-custom {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: none;
-            border-radius: 12px;
-            padding: 15px 20px;
-            margin-bottom: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
+.messages-container .alert {
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: none;           /* optional – removes default border */
+}
 
         /* ==================== FOOTER ==================== */
         footer {
@@ -420,11 +416,11 @@
             }
 
             .messages-container {
-                top: 90px;
-                left: 15px;
-                right: 15px;
-                max-width: none;
-            }
+        top: 90px;
+        left: 15px;
+        right: 15px;
+        max-width: none;
+    }
 
             .footer-content {
                 padding: 40px 0 30px;
@@ -518,11 +514,11 @@
 
             <!-- Center Nav Links (Desktop) -->
             <ul class="nav-links">
-                <li><a href="{% url 'account:home' %}" class="{% if request.path == '/' %}active{% endif %}">HOME</a></li>
-                <li><a href="{% url 'account:about' %}" class="{% if 'about' in request.path %}active{% endif %}">ABOUT</a></li>
-                <li><a href="{% url 'subscriptions:plans_list' %}" class="{% if 'plans_list' in request.path %}active{% endif %}">SUBSCRIPTION</a></li>
-                <li><a href="{% url 'venues:list' %}" class="{% if 'venues' in request.path %}active{% endif %}">VENUES</a></li>
-            </ul>
+    <li><a href="{% url 'account:home' %}" class="{% if request.path == '/' %}active{% endif %}">HOME</a></li>
+    <li><a href="{% url 'account:about' %}" class="{% if 'about' in request.path %}active{% endif %}">ABOUT</a></li>
+    <li><a href="{% url 'subscriptions:plans_list' %}" class="{% if request.resolver_match.namespace == 'subscriptions' %}active{% endif %}">SUBSCRIPTION</a></li>
+    <li><a href="{% url 'venues:list' %}" class="{% if request.resolver_match.namespace == 'venues' %}active{% endif %}">VENUES</a></li>
+</ul>
 
             <!-- Auth Buttons (Desktop) -->
             <div class="auth-buttons">
@@ -562,8 +558,8 @@
             <ul class="mobile-nav-links">
                 <li><a href="{% url 'account:home' %}" class="{% if request.path == '/' %}active{% endif %}">HOME</a></li>
                 <li><a href="{% url 'account:about' %}" class="{% if 'about' in request.path %}active{% endif %}">ABOUT</a></li>
-                <li><a href="{% url 'subscriptions:plans_list' %}" class="{% if 'plans_list' in request.path %}active{% endif %}">SUBSCRIPTION</a></li>
-                <li><a href="{% url 'venues:list' %}" class="{% if 'venues' in request.path %}active{% endif %}">VENUES</a></li>
+                <li><a href="{% url 'subscriptions:plans_list' %}" class="{% if request.resolver_match.namespace == 'subscriptions' %}active{% endif %}">SUBSCRIPTION</a></li>
+                <li><a href="{% url 'venues:list' %}" class="{% if request.resolver_match.namespace == 'venues' %}active{% endif %}">VENUES</a></li>
             </ul>
 
             <div class="mobile-auth-buttons">
@@ -579,17 +575,17 @@
         </div>
     </div>
 
-    <!-- Messages -->
-    {% if messages %}
-    <div class="messages-container">
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-custom alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        {% endfor %}
-    </div>
-    {% endif %}
+   <!-- Messages -->
+{% if messages %}
+<div class="messages-container">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
 
     <!-- Main Content -->
     <main class="main-content">

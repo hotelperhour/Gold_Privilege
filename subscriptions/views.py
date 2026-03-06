@@ -17,47 +17,139 @@ import requests
 import secrets
 from subscriptions.utils import get_subscription_state, can_subscribe_to_plan
 from account.permissions import subscriber_required
-from .models import SubscriptionPlan, PromoCode, Subscription, Payment
+
+from .models import SubscriptionPlan, PromoCode, Subscription, Payment, PlanFeature, PlanFeatureAssignment
+from .utils import get_subscription_state
+from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
 
-class PlanListView(ListView):
-    model = SubscriptionPlan
-    template_name = 'subscriptions/plans_list.html'
-    context_object_name = 'plans'
+def plans_list(request):
+    """
+    Display subscription plans with perfect button logic for all scenarios
+    """
+    # Get all active plans ordered by price
+    plans = list(SubscriptionPlan.objects.filter(
+        is_active=True
+    ).prefetch_related(
+        'feature_assignments__feature'
+    ).order_by('display_order', 'price'))
+
+    # Filter only available plans
+    available_plans = [p for p in plans if p.is_available()]
+
+    # Get subscription state
+    sub_state = get_subscription_state(request.user) if request.user.is_authenticated else None
+
+    # ═══════════════════════════════════════════════════════════════
+    # PROGRESSIVE FEATURE COMPARISON (for cards - NO quotas)
+    # ═══════════════════════════════════════════════════════════════
     
-    def get_queryset(self):
-        return SubscriptionPlan.objects.filter(
-            is_active=True
-        ).prefetch_related(
-            'feature_assignments__feature'
-        ).order_by('display_order', 'price')
+    previous_plan_features_dict = {}
     
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    for i, plan in enumerate(available_plans):
+        if i > 0:
+            previous_plan = available_plans[i-1]
+            previous_features = set(
+                assignment.feature.id 
+                for assignment in previous_plan.feature_assignments.all()
+            )
+            previous_plan_features_dict[i] = previous_features
+        else:
+            previous_plan_features_dict[i] = set()
+
+    # ═══════════════════════════════════════════════════════════════
+    # BUILD COMPARISON TABLE WITH SMART ORDERING
+    # Industry Standard: Show features common to ALL plans first
+    # ═══════════════════════════════════════════════════════════════
+    
+    comparison_features = []
+    
+    # Get all unique features
+    all_features = set()
+    for plan in available_plans:
+        for assignment in plan.feature_assignments.all():
+            all_features.add(assignment.feature)
+    
+    # Categorize features by availability
+    feature_availability = {}
+    for feature in all_features:
+        available_in = []
+        for plan in available_plans:
+            if plan.feature_assignments.filter(feature=feature).exists():
+                available_in.append(plan.id)
+        feature_availability[feature.id] = {
+            'feature': feature,
+            'count': len(available_in),
+            'plan_ids': available_in
+        }
+    
+    # Sort: Features in ALL plans first, then by display_order
+    sorted_features = sorted(
+        all_features,
+        key=lambda f: (
+            -feature_availability[f.id]['count'],  # More plans first (negative for descending)
+            f.display_order  # Then by display order
+        )
+    )
+    
+    # Build comparison data
+    for feature in sorted_features:
+        feature_row = {
+            'id': feature.id,
+            'name': feature.name,
+            'quotas': {}
+        }
         
-        if self.request.user.is_authenticated:
-            # Get subscription state
-            sub_state = get_subscription_state(self.request.user)
-            context['subscription_state'] = sub_state
-            
-            # Check subscription action for each plan
-            plan_actions = {}
-            for plan in context['plans']:
-                can_sub, reason, action = can_subscribe_to_plan(
-                    self.request.user,
-                    plan
+        for plan in available_plans:
+            try:
+                assignment = PlanFeatureAssignment.objects.get(
+                    plan=plan,
+                    feature=feature
                 )
-                plan_actions[plan.id] = {
-                    'can_subscribe': can_sub,
-                    'reason': reason,
-                    'action': action
-                }
-            
-            context['plan_actions'] = plan_actions
+                # Format quota
+                if assignment.usage_limit >= 999:
+                    quota_display = "Unlimited"
+                elif assignment.usage_limit == 1:
+                    quota_display = "✓"
+                else:
+                    quota_display = f"×{assignment.usage_limit}"
+                
+                feature_row['quotas'][plan.id] = quota_display
+            except PlanFeatureAssignment.DoesNotExist:
+                feature_row['quotas'][plan.id] = None
         
-        return context
+        comparison_features.append(feature_row)
+
+    context = {
+        'plans': available_plans,
+        'subscription_state': sub_state or {},
+        'previous_plan_features_dict': previous_plan_features_dict,
+        'comparison_features': comparison_features,
+        'has_active_subscription': sub_state and sub_state.get('has_active', False) if sub_state else False,
+    }
+
+    return render(request, 'subscriptions/plans_list.html', context)
+
+
+def _determine_plan_action(sub_state, plan):
+    """
+    Determine what action button to show for a plan
+    Returns: {'action': 'subscribe'|'upgrade'|'renew'|'blocked', 'reason': str}
+    """
+    # No active subscription
+    if not sub_state.get('has_active'):
+        return {'action': 'subscribe', 'reason': None}
+
+    current_plan = sub_state['subscription'].plan
+
+    # Same plan
+    if current_plan == plan:
+        return {'action': 'blocked', 'reason': 'Current Plan'}
+
+    return {'action': 'blocked', 'reason': 'Cancel your current plan first to switch'}
+
 
 
 class PlanDetailView(DetailView):
@@ -170,11 +262,6 @@ def subscribe_to_plan(request, slug):
         
         try:
             with transaction.atomic():
-                # ── UPGRADE: Cancel old subscription ──
-                if action == 'upgrade':
-                    old_sub = state['subscription']
-                    old_sub.cancel(reason='Upgraded to higher plan')
-                    messages.info(request, f'Your {old_sub.plan.name} plan has been cancelled.')
                 
                 # Create subscription
                 subscription = Subscription.objects.create(
@@ -225,7 +312,7 @@ def subscribe_to_plan(request, slug):
     # GET: Show form
     return render(request, 'subscriptions/subscribe.html', {
         'plan': plan,
-        'action': action,  # ← Pass action type to template
+        'action': action, 
     })
 
 
