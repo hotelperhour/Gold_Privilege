@@ -1,3 +1,4 @@
+from django.http import request
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -234,7 +235,8 @@ def send_welcome_email(user):
     else:
         template = 'account/emails/welcome_subscriber.html'
     
-    html_message = render_to_string(template, {'user': user})
+    html_message = render_to_string(template, {'user': user,'user_name': user.get_full_name(), 'gp_id': user.gp_id, 'wallet_url': request.build_absolute_uri(reverse('wallet:wallet_dashboard'))})
+
     plain_message = strip_tags(html_message)
     
     email = EmailMultiAlternatives(

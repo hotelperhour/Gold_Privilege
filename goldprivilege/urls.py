@@ -25,7 +25,8 @@ urlpatterns = [
     path("subscriptions/", include(("subscriptions.urls", "subscriptions"), namespace="subscriptions")),
     path("venues/", include(("venues.urls", "venues"), namespace="venues")),
     path("bookings/", include(("bookings.urls", "bookings"), namespace="bookings")),
-    
+    path("services/", include(("services.urls", "services"), namespace="services")),
+    path("wallet/", include(("wallet.urls", "wallet"), namespace="wallet")),
 ]
 
 

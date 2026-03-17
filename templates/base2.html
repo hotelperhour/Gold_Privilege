@@ -1,4 +1,6 @@
+{% load humanize %}
 {% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -498,6 +500,57 @@
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
+
+       
+        a.reward-pill {
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        /* "Gold Coins" subtext under the balance number */
+        .reward-subtext {
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 10px;
+            letter-spacing: 0.3px;
+            display: block;
+            line-height: 1;
+            margin-top: 1px;
+        }
+        
+        /* Mobile offcanvas wallet balance pill */
+        .mobile-wallet-pill {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(229, 173, 4, 0.12);
+            border: 1px solid rgba(229, 173, 4, 0.3);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .mobile-wallet-pill:hover { background: rgba(229, 173, 4, 0.18); }
+        .mobile-wallet-pill .mwp-icon {
+            width: 38px; height: 38px;
+            background: var(--chocolate);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        .mobile-wallet-pill .mwp-icon i { color: var(--gold-primary); font-size: 16px; }
+        .mobile-wallet-pill .mwp-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.55);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: block;
+        }
+        .mobile-wallet-pill .mwp-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--gold-primary);
+        }
        
     </style>
     {% block extra_css %}{% endblock %}
@@ -528,11 +581,21 @@
                     </div>
                 </div>
 
-                <!-- Reward Pill -->
-                <div class="reward-pill">
-                    <i class="fas fa-trophy reward-icon"></i>
-                    <span class="reward-text">80pts</span>
-                </div>
+                {# ── CHANGE: Wallet pill — dynamic for subscribers, static for others ── #}
+                {% if user.is_authenticated and user.is_subscriber and wallet_balance is not None %}
+                    <a href="{% url 'wallet:wallet_dashboard' %}" class="reward-pill" title="My Gold Coins Wallet">
+                        <i class="fas fa-coins reward-icon"></i>
+                        <div>
+                            <span class="reward-text">{{ wallet_balance|floatformat:0|intcomma }}</span>
+                            <span class="reward-subtext">Gold Coins</span>
+                        </div>
+                    </a>
+                {% else %}
+                    <div class="reward-pill">
+                        <i class="fas fa-trophy reward-icon"></i>
+                        <span class="reward-text">Rewards</span>
+                    </div>
+                {% endif %}
 
                 <!-- Profile Picture -->
                 <div class="profile-pic-container">
@@ -599,6 +662,18 @@
                     {% endif %}
                 </div>
             </div>
+
+            {# ── CHANGE: wallet balance block in offcanvas (subscribers only) ── #}
+            {% if user.is_authenticated and user.is_subscriber and wallet_balance is not None %}
+            <a href="{% url 'wallet:wallet_dashboard' %}" class="mobile-wallet-pill">
+                <div class="mwp-icon"><i class="fas fa-coins"></i></div>
+                <div>
+                    <span class="mwp-label">Gold Coins Balance</span>
+                    <span class="mwp-amount">{{ wallet_balance|floatformat:0|intcomma }} coins</span>
+                </div>
+                <i class="fas fa-chevron-right" style="margin-left:auto;color:rgba(255,255,255,0.3);font-size:12px;"></i>
+            </a>
+            {% endif %}
 
             <!-- Navigation Items -->
             <div class="mobile-nav-items">

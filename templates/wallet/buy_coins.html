@@ -1,0 +1,228 @@
+{% extends "base_subscriber.html" %}
+{% load static humanize %}
+
+{% block title %}Buy Gold Coins — Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: #6c757d; text-decoration: none; font-size: 14px; margin-bottom: 20px; }
+    .back-link:hover { color: #E5AD04; }
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 { font-size: 26px; font-weight: 700; color: #020202; margin: 0; }
+    .page-header p  { color: #6c757d; margin: 4px 0 0; font-size: 14px; }
+
+    /* Package cards */
+    .packages-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(175px, 1fr)); gap: 16px; margin-bottom: 28px; }
+    .pkg-card { background: #fff; border: 2px solid #eee; border-radius: 16px; padding: 24px 18px; text-align: center; cursor: pointer; transition: all 0.25s ease; position: relative; }
+    .pkg-card:hover  { border-color: #E5AD04; transform: translateY(-4px); box-shadow: 0 10px 28px rgba(229,173,4,0.15); }
+    .pkg-card.selected { border-color: #E5AD04; background: #fffdf0; box-shadow: 0 8px 24px rgba(229,173,4,0.2); }
+    .pkg-featured-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #E5AD04; color: #000; font-size: 11px; font-weight: 700; padding: 3px 12px; border-radius: 20px; white-space: nowrap; }
+    .pkg-coins { font-size: 30px; font-weight: 800; color: #E5AD04; line-height: 1; margin-bottom: 4px; }
+    .pkg-coins-label { font-size: 11px; color: #9a9a9a; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+    .pkg-bonus { font-size: 12px; color: #28a745; font-weight: 600; margin-bottom: 12px; }
+    .pkg-price { font-size: 20px; font-weight: 700; color: #020202; }
+
+    /* Custom amount */
+    .custom-section { background: #fff; border-radius: 16px; padding: 24px 28px; margin-bottom: 28px; border: 1px solid #eee; }
+    .custom-section h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: #020202; }
+    .custom-section p  { font-size: 13px; color: #9a9a9a; margin-bottom: 14px; }
+    .c-control { border: 2px solid #eee; border-radius: 0 10px 10px 0; padding: 11px 14px; font-size: 15px; transition: border-color 0.2s; width: 100%; font-family: 'Poppins', sans-serif; outline: none; }
+    .c-control:focus { border-color: #E5AD04; }
+    .c-prefix { display: flex; align-items: center; padding: 0 14px; border: 2px solid #eee; border-right: none; border-radius: 10px 0 0 10px; background: #f8f9fa; font-weight: 600; color: #555; }
+
+    /* Summary + pay */
+    .summary-card { background: linear-gradient(135deg, #020202, #5c3001); border-radius: 16px; padding: 24px 28px; color: #fff; margin-bottom: 20px; }
+    .summary-card h3 { font-size: 13px; opacity: 0.6; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+    .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-row .lbl  { font-size: 13px; opacity: 0.75; }
+    .summary-row .val  { font-size: 15px; font-weight: 600; }
+    .summary-row.total .val { font-size: 26px; color: #E5AD04; }
+    .pay-btn { width: 100%; background: #E5AD04; color: #000; border: none; border-radius: 12px; padding: 15px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.25s ease; font-family: 'Poppins', sans-serif; }
+    .pay-btn:hover { background: #F9B036; transform: translateY(-2px); }
+    .pay-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    /* Spend-only notice */
+    .spend-notice { background: #f0fff4; border: 1px solid #b7ebc8; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #1a6b35; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; }
+    .spend-notice i { flex-shrink: 0; margin-top: 1px; }
+
+    /* How it works */
+    .how-box { background: #fff; border-radius: 16px; padding: 22px 26px; border: 1px solid #eee; margin-top: 16px; }
+    .how-box h4 { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: #020202; }
+    .hiw-step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+    .hiw-num { width: 26px; height: 26px; background: #E5AD04; color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .hiw-text { font-size: 13px; color: #5a5a5a; line-height: 1.5; padding-top: 3px; }
+</style>
+{% endblock %}
+
+{% block subscriber_content %}
+
+    <a href="{% url 'wallet:wallet_dashboard' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Wallet</a>
+
+    <div class="page-header">
+        <h1>Buy Gold Coins</h1>
+        <p>1 Gold Coin = ₦1. Use coins to pay for Discount Store orders.</p>
+    </div>
+
+    <!-- Spend-only notice -->
+    <div class="spend-notice">
+        <i class="fas fa-info-circle"></i>
+        <span>Gold Coins are for spending in the <strong>Discount Store</strong> only. They cannot be withdrawn to a bank account.</span>
+    </div>
+
+    <div class="row g-0">
+        <div class="col-lg-8 pe-lg-4">
+
+            {% if packages %}
+            <div style="font-size:15px; font-weight:600; color:#020202; margin-bottom:14px;">Choose a Package</div>
+            <div class="packages-grid">
+                {% for pkg in packages %}
+                <div class="pkg-card {% if pkg.is_featured %}mt-3{% endif %}"
+                     onclick="selectPackage({{ pkg.pk }}, {{ pkg.total_coins }}, {{ pkg.price }}, '{{ pkg.name }}')">
+                    {% if pkg.is_featured %}<div class="pkg-featured-badge">⭐ Best Value</div>{% endif %}
+                    <div class="pkg-coins">{{ pkg.total_coins|intcomma }}</div>
+                    <div class="pkg-coins-label">Gold Coins</div>
+                    {% if pkg.bonus_coins > 0 %}<div class="pkg-bonus">+{{ pkg.bonus_coins }} bonus</div>{% endif %}
+                    <div class="pkg-price">₦{{ pkg.price|intcomma }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Custom amount — always available, packages are optional -->
+            <div class="custom-section">
+                <h3>Or enter a custom amount</h3>
+                <p>Type any amount in Naira. You'll receive that many coins (no bonus on custom amounts). Minimum ₦100.</p>
+                <div style="display:flex; max-width:280px;">
+                    <span class="c-prefix">₦</span>
+                    <input type="number" id="customAmountInput" class="c-control"
+                           placeholder="e.g. 2500" min="100" step="50"
+                           oninput="selectCustom(this.value)">
+                </div>
+                <div style="margin-top:8px; font-size:13px; color:#9a9a9a;">
+                    = <span id="customCoinsPreview" style="font-weight:600; color:#020202;">0</span> coins
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-lg-4">
+            <div class="summary-card">
+                <h3>Order Summary</h3>
+                <div class="summary-row"><span class="lbl">Package</span><span class="val" id="summaryPackage">—</span></div>
+                <div class="summary-row"><span class="lbl">Coins</span><span class="val" id="summaryCoins">0</span></div>
+                <div class="summary-row total"><span class="lbl">Total</span><span class="val" id="summaryTotal">₦0</span></div>
+            </div>
+
+            <button id="payBtn" class="pay-btn" onclick="initiatePayment()" disabled>
+                <i class="fas fa-lock me-2"></i>Pay Securely
+            </button>
+            <p style="text-align:center; font-size:12px; color:#9a9a9a; margin-top:10px;">
+                <i class="fas fa-shield-alt me-1"></i>Secured by Paystack
+            </p>
+
+            <div class="how-box">
+                <h4>How it works</h4>
+                <div class="hiw-step">
+                    <div class="hiw-num">1</div>
+                    <div class="hiw-text">Pick a package or enter a custom amount</div>
+                </div>
+                <div class="hiw-step">
+                    <div class="hiw-num">2</div>
+                    <div class="hiw-text">Pay via Paystack (card, bank transfer, USSD)</div>
+                </div>
+                <div class="hiw-step">
+                    <div class="hiw-num">3</div>
+                    <div class="hiw-text">Coins are instantly added to your wallet</div>
+                </div>
+                <div class="hiw-step">
+                    <div class="hiw-num">4</div>
+                    <div class="hiw-text">Spend coins in the Discount Store</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+    let selectedPackageId = null;
+    let selectedCoins     = 0;
+    let selectedAmount    = 0;
+
+    function selectPackage(id, coins, price, name) {
+        selectedPackageId = id; selectedCoins = coins; selectedAmount = price;
+        document.getElementById('customAmountInput').value = '';
+        document.getElementById('customCoinsPreview').textContent = '0';
+        document.querySelectorAll('.pkg-card').forEach(c => c.classList.remove('selected'));
+        event.currentTarget.classList.add('selected');
+        updateSummary(name, coins, price);
+    }
+
+    function selectCustom(val) {
+        const amount = parseFloat(val) || 0;
+        selectedPackageId = null; selectedCoins = Math.floor(amount); selectedAmount = amount;
+        document.getElementById('customCoinsPreview').textContent = selectedCoins.toLocaleString();
+        document.querySelectorAll('.pkg-card').forEach(c => c.classList.remove('selected'));
+        if (amount >= 100) { updateSummary('Custom', selectedCoins, amount); }
+        else {
+            document.getElementById('summaryPackage').textContent = '—';
+            document.getElementById('summaryCoins').textContent   = '0';
+            document.getElementById('summaryTotal').textContent   = '₦0';
+            document.getElementById('payBtn').disabled = true;
+        }
+    }
+
+    function updateSummary(name, coins, amount) {
+        document.getElementById('summaryPackage').textContent = name;
+        document.getElementById('summaryCoins').textContent   = coins.toLocaleString() + ' coins';
+        document.getElementById('summaryTotal').textContent   = '₦' + parseFloat(amount).toLocaleString();
+        document.getElementById('payBtn').disabled = false;
+    }
+
+    function initiatePayment() {
+        if (selectedAmount <= 0) return;
+        const btn = document.getElementById('payBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Preparing...';
+
+        const fd = new FormData();
+        fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+        if (selectedPackageId) { fd.append('package_id', selectedPackageId); }
+        else { fd.append('custom_amount', selectedAmount); }
+
+        fetch('{% url "wallet:initiate_purchase" %}', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                alert(data.error || 'An error occurred.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-lock me-2"></i>Pay Securely';
+                return;
+            }
+            const handler = PaystackPop.setup({
+                key: '{{ paystack_public_key }}',
+                email: data.email,
+                amount: data.amount_kobo,
+                ref: data.reference,
+                currency: 'NGN',
+                metadata: { payment_type: 'COIN_PURCHASE', coins: data.coins, purchase_id: data.purchase_id },
+                callback: function(resp) {
+                    window.location.href = '{% url "wallet:purchase_callback" %}?reference=' + resp.reference;
+                },
+                onClose: function() {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-lock me-2"></i>Pay Securely';
+                }
+            });
+            handler.openIframe();
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-lock me-2"></i>Pay Securely';
+        });
+    }
+</script>
+{% endblock %}

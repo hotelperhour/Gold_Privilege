@@ -1,0 +1,33 @@
+{% extends 'base_subscriber.html' %}
+{% load static %}
+
+{% block title %}Services – Gold Privilege{% endblock %}
+
+{% block subscriber_content %}
+<style>
+* { font-family: 'Poppins', sans-serif; }
+.no-sub-wrap {
+    max-width: 480px; margin: 80px auto; text-align: center;
+}
+.no-sub-wrap i { font-size: 72px; color: #e5e7eb; margin-bottom: 24px; }
+.no-sub-wrap h2 { font-size: 26px; font-weight: 700; color: #000; margin-bottom: 10px; }
+.no-sub-wrap p { font-size: 15px; color: #6b7280; margin-bottom: 28px; }
+.btn-subscribe {
+    background: #E5AD04; color: #000; font-size: 15px; font-weight: 700;
+    padding: 14px 32px; border-radius: 12px; text-decoration: none;
+}
+.btn-subscribe:hover { background: #F9B036; color: #000; text-decoration: none; }
+</style>
+
+<div class="no-sub-wrap">
+    <i class="fas fa-concierge-bell"></i>
+    <h2>Subscribe to Access Services</h2>
+    <p>
+        Airtime, data bundles, ride vouchers, and more are available
+        to Gold Privilege members. Subscribe to get started.
+    </p>
+    <a href="{% url 'subscriptions:plans_list' %}" class="btn-subscribe">
+        View Plans
+    </a>
+</div>
+{% endblock %}

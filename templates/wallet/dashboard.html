@@ -1,0 +1,264 @@
+{% extends "base_subscriber.html" %}
+{% load static humanize %}
+
+{% block title %}My Wallet — Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 { font-size: 26px; font-weight: 700; color: #020202; margin: 0; }
+    .page-header p  { color: #6c757d; margin: 4px 0 0; font-size: 14px; }
+
+    /* ── Balance hero card ── */
+    .balance-card {
+        background: linear-gradient(135deg, #020202 0%, #5c3001 100%);
+        border-radius: 20px; padding: 36px 32px;
+        color: #fff; position: relative; overflow: hidden; margin-bottom: 24px;
+    }
+    .balance-card::before {
+        content: ''; position: absolute; top: -60px; right: -60px;
+        width: 220px; height: 220px; background: rgba(229,173,4,0.12); border-radius: 50%;
+    }
+    .balance-card::after {
+        content: ''; position: absolute; bottom: -40px; left: 40px;
+        width: 140px; height: 140px; background: rgba(229,173,4,0.07); border-radius: 50%;
+    }
+    .gp-id-badge {
+        position: absolute; top: 28px; right: 32px;
+        background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 8px; padding: 6px 14px;
+        font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); letter-spacing: 1px;
+    }
+    .balance-label { font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.65; margin-bottom: 8px; }
+    .balance-amount { font-size: 52px; font-weight: 800; color: #E5AD04; line-height: 1; margin-bottom: 4px; }
+    .balance-naira  { font-size: 15px; opacity: 0.7; margin-bottom: 24px; }
+    .balance-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .bal-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 10px 22px; border-radius: 10px; font-size: 14px; font-weight: 600;
+        text-decoration: none; transition: all 0.25s ease; font-family: 'Poppins', sans-serif;
+    }
+    .bal-btn-gold { background: #E5AD04; color: #000; }
+    .bal-btn-gold:hover { background: #F9B036; transform: translateY(-2px); color: #000; }
+    .bal-btn-outline { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); }
+    .bal-btn-outline:hover { background: rgba(255,255,255,0.22); color: #fff; transform: translateY(-2px); }
+
+    @media (max-width: 576px) {
+        .gp-id-badge { position: relative; top: auto; right: auto; display: inline-block; margin-bottom: 16px; }
+        .balance-amount { font-size: 36px; }
+    }
+
+    /* ── Stats row ── */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    @media (max-width: 768px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 480px) { .stats-row { grid-template-columns: 1fr; } }
+    .stat-card { background: #fff; border-radius: 14px; padding: 20px 22px; border: 1px solid rgba(0,0,0,0.05); }
+    .stat-card .sc-icon { float: right; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-top: -6px; }
+    .stat-card .sc-label { font-size: 12px; color: #9a9a9a; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+    .stat-card .sc-value { font-size: 24px; font-weight: 700; color: #020202; }
+
+    /* ── Section title ── */
+    .section-title { font-size: 17px; font-weight: 600; color: #020202; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+    .section-title a { font-size: 13px; color: #E5AD04; text-decoration: none; font-weight: 500; }
+
+    /* ── Quick actions ── */
+    .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+    @media (max-width: 768px) { .quick-actions { grid-template-columns: repeat(2, 1fr); } }
+    .qa-card { background: #fff; border-radius: 14px; padding: 20px 16px; text-align: center; text-decoration: none; border: 1px solid rgba(0,0,0,0.05); transition: all 0.25s ease; display: block; }
+    .qa-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-color: #E5AD04; }
+    .qa-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin: 0 auto 12px; }
+    .qa-label { font-size: 13px; font-weight: 600; color: #020202; }
+
+    /* ── Transaction list ── */
+    .txn-list { background: #fff; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05); overflow: hidden; }
+    .txn-item { display: flex; align-items: center; gap: 14px; padding: 16px 22px; border-bottom: 1px solid rgba(0,0,0,0.04); transition: background 0.2s; }
+    .txn-item:last-child { border-bottom: none; }
+    .txn-item:hover { background: #fafafa; }
+    .txn-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .txn-info { flex: 1; min-width: 0; }
+    .txn-title    { font-size: 14px; font-weight: 600; color: #020202; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .txn-subtitle { font-size: 12px; color: #9a9a9a; margin-top: 2px; }
+    .txn-amount   { font-size: 15px; font-weight: 700; white-space: nowrap; }
+    .txn-amount.credit { color: #28a745; }
+    .txn-amount.debit  { color: #dc3545; }
+
+    /* ── PIN warning banner ── */
+    .pin-warning { background: linear-gradient(135deg, #fff8e1, #fff3cc); border: 1px solid #ffe066; border-radius: 14px; padding: 18px 22px; display: flex; align-items: center; gap: 14px; margin-bottom: 24px; text-decoration: none; }
+    .pin-warning:hover { border-color: #E5AD04; }
+    .pin-warning i { font-size: 24px; color: #d4a000; flex-shrink: 0; }
+    .pin-warning-text strong { display: block; color: #020202; font-size: 14px; font-weight: 600; }
+    .pin-warning-text span   { font-size: 13px; color: #6c757d; }
+
+    /* ── Transaction list — mobile responsive fixes ── */
+@media (max-width: 576px) {
+ 
+    /* Give items more vertical room and allow wrapping */
+    .txn-item {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 14px 16px;
+        align-items: flex-start;
+    }
+ 
+    /* Icon stays top-left */
+    .txn-icon { flex-shrink: 0; }
+ 
+    /* Info section takes full remaining width */
+    .txn-info {
+        flex: 1;
+        min-width: 0;
+    }
+ 
+    /* Title: allow wrapping instead of truncating */
+    .txn-title {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+ 
+    /* Subtitle: allow wrapping */
+    .txn-subtitle {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        line-height: 1.5;
+        font-size: 11px;
+    }
+ 
+    /* Amount: push to right edge on its own line */
+    .txn-amount {
+        margin-left: auto;
+        font-size: 14px;
+    }
+ 
+    .txn-balance { font-size: 10px; }
+ 
+    /* History page: right column shrinks gracefully */
+    .txn-right {
+        text-align: right;
+        flex-shrink: 0;
+    }
+}
+</style>
+{% endblock %}
+
+{% block subscriber_content %}
+
+    <div class="page-header">
+        <h1>My Wallet</h1>
+        <p>Your GP ID: <strong>{{ request.user.gp_id }}</strong> — share this so others can send you coins</p>
+    </div>
+
+    <!-- PIN warning if not set -->
+    {% if not wallet.pin_set %}
+    <a href="{% url 'wallet:set_pin' %}" class="pin-warning">
+        <i class="fas fa-lock"></i>
+        <div class="pin-warning-text">
+            <strong>Set your Wallet PIN</strong>
+            <span>You need a PIN to transfer coins to other members. Takes 30 seconds.</span>
+        </div>
+        <i class="fas fa-chevron-right" style="margin-left:auto; color:#aaa;"></i>
+    </a>
+    {% endif %}
+
+    <!-- Balance hero -->
+    <div class="balance-card">
+        <span class="gp-id-badge"><i class="fas fa-id-badge me-1"></i>{{ request.user.gp_id }}</span>
+        <div class="balance-label">Gold Coins Balance</div>
+        <div class="balance-amount">{{ wallet.balance|floatformat:0|intcomma }}</div>
+        <div class="balance-naira">≈ ₦{{ wallet.balance|floatformat:0|intcomma }} &nbsp;(1 coin = ₦1)</div>
+        <div class="balance-actions">
+
+            <a href="{% url 'wallet:buy' %}" class="bal-btn bal-btn-gold">
+                <i class="fas fa-plus-circle"></i> Buy Coins
+            </a>
+
+            {% if wallet.pin_set %}
+            <a href="{% url 'wallet:transfer' %}" class="bal-btn bal-btn-outline">
+                <i class="fas fa-paper-plane"></i> Send Coins
+            </a>
+            {% endif %}
+            <a href="{% url 'wallet:history' %}" class="bal-btn bal-btn-outline">
+                <i class="fas fa-history"></i> History
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="sc-icon" style="background:#fff8e1; color:#E5AD04;"><i class="fas fa-coins"></i></div>
+            <div class="sc-label">Total Purchased</div>
+            <div class="sc-value">{{ stats.total_purchased|floatformat:0|intcomma }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="sc-icon" style="background:#fff1f0; color:#dc3545;"><i class="fas fa-shopping-bag"></i></div>
+            <div class="sc-label">Total Spent</div>
+            <div class="sc-value">{{ stats.total_spent|floatformat:0|intcomma }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="sc-icon" style="background:#f0fff4; color:#28a745;"><i class="fas fa-gift"></i></div>
+            <div class="sc-label">Total Earned</div>
+            <div class="sc-value">{{ stats.total_earned|floatformat:0|intcomma }}</div>
+        </div>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="section-title">Quick Actions</div>
+    <div class="quick-actions">
+        <a href="{% url 'wallet:buy' %}" class="qa-card">
+            <div class="qa-icon" style="background:#fff8e1;"><i class="fas fa-wallet" style="color:#E5AD04;"></i></div>
+            <div class="qa-label">Buy Coins</div>
+        </a>
+        <a href="{% url 'wallet:transfer' %}" class="qa-card">
+            <div class="qa-icon" style="background:#e8f4fd;"><i class="fas fa-paper-plane" style="color:#1a73e8;"></i></div>
+            <div class="qa-label">Send Coins</div>
+        </a>
+        <a href="{% url 'wallet:history' %}" class="qa-card">
+            <div class="qa-icon" style="background:#f3e5f5;"><i class="fas fa-list-alt" style="color:#8e24aa;"></i></div>
+            <div class="qa-label">History</div>
+        </a>
+        <a href="{% url 'wallet:set_pin' %}" class="qa-card">
+            <div class="qa-icon" style="background:#e8f5e9;"><i class="fas fa-lock" style="color:#28a745;"></i></div>
+            <div class="qa-label">{% if wallet.pin_set %}Change PIN{% else %}Set PIN{% endif %}</div>
+        </a>
+    </div>
+
+    <!-- Recent transactions -->
+    <div class="section-title">
+        Recent Transactions
+        <a href="{% url 'wallet:history' %}">View all →</a>
+    </div>
+
+    <div class="txn-list">
+        {% for txn in recent_transactions %}
+        {% with type=txn.type %}
+        <div class="txn-item">
+            <div class="txn-icon" style="background:{% if type == 'PURCHASE' %}#fff8e1{% elif txn.is_credit %}#f0fff4{% else %}#fff1f0{% endif %};">
+                <i class="{% if type == 'PURCHASE' %}fas fa-coins{% elif type == 'SPEND' %}fas fa-shopping-bag{% elif type == 'CASHBACK' %}fas fa-percentage{% elif type == 'REFERRAL' %}fas fa-user-plus{% elif type == 'TRANSFER_IN' %}fas fa-arrow-down{% elif type == 'TRANSFER_OUT' %}fas fa-paper-plane{% elif type == 'MONTHLY_BONUS' %}fas fa-gift{% elif type == 'REFUND' %}fas fa-undo{% else %}fas fa-exchange-alt{% endif %}"
+                   style="color:{% if type == 'PURCHASE' %}#E5AD04{% elif txn.is_credit %}#28a745{% else %}#dc3545{% endif %};"></i>
+            </div>
+            <div class="txn-info">
+                <div class="txn-title">{{ txn.get_type_display }}</div>
+                <div class="txn-subtitle">
+                    {% if txn.related_user %}{% if type == 'TRANSFER_IN' %}From{% else %}To{% endif %} {{ txn.related_user.get_full_name }} • {% endif %}
+                    {{ txn.created_at|date:"M j, Y, g:i a" }}
+                </div>
+            </div>
+            <div class="txn-amount {% if txn.is_credit %}credit{% else %}debit{% endif %}">
+                {% if txn.is_credit %}+{% else %}-{% endif %}{{ txn.amount|floatformat:0|intcomma }}
+            </div>
+        </div>
+        {% endwith %}
+        {% empty %}
+        <div style="padding:40px; text-align:center; color:#9a9a9a;">
+            <i class="fas fa-coins" style="font-size:36px; opacity:0.3; display:block; margin-bottom:12px;"></i>
+            <p style="margin:0;">No transactions yet.</p>
+            <a href="{% url 'wallet:buy' %}" style="color:#E5AD04; font-weight:600; margin-top:8px; display:inline-block;">Buy your first coins →</a>
+        </div>
+        {% endfor %}
+    </div>
+
+{% endblock %}

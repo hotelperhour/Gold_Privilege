@@ -20,3 +20,4 @@ test_email.py
 test_sms.py
 test_smtp.py
 db.sqlite3
+PROJECT_BRIEF.md

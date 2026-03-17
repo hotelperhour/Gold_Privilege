@@ -1,0 +1,405 @@
+{% extends 'base_subscriber.html' %}
+{% load static %}
+{% load services_tags %}
+{% block title %}{{ service.name }} – Gold Privilege{% endblock %}
+
+{% block subscriber_content %}
+<style>
+* { font-family: 'Poppins', sans-serif; box-sizing: border-box; }
+:root {
+    --gold: #E5AD04; --gold-light: #F9B036;
+    --black: #000; --grey: #f5f5f5; --text-muted: #6b7280; --radius: 16px;
+}
+
+.back-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--text-muted); font-size: 14px; font-weight: 500;
+    text-decoration: none; margin-bottom: 28px;
+}
+.back-link:hover { color: var(--black); }
+
+.page-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 32px;
+    align-items: start;
+}
+
+/* Form card */
+.form-card {
+    background: #fff; border-radius: var(--radius);
+    padding: 36px 32px; box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+}
+.form-card h2 { font-size: 22px; font-weight: 700; color: var(--black); margin: 0 0 6px; }
+.form-card .service-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; }
+
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; font-size: 14px; font-weight: 600; color: var(--black); margin-bottom: 8px; }
+.form-control {
+    width: 100%; padding: 12px 16px; border: 1.5px solid #e5e7eb;
+    border-radius: 10px; font-size: 15px; font-family: 'Poppins', sans-serif;
+    outline: none; transition: border-color 0.2s;
+}
+.form-control:focus { border-color: var(--gold); }
+
+/* Network selector */
+.network-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.network-option { display: none; }
+.network-label {
+    border: 2px solid #e5e7eb; border-radius: 10px; padding: 12px 8px;
+    text-align: center; cursor: pointer; font-size: 13px; font-weight: 600;
+    color: var(--text-muted); transition: all 0.2s; display: block;
+}
+.network-option:checked + .network-label { border-color: var(--gold); background: #fff8e1; color: var(--black); }
+.network-label:hover { border-color: var(--gold-light); }
+
+/* Amount chips */
+.amount-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.amount-chip-input { display: none; }
+.amount-chip {
+    border: 2px solid #e5e7eb; border-radius: 8px; padding: 10px 18px;
+    font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-muted);
+    transition: all 0.2s; display: block; text-align: center;
+}
+.amount-chip-input:checked + .amount-chip { border-color: var(--gold); background: #fff8e1; color: var(--black); }
+.amount-chip.out-of-stock { opacity: 0.4; cursor: not-allowed; text-decoration: line-through; }
+
+/* Amount hint bar */
+.amount-hint {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+    padding: 10px 14px; margin-top: 8px; font-size: 12px; color: var(--text-muted);
+}
+.amount-hint strong { color: var(--black); }
+
+/* Submit button */
+.btn-submit {
+    width: 100%; padding: 16px; background: var(--gold); color: #000;
+    font-size: 16px; font-weight: 700; border: none; border-radius: 12px;
+    cursor: pointer; transition: all 0.2s; margin-top: 8px;
+}
+.btn-submit:hover { background: var(--gold-light); transform: translateY(-2px); }
+.btn-submit:disabled { background: #e5e7eb; color: var(--text-muted); cursor: not-allowed; transform: none; }
+
+/* Alert banners */
+.alert-banner {
+    border-radius: 10px; padding: 14px 18px; font-size: 14px;
+    font-weight: 500; margin-bottom: 20px;
+    display: flex; gap: 10px; align-items: flex-start;
+}
+.alert-warning { background: #fff3cd; border: 1px solid #ffc107; color: #856404; }
+.alert-danger  { background: #f8d7da; border: 1px solid #dc3545; color: #842029; }
+.alert-success { background: #d1e7dd; border: 1px solid #198754; color: #0f5132; }
+
+/* Quota card (right sidebar) */
+.quota-card {
+    background: var(--black); border-radius: var(--radius);
+    padding: 28px 24px; color: #fff; position: sticky; top: 24px;
+}
+.quota-card h3 {
+    font-size: 13px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--gold); margin: 0 0 20px;
+}
+.quota-row {
+    display: flex; justify-content: space-between;
+    font-size: 14px; margin-bottom: 10px;
+}
+.quota-row .label { color: rgba(255,255,255,0.6); }
+.quota-row .value { font-weight: 700; color: #fff; }
+.quota-row .value.gold { color: var(--gold); }
+.quota-row .value.danger { color: #ff6b6b; }
+
+.quota-bar { height: 8px; background: rgba(255,255,255,0.15); border-radius: 99px; overflow: hidden; margin: 16px 0; }
+.quota-bar-fill { height: 100%; border-radius: 99px; background: var(--gold); transition: width 0.4s ease; }
+.quota-bar-fill.danger { background: #dc3545; }
+.quota-bar-fill.warning { background: #ffc107; }
+
+.quota-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 16px 0; }
+
+.quota-note { font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.6; }
+
+.limit-pill {
+    display: inline-block; background: rgba(229,173,4,0.15); color: var(--gold);
+    border: 1px solid rgba(229,173,4,0.3); border-radius: 6px;
+    padding: 4px 10px; font-size: 12px; font-weight: 600; margin-top: 4px;
+}
+
+@media (max-width: 960px) {
+    .page-layout { grid-template-columns: 1fr; }
+    .quota-card { position: static; }
+    .network-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+    .form-card { padding: 24px 20px; }
+}
+</style>
+
+<a href="{% url 'services:home' %}" class="back-link">
+    <i class="fas fa-arrow-left"></i> Back to Services
+</a>
+
+<div class="page-layout">
+
+    <!-- LEFT: request form -->
+    <div class="form-card">
+        <h2>{{ service.name }}</h2>
+        <p class="service-sub">
+            {% if service.description %}{{ service.description }}{% endif %}
+            {% if is_airtime or is_data %}
+                ⚡ Delivered instantly to the phone number you enter.
+            {% else %}
+                📦 A voucher code will be shown after submission.
+            {% endif %}
+        </p>
+
+        {% if not allowed %}
+        <div class="alert-banner alert-danger">
+            <i class="fas fa-times-circle" style="margin-top:2px;"></i>
+            <div>
+                <strong>Monthly allowance exhausted.</strong><br>
+                {{ quota_msg }} Your allowance resets on the 1st of next month.
+            </div>
+        </div>
+        {% endif %}
+
+        {% if messages %}
+            {% for msg in messages %}
+            <div class="alert-banner {% if 'success' in msg.tags %}alert-success{% else %}alert-warning{% endif %}">
+                <i class="fas fa-info-circle" style="margin-top:2px;"></i>
+                <div>{{ msg }}</div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Network selector (airtime/data) -->
+            {% if is_airtime or is_data %}
+            <div class="form-group">
+                <label class="form-label">Select Network</label>
+                <div class="network-grid">
+                    {% for value, label in networks %}
+                    <div>
+                        <input type="radio" name="network" value="{{ value }}"
+                               id="net_{{ value }}" class="network-option"
+                               required {% if not allowed %}disabled{% endif %}>
+                        <label for="net_{{ value }}" class="network-label">{{ label }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="phone">Phone Number</label>
+                <input type="tel" name="phone" id="phone"
+                       class="form-control"
+                       placeholder="e.g. 08012345678"
+                       pattern="[0-9]{11}"
+                       maxlength="11"
+                       required
+                       {% if not allowed %}disabled{% endif %}>
+            </div>
+            {% endif %}
+
+            <!-- Amount -->
+            <div class="form-group">
+                <label class="form-label">
+                    {% if is_data %}Amount (GB){% else %}Amount (₦){% endif %}
+                </label>
+
+                {% if is_voucher and voucher_amounts %}
+                    <!-- Fixed denomination chips for vouchers -->
+                    <div class="amount-chips">
+                        {% for amt in voucher_amounts %}
+                        {% with in_stock=voucher_stock|get_item:amt %}
+                        <div>
+                            <input type="radio"
+                                   name="amount"
+                                   value="{{ amt }}"
+                                   id="amt_{{ amt }}"
+                                   class="amount-chip-input"
+                                   required
+                                   {% if not in_stock or not allowed %}disabled{% endif %}>
+                            <label for="amt_{{ amt }}"
+                                   class="amount-chip {% if not in_stock %}out-of-stock{% endif %}">
+                                ₦{{ amt|floatformat:0 }}
+                                {% if not in_stock %}<br><small>Out of stock</small>{% endif %}
+                            </label>
+                        </div>
+                        {% endwith %}
+                        {% endfor %}
+                    </div>
+
+                {% else %}
+                    <!-- Free-entry for airtime/data -->
+                    <input type="number"
+                            name="amount"
+                            id="amount"
+                            class="form-control"
+                            placeholder="{% if is_data %}e.g. 1.0{% else %}e.g. 500{% endif %}"
+                           step="{% if is_data %}0.5{% else %}50{% endif %}"
+                           {% if min_amount %}min="{{ min_amount }}"{% else %}{% if is_data %}min="0.5"{% else %}min="100"{% endif %}{% endif %}
+                           {% if max_amount %}max="{{ max_amount }}"{% endif %}
+                           required
+                           {% if not allowed %}disabled{% endif %}>
+
+                    <!-- Amount hint row -->
+                    <div class="amount-hint">
+    <span>
+        Min: <strong>
+            {% if is_data %}{{ min_amount|default:"0.5"|floatformat:1 }} GB
+            {% else %}₦{{ min_amount|default:100|floatformat:0 }}{% endif %}
+        </strong>
+    </span>
+    {% if max_amount %}
+    <span>
+        Max: <strong>
+            {% if is_data %}{{ max_amount|floatformat:1 }} GB
+            {% else %}₦{{ max_amount|floatformat:0 }}{% endif %}
+        </strong>
+    </span>
+    {% endif %}
+    {% if remaining and not plan_quota.is_unlimited %}
+    <span>
+        Left this month: <strong style="color:#E5AD04;">
+            {% if is_data %}{{ remaining|floatformat:2 }} GB
+            {% else %}₦{{ remaining|floatformat:0 }}{% endif %}
+        </strong>
+    </span>
+    {% endif %}
+</div>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn-submit"
+                    {% if not allowed %}disabled{% endif %}>
+                {% if is_voucher %}Get Voucher Code
+                {% elif is_airtime %}Buy Airtime Now
+                {% elif is_data %}Buy Data Now
+                {% else %}Request Service{% endif %}
+            </button>
+        </form>
+    </div>
+
+    <!-- RIGHT: quota sidebar -->
+    <div class="quota-card">
+        <h3>📊 Your Monthly Quota</h3>
+
+        {% if allowed %}
+            {% if is_voucher %}
+                <!-- Voucher: count-based display -->
+                {% if plan_quota and not plan_quota.is_unlimited %}
+                <div class="quota-row">
+                    <span class="label">Vouchers remaining</span>
+                    <span class="value gold">{{ remaining }}</span>
+                </div>
+                {% else %}
+                <div class="quota-row">
+                    <span class="label">Monthly access</span>
+                    <span class="value gold">Unlimited ✓</span>
+                </div>
+                {% endif %}
+
+            {% else %}
+                <!-- Airtime/data: value-based display -->
+                {% if plan_quota and not plan_quota.is_unlimited %}
+                <div class="quota-row">
+    <span class="label">Monthly allowance</span>
+    <span class="value">
+        {% if is_data %}{{ plan_quota.monthly_data_gb|floatformat:1 }} GB
+        {% else %}₦{{ plan_quota.monthly_allowance|floatformat:0 }}{% endif %}
+    </span>
+</div>
+<div class="quota-row">
+    <span class="label">Balance remaining</span>
+    <span class="value gold">
+        {% if is_data %}{{ remaining|floatformat:2 }} GB
+        {% else %}₦{{ remaining|floatformat:0 }}{% endif %}
+    </span>
+</div>
+
+                <!-- Progress bar -->
+                {% if plan_quota.monthly_allowance %}
+                {% with pct=remaining|floatformat:0 %}
+                <div class="quota-bar">
+                    <div class="quota-bar-fill
+                        {% if remaining < plan_quota.monthly_allowance|divisibleby:4 %}danger
+                        {% elif remaining < plan_quota.monthly_allowance|divisibleby:2 %}warning{% endif %}"
+                        style="width: {{ remaining|floatformat:0 }}px;"
+                        id="quota-bar-fill">
+                    </div>
+                </div>
+                {% endwith %}
+                {% endif %}
+
+                {% else %}
+                <div class="quota-row">
+                    <span class="label">Monthly allowance</span>
+                    <span class="value gold">Unlimited ✓</span>
+                </div>
+                {% endif %}
+
+                <!-- Per-transaction limits -->
+                {% if min_amount or max_amount %}
+                <hr class="quota-divider">
+                <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Per top-up limits</div>
+                {% if min_amount %}
+                <div class="quota-row">
+                    <span class="label">Minimum per top-up</span>
+                    <span class="value">
+                        {% if is_data %}{{ min_amount|floatformat:1 }} GB
+                        {% else %}₦{{ min_amount|floatformat:0 }}{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                {% if max_amount %}
+                <div class="quota-row">
+                    <span class="label">Maximum per top-up</span>
+                    <span class="value">
+                        {% if is_data %}{{ max_amount|floatformat:1 }} GB
+                        {% else %}₦{{ max_amount|floatformat:0 }}{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                {% endif %}
+            {% endif %}
+
+        {% else %}
+            <div style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.6;">
+                {{ quota_msg }}
+            </div>
+        {% endif %}
+
+        <hr class="quota-divider">
+        <p class="quota-note">
+            <i class="fas fa-info-circle" style="color:var(--gold);margin-right:6px;"></i>
+            Quota resets on the 1st of every month.
+            {% if is_airtime or is_data %}
+            Top up any amount within your limits — as often as you like until your monthly balance runs out.
+            {% else %}
+            Voucher codes are revealed immediately after your request is approved.
+            {% endif %}
+        </p>
+    </div>
+
+</div>
+
+<!-- JS: set quota bar width correctly using percentage -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const fill = document.getElementById('quota-bar-fill');
+    {% if plan_quota and not plan_quota.is_unlimited and remaining and not is_voucher %}
+    if (fill) {
+        const allowance  = {{ plan_quota.monthly_allowance|default:0 }};
+        const remaining  = {{ remaining|default:0 }};
+        const pct = allowance > 0 ? Math.min(100, (remaining / allowance) * 100) : 0;
+        fill.style.width = pct + '%';
+        if (pct < 25) fill.classList.add('danger');
+        else if (pct < 50) fill.classList.add('warning');
+    }
+    {% endif %}
+});
+</script>
+
+{% endblock %}

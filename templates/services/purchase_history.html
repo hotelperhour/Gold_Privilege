@@ -1,0 +1,133 @@
+
+{% extends 'base_subscriber.html' %}
+{% load static %}
+
+{% block title %}Service History – Gold Privilege{% endblock %}
+
+{% block subscriber_content %}
+<style>
+* { font-family: 'Poppins', sans-serif; }
+:root { --gold: #E5AD04; --black: #000; --radius: 12px; }
+
+.history-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+}
+.history-header h1 { font-size: 26px; font-weight: 700; color: var(--black); margin: 0; }
+.btn-back {
+    background: #f3f4f6; color: var(--black); text-decoration: none;
+    padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
+}
+
+.history-table-wrap {
+    background: #fff; border-radius: var(--radius);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07); overflow: hidden;
+}
+.history-table {
+    width: 100%; border-collapse: collapse;
+}
+.history-table th {
+    background: var(--black); color: #fff;
+    padding: 14px 16px; font-size: 13px; font-weight: 600;
+    text-align: left; white-space: nowrap;
+}
+.history-table td {
+    padding: 14px 16px; font-size: 14px; color: #374151;
+    border-bottom: 1px solid #f3f4f6;
+}
+.history-table tr:last-child td { border-bottom: none; }
+.history-table tr:hover td { background: #fafafa; }
+
+.badge {
+    padding: 4px 10px; border-radius: 6px;
+    font-size: 12px; font-weight: 600;
+}
+.badge-delivered  { background: #d4edda; color: #155724; }
+.badge-failed     { background: #f8d7da; color: #721c24; }
+.badge-pending    { background: #fff3cd; color: #856404; }
+.badge-processing { background: #cce5ff; color: #004085; }
+
+.ref-link {
+    color: var(--gold); font-weight: 700; text-decoration: none;
+    font-family: monospace; font-size: 13px;
+}
+
+.empty-state {
+    text-align: center; padding: 80px 20px; color: #9ca3af;
+}
+.empty-state i { font-size: 48px; margin-bottom: 14px; }
+
+@media (max-width: 768px) {
+    .history-table thead { display: none; }
+    .history-table tr {
+        display: block; margin-bottom: 16px;
+        border: 1px solid #e5e7eb; border-radius: 10px;
+        padding: 14px;
+    }
+    .history-table td {
+        display: flex; justify-content: space-between;
+        border: none; padding: 6px 0;
+    }
+    .history-table td::before {
+        content: attr(data-label);
+        font-weight: 600; color: #6b7280;
+    }
+}
+</style>
+
+<div class="history-header">
+    <h1>Service History</h1>
+    <a href="{% url 'services:home' %}" class="btn-back">← Back to Services</a>
+</div>
+
+{% if purchases %}
+<div class="history-table-wrap">
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>Reference</th>
+                <th>Service</th>
+                <th>Amount</th>
+                <th>Details</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in purchases %}
+            <tr>
+                <td data-label="Ref">
+                    <span class="ref-link">{{ p.reference }}</span>
+                </td>
+                <td data-label="Service">{{ p.service.name }}</td>
+                <td data-label="Amount">₦{{ p.amount|floatformat:0 }}</td>
+                <td data-label="Details">
+                    {% if p.recipient_phone %}
+                        {{ p.recipient_phone }}
+                        {% if p.network_provider %}({{ p.get_network_provider_display }}){% endif %}
+                    {% elif p.voucher %}
+                        Voucher code issued
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td data-label="Status">
+                    <span class="badge badge-{{ p.status|lower }}">
+                        {{ p.get_status_display }}
+                    </span>
+                </td>
+                <td data-label="Date">{{ p.created_at|date:"M d, Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="empty-state">
+    <i class="fas fa-history"></i>
+    <p>No service history yet.<br>Use a service to see your transactions here.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+

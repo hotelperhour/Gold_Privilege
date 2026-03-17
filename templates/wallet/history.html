@@ -1,0 +1,193 @@
+{% extends "base_subscriber.html" %}
+{% load static humanize %}
+
+{% block title %}Transaction History — Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: #6c757d; text-decoration: none; font-size: 14px; margin-bottom: 20px; }
+    .back-link:hover { color: #E5AD04; }
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 { font-size: 26px; font-weight: 700; color: #020202; margin: 0; }
+    .page-header p  { color: #6c757d; margin: 4px 0 0; font-size: 14px; }
+
+    /* Filter bar */
+    .filter-bar { background: #fff; border-radius: 14px; padding: 18px 22px; margin-bottom: 20px; border: 1px solid #eee; }
+    .filter-bar form { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; min-width: 140px; }
+    .filter-group label { font-size: 11px; font-weight: 600; color: #6c757d; text-transform: uppercase; letter-spacing: 0.5px; }
+    .filter-group .form-control,
+    .filter-group .form-select { border: 2px solid #eee; border-radius: 8px; padding: 8px 12px; font-size: 13px; font-family: 'Poppins', sans-serif; }
+    .filter-group .form-control:focus,
+    .filter-group .form-select:focus { border-color: #E5AD04; box-shadow: none; }
+    .filter-btn { background: #020202; color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; white-space: nowrap; transition: background 0.2s; }
+    .filter-btn:hover { background: #5c3001; }
+    .clear-btn { background: transparent; color: #9a9a9a; border: 2px solid #eee; border-radius: 8px; padding: 8px 14px; font-size: 13px; cursor: pointer; text-decoration: none; font-family: 'Poppins', sans-serif; display: inline-flex; align-items: center; transition: all 0.2s; }
+    .clear-btn:hover { border-color: #aaa; color: #555; }
+
+    /* Transaction list */
+    .txn-card { background: #fff; border-radius: 16px; border: 1px solid #eee; overflow: hidden; }
+    .txn-header { padding: 14px 22px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+    .txn-header span { font-size: 13px; color: #9a9a9a; }
+    .txn-item { display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-bottom: 1px solid #f8f8f8; transition: background 0.15s; }
+    .txn-item:last-child { border-bottom: none; }
+    .txn-item:hover { background: #fafafa; }
+    .txn-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .txn-info { flex: 1; min-width: 0; }
+    .txn-title { font-size: 14px; font-weight: 600; color: #020202; }
+    .txn-meta  { font-size: 12px; color: #9a9a9a; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .txn-right { text-align: right; flex-shrink: 0; }
+    .txn-amount { font-size: 15px; font-weight: 700; }
+    .txn-amount.credit { color: #28a745; }
+    .txn-amount.debit  { color: #dc3545; }
+    .txn-balance { font-size: 11px; color: #bbb; margin-top: 2px; }
+
+    /* Pagination */
+    .pagination-row { display: flex; justify-content: center; gap: 6px; padding: 18px 22px; flex-wrap: wrap; }
+    .pg-link { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 600; border: 1px solid #eee; color: #020202; background: #fff; transition: all 0.2s; }
+    .pg-link:hover { border-color: #E5AD04; color: #E5AD04; }
+    .pg-link.active { background: #E5AD04; border-color: #E5AD04; color: #000; }
+    .pg-link.disabled { opacity: 0.35; pointer-events: none; }
+
+    .empty-state { padding: 50px 20px; text-align: center; }
+    .empty-state i { font-size: 44px; color: #e0e0e0; display: block; margin-bottom: 12px; }
+    .empty-state p { color: #9a9a9a; font-size: 15px; margin: 0; }
+
+    /* ── Transaction list — mobile responsive fixes ── */
+@media (max-width: 576px) {
+ 
+    /* Give items more vertical room and allow wrapping */
+    .txn-item {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 14px 16px;
+        align-items: flex-start;
+    }
+ 
+    /* Icon stays top-left */
+    .txn-icon { flex-shrink: 0; }
+ 
+    /* Info section takes full remaining width */
+    .txn-info {
+        flex: 1;
+        min-width: 0;
+    }
+ 
+    /* Title: allow wrapping instead of truncating */
+    .txn-title {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        font-size: 13px;
+        line-height: 1.4;
+    }
+ 
+    /* Subtitle: allow wrapping */
+    .txn-subtitle {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        line-height: 1.5;
+        font-size: 11px;
+    }
+ 
+    /* Amount: push to right edge on its own line */
+    .txn-amount {
+        margin-left: auto;
+        font-size: 14px;
+    }
+ 
+    .txn-balance { font-size: 10px; }
+ 
+    /* History page: right column shrinks gracefully */
+    .txn-right {
+        text-align: right;
+        flex-shrink: 0;
+    }
+}
+</style>
+{% endblock %}
+
+{% block subscriber_content %}
+
+    <a href="{% url 'wallet:wallet_dashboard' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Wallet</a>
+
+    <div class="page-header">
+        <h1>Transaction History</h1>
+        <p>Every coin movement in your wallet, newest first.</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-bar">
+        <form method="get">
+            <div class="filter-group">
+                <label>Type</label>{{ filter_form.txn_type }}
+            </div>
+            <div class="filter-group">
+                <label>From</label>{{ filter_form.date_from }}
+            </div>
+            <div class="filter-group">
+                <label>To</label>{{ filter_form.date_to }}
+            </div>
+            <button type="submit" class="filter-btn"><i class="fas fa-filter me-1"></i>Filter</button>
+            <a href="{% url 'wallet:history' %}" class="clear-btn"><i class="fas fa-times me-1"></i>Clear</a>
+        </form>
+    </div>
+
+    <div class="txn-card">
+        <div class="txn-header">
+            <strong style="font-size:15px;">Transactions</strong>
+            <span>{{ page_obj.paginator.count }} total</span>
+        </div>
+
+        {% for txn in page_obj %}
+        {% with type=txn.type %}
+        <div class="txn-item">
+            <div class="txn-icon" style="background:{% if type == 'PURCHASE' %}#fff8e1{% elif txn.is_credit %}#f0fff4{% else %}#fff1f0{% endif %};">
+                <i class="{% if type == 'PURCHASE' %}fas fa-coins{% elif type == 'SPEND' %}fas fa-shopping-bag{% elif type == 'CASHBACK' %}fas fa-percentage{% elif type == 'REFERRAL' %}fas fa-user-plus{% elif type == 'TRANSFER_IN' %}fas fa-arrow-down{% elif type == 'TRANSFER_OUT' %}fas fa-paper-plane{% elif type == 'MONTHLY_BONUS' %}fas fa-gift{% elif type == 'REFUND' %}fas fa-undo{% elif type == 'ADMIN_CREDIT' %}fas fa-plus-circle{% elif type == 'ADMIN_DEBIT' %}fas fa-minus-circle{% else %}fas fa-exchange-alt{% endif %}"
+                   style="color:{% if type == 'PURCHASE' %}#E5AD04{% elif txn.is_credit %}#28a745{% else %}#dc3545{% endif %};"></i>
+            </div>
+            <div class="txn-info">
+                <div class="txn-title">{{ txn.get_type_display }}</div>
+                <div class="txn-meta">
+                    {% if txn.related_user %}{% if type == 'TRANSFER_IN' %}From{% else %}To{% endif %} {{ txn.related_user.get_full_name }} • {% endif %}
+                    {% if txn.note %}{{ txn.note|truncatechars:50 }} • {% endif %}
+                    {{ txn.created_at|date:"N j, Y · g:i a" }}
+                </div>
+            </div>
+            <div class="txn-right">
+                <div class="txn-amount {% if txn.is_credit %}credit{% else %}debit{% endif %}">
+                    {% if txn.is_credit %}+{% else %}-{% endif %}{{ txn.amount|floatformat:0|intcomma }}
+                </div>
+                <div class="txn-balance">Bal: {{ txn.balance_after|floatformat:0|intcomma }}</div>
+            </div>
+        </div>
+        {% endwith %}
+        {% empty %}
+        <div class="empty-state">
+            <i class="fas fa-receipt"></i>
+            <p>No transactions match your filters.</p>
+        </div>
+        {% endfor %}
+
+        {% if is_paginated %}
+        {% with q=request.GET %}
+        <div class="pagination-row">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if q.txn_type %}&txn_type={{ q.txn_type }}{% endif %}{% if q.date_from %}&date_from={{ q.date_from }}{% endif %}{% if q.date_to %}&date_to={{ q.date_to }}{% endif %}" class="pg-link"><i class="fas fa-chevron-left" style="font-size:11px;"></i></a>
+            {% endif %}
+            {% for i in page_obj.paginator.page_range %}
+                {% if page_obj.number == i %}<span class="pg-link active">{{ i }}</span>
+                {% elif i >= page_obj.number|add:"-2" and i <= page_obj.number|add:"2" %}
+                <a href="?page={{ i }}{% if q.txn_type %}&txn_type={{ q.txn_type }}{% endif %}{% if q.date_from %}&date_from={{ q.date_from }}{% endif %}{% if q.date_to %}&date_to={{ q.date_to }}{% endif %}" class="pg-link">{{ i }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if q.txn_type %}&txn_type={{ q.txn_type }}{% endif %}{% if q.date_from %}&date_from={{ q.date_from }}{% endif %}{% if q.date_to %}&date_to={{ q.date_to }}{% endif %}" class="pg-link"><i class="fas fa-chevron-right" style="font-size:11px;"></i></a>
+            {% endif %}
+        </div>
+        {% endwith %}
+        {% endif %}
+    </div>
+
+{% endblock %}

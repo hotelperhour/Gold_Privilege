@@ -1,47 +1,65 @@
 <!-- templates/subscriber_sidebar.html -->
+ {% load humanize %}
 <aside class="subscriber-sidebar">
-    <!-- Desktop Sidebar -->
+    <!-- ── Desktop Sidebar ─────────────────────────────────────────── -->
     <div class="sidebar-desktop d-none d-lg-block">
         <div class="sidebar-header">
             <div class="sidebar-logo">
-                <svg width="30" height="30" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="30" height="30" viewBox="0 0 50 50" fill="none">
                     <path d="M25 5L29 15L40 12L35 22L45 25L35 28L40 38L29 35L25 45L21 35L10 38L15 28L5 25L15 22L10 12L21 15L25 5Z" fill="#E5AD04" stroke="#020202" stroke-width="2"/>
                     <circle cx="25" cy="25" r="5" fill="#020202"/>
                 </svg>
                 <span class="sidebar-brand">Member Hub</span>
             </div>
         </div>
-        
+ 
         <nav class="sidebar-nav">
-            <a href="{% url 'account:dashboard' %}" 
+            <a href="{% url 'account:dashboard' %}"
                class="nav-item {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'user_dashboard' %}active{% endif %}">
                 <i class="fas fa-tachometer-alt"></i>
                 <span>Dashboard</span>
             </a>
-            
-            <a href="{% url 'subscriptions:my_subscription' %}" 
+ 
+            <a href="{% url 'subscriptions:my_subscription' %}"
                class="nav-item {% if 'subscription' in request.path %}active{% endif %}">
                 <i class="fas fa-crown"></i>
                 <span>My Plan</span>
             </a>
-            
-            <a href="{% url 'bookings:list' %}" 
+ 
+            <a href="{% url 'bookings:list' %}"
                class="nav-item {% if 'booking' in request.path %}active{% endif %}">
                 <i class="fas fa-calendar-check"></i>
                 <span>My Bookings</span>
             </a>
-            
-            <a href="{% url 'account:profile' %}" 
+ 
+            <a href="{% url 'services:home' %}"
+               class="nav-item {% if 'services' in request.path %}active{% endif %}">
+                <i class="fas fa-concierge-bell"></i>
+                <span>Services</span>
+            </a>
+ 
+            <!-- ── NEW: Wallet link ── -->
+            <a href="{% url 'wallet:wallet_dashboard' %}"
+               class="nav-item {% if 'wallet' in request.path %}active{% endif %}">
+                <i class="fas fa-coins"></i>
+                <span>Wallet</span>
+                {% if wallet_balance is not None %}
+                
+                {% endif %}
+            </a>
+ 
+            <a href="{% url 'account:profile' %}"
                class="nav-item {% if 'profile' in request.path %}active{% endif %}">
                 <i class="fas fa-user-cog"></i>
                 <span>Profile</span>
             </a>
         </nav>
-        
-        <!-- User Info at bottom -->
+ 
+        <!-- Footer (now shows GP ID) -->
         <div class="sidebar-footer">
             <div class="user-info">
                 <div class="user-name">{{ user.profile.get_full_name|truncatechars:20 }}</div>
+                <div class="user-gp-id">{{ user.gp_id }}</div>
                 <div class="user-status">
                     {% if active_subscription %}
                         <span class="status-dot active"></span>
@@ -53,33 +71,50 @@
                 </div>
             </div>
         </div>
+
     </div>
     
-    <!-- Mobile Sidebar (Bottom Nav) -->
+     <!-- ── Mobile Bottom Nav (6 items with visible labels) ──────────── -->
     <div class="sidebar-mobile d-lg-none">
         <nav class="mobile-nav">
-            <a href="{% url 'account:dashboard' %}" 
-   class="mobile-nav-item {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'user_dashboard' %}active{% endif %}">
-    <i class="fas fa-tachometer-alt"></i>
-    <span class="mobile-tooltip">Dashboard</span>
-</a>
-            
-            <a href="{% url 'subscriptions:my_subscription' %}" 
+            <a href="{% url 'account:dashboard' %}"
+               class="mobile-nav-item {% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'user_dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i>
+                <span class="mobile-label">Home</span>
+            </a>
+ 
+            <a href="{% url 'subscriptions:my_subscription' %}"
                class="mobile-nav-item {% if 'subscription' in request.path %}active{% endif %}">
                 <i class="fas fa-crown"></i>
-                <span class="mobile-tooltip">My Plan</span>
+                <span class="mobile-label">Plan</span>
             </a>
-            
-            <a href="{% url 'bookings:list' %}" 
+ 
+            <a href="{% url 'bookings:list' %}"
                class="mobile-nav-item {% if 'booking' in request.path %}active{% endif %}">
                 <i class="fas fa-calendar-check"></i>
-                <span class="mobile-tooltip">Bookings</span>
+                <span class="mobile-label">Bookings</span>
             </a>
-            
-            <a href="{% url 'account:profile' %}" 
+ 
+            <a href="{% url 'services:home' %}"
+               class="mobile-nav-item {% if 'services' in request.path %}active{% endif %}">
+                <i class="fas fa-concierge-bell"></i>
+                <span class="mobile-label">Services</span>
+            </a>
+ 
+            <!-- ── NEW: Wallet ── -->
+            <a href="{% url 'wallet:wallet_dashboard' %}"
+               class="mobile-nav-item {% if 'wallet' in request.path %}active{% endif %}">
+                <i class="fas fa-coins"></i>
+                <span class="mobile-label">Wallet</span>
+                {% if wallet_balance is not None and wallet_balance > 0 %}
+                <span class="wallet-dot"></span>
+                {% endif %}
+            </a>
+ 
+            <a href="{% url 'account:profile' %}"
                class="mobile-nav-item {% if 'profile' in request.path %}active{% endif %}">
                 <i class="fas fa-user"></i>
-                <span class="mobile-tooltip">Profile</span>
+                <span class="mobile-label">Profile</span>
             </a>
         </nav>
     </div>
@@ -218,73 +253,7 @@
     .status-dot.active   { background-color: #28a745; }
     .status-dot.inactive { background-color: #6c757d; }
     
-    /* Mobile Bottom Nav */
-    .sidebar-mobile {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 65px;
-        background-color: #FFFFFF;
-        border-top: 1px solid rgba(0, 0, 0, 0.08);
-        z-index: 1000;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-    }
     
-    .mobile-nav {
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        height: 100%;
-        padding: 0 10px;
-    }
-    
-    .mobile-nav-item {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 50px;
-        height: 50px;
-        border-radius: 12px;
-        text-decoration: none;
-        color: #000;
-        transition: all 0.3s ease;
-    }
-    
-    .mobile-nav-item:hover {
-        background-color: rgba(229, 173, 4, 0.1);
-        color: #F9B036;
-    }
-    
-    .mobile-nav-item.active {
-        background-color: rgba(229, 173, 4, 0.15);
-        color: #E5AD04;
-    }
-    
-    .mobile-nav-item i { font-size: 20px; }
-    
-    .mobile-tooltip {
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: #020202;
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        white-space: nowrap;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-        margin-bottom: 5px;
-    }
-    
-    .mobile-nav-item:hover .mobile-tooltip {
-        opacity: 1;
-        visibility: visible;
-    }
     
     /* Content wrapper adjustment */
     .subscriber-content-wrapper {
@@ -302,4 +271,146 @@
             padding-bottom: 85px;
         }
     }
+
+
+
+    /* ── Sidebar shell ── */
+    .subscriber-sidebar { position: fixed; top: 0; left: 0; height: 100vh; z-index: 1000; }
+ 
+    /* ── Desktop ── */
+    .sidebar-desktop {
+        width: 250px; height: 100vh;
+        background: #FFFFFF; border-right: 1px solid rgba(0,0,0,0.08);
+        display: flex; flex-direction: column; padding-top: 80px;
+    }
+ 
+    .sidebar-header { padding: 20px; border-bottom: 1px solid rgba(0,0,0,0.05); flex-shrink: 0; }
+    .sidebar-logo   { display: flex; align-items: center; gap: 12px; }
+    .sidebar-brand  { font-family: 'Poppins', sans-serif; font-weight: 600; color: #020202; font-size: 16px; }
+ 
+    .sidebar-nav {
+        flex: 1; padding: 20px 0;
+        overflow-y: auto; overflow-x: hidden;
+        scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.2) transparent;
+    }
+    .sidebar-nav::-webkit-scrollbar { width: 4px; }
+    .sidebar-nav::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 20px; }
+ 
+    .nav-item {
+        display: flex; align-items: center; gap: 15px;
+        padding: 14px 20px; text-decoration: none;
+        color: #000; font-family: 'Poppins', sans-serif;
+        font-weight: 500; font-size: 15px;
+        border-left: 3px solid transparent; transition: all 0.3s ease; margin: 2px 0;
+    }
+    .nav-item:hover  { background: rgba(229,173,4,0.1); color: #F9B036; border-left-color: #F9B036; }
+    .nav-item.active { background: rgba(229,173,4,0.15); color: #E5AD04; border-left-color: #E5AD04; font-weight: 600; }
+    .nav-item i { width: 20px; text-align: center; font-size: 16px; }
+ 
+    /* Wallet balance chip on desktop */
+    .wallet-chip {
+        margin-left: auto; background: #E5AD04; color: #000;
+        font-size: 11px; font-weight: 700;
+        padding: 2px 8px; border-radius: 20px; white-space: nowrap;
+    }
+ 
+    .sidebar-footer { padding: 20px; border-top: 1px solid rgba(0,0,0,0.05); flex-shrink: 0; }
+    .user-info { display: flex; flex-direction: column; gap: 3px; }
+    .user-name  { font-weight: 600; color: #020202; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .user-gp-id { font-size: 11px; color: #E5AD04; font-weight: 600; letter-spacing: 0.5px; }
+    .user-status { display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+    .user-status small { font-size: 12px; color: #6c757d; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-dot.active   { background: #28a745; }
+    .status-dot.inactive { background: #6c757d; }
+ 
+    
+   /* ── Mobile bottom nav — icons only, clean 6-item layout ── */
+    .sidebar-mobile {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        height: 62px;
+        background: #FFFFFF;
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        z-index: 1000;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    }
+ 
+    .mobile-nav {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        height: 100%;
+        padding: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .mobile-nav::-webkit-scrollbar { display: none; }
+ 
+    .mobile-nav-item {
+        position: relative;
+        flex: 1;
+        min-width: 44px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        height: 100%;
+        text-decoration: none;
+        color: #9a9a9a;
+        transition: color 0.2s, background 0.2s;
+        padding: 8px 2px 6px;
+    }
+ 
+    .mobile-nav-item:hover  { color: #F9B036; background: rgba(229, 173, 4, 0.06); }
+    .mobile-nav-item.active { color: #E5AD04; background: rgba(229, 173, 4, 0.08); }
+ 
+    .mobile-nav-item i { font-size: 20px; display: block; line-height: 1; }
+ 
+    /* Tiny label — 9px is readable at arm's length, not cramped */
+    .mobile-label {
+        font-size: 9px;
+        font-weight: 500;
+        line-height: 1;
+        display: block;
+        color: #000000;
+        font-family: 'Poppins', sans-serif;
+        letter-spacing: 0.2px;
+    }
+    .mobile-nav-item.active .mobile-label,
+.mobile-nav-item:hover .mobile-label {
+    color: #E5AD04;  /* but turn golden when active/hover */
+}
+ 
+    /* Gold top-bar on active item */
+    .mobile-nav-item.active::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 50%;
+        transform: translateX(-50%);
+        width: 20px; height: 3px;
+        background: #E5AD04;
+        border-radius: 0 0 3px 3px;
+    }
+ 
+    /* Green dot on wallet item when balance > 0 */
+    .wallet-dot {
+        position: absolute;
+        top: 7px;
+        right: calc(50% - 14px);
+        width: 6px; height: 6px;
+        background: #28a745;
+        border-radius: 50%;
+        border: 1.5px solid #fff;
+    }
+ 
+    /* Very small screens: scroll instead of cramming */
+    @media (max-width: 360px) {
+        .mobile-nav { justify-content: flex-start; }
+        .mobile-nav-item { min-width: 50px; flex: 0 0 50px; }
+    }
+    
 </style>

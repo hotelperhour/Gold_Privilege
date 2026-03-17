@@ -1,0 +1,219 @@
+{% extends "base_subscriber.html" %}
+{% load static humanize %}
+
+{% block title %}Send Gold Coins — Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: #6c757d; text-decoration: none; font-size: 14px; margin-bottom: 20px; }
+    .back-link:hover { color: #E5AD04; }
+    .page-header { margin-bottom: 28px; }
+    .page-header h1 { font-size: 26px; font-weight: 700; color: #020202; margin: 0; }
+    .page-header p  { color: #6c757d; margin: 4px 0 0; font-size: 14px; }
+
+    .transfer-card { background: #fff; border-radius: 20px; padding: 32px 28px; border: 1px solid #eee; }
+
+    .f-label { font-size: 13px; font-weight: 600; color: #020202; margin-bottom: 6px; display: block; }
+    .f-control { width: 100%; border: 2px solid #eee; border-radius: 10px; padding: 11px 14px; font-size: 15px; font-family: 'Poppins', sans-serif; transition: border-color 0.2s; outline: none; }
+    .f-control:focus { border-color: #E5AD04; }
+
+    .gp-row { display: flex; gap: 8px; }
+    .gp-row .f-control { flex: 1; }
+    .lookup-btn { padding: 11px 18px; background: #020202; color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; font-family: 'Poppins', sans-serif; transition: background 0.2s; flex-shrink: 0; }
+    .lookup-btn:hover { background: #5c3001; }
+
+    .recipient-preview { border-radius: 10px; padding: 11px 15px; font-size: 14px; margin-top: 8px; display: none; }
+    .recipient-preview.ok    { background: #f0fff4; border: 1px solid #b7ebc8; color: #1a6b35; }
+    .recipient-preview.error { background: #fff1f0; border: 1px solid #f5c6c6; color: #a02020; }
+
+    .balance-pill { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #020202, #5c3001); color: #fff; border-radius: 50px; padding: 8px 18px; font-size: 14px; font-weight: 600; margin-bottom: 20px; }
+    .balance-pill .coin { color: #E5AD04; font-size: 16px; }
+
+    .limit-info { background: #fffdf0; border: 1px solid #ffe066; border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #7a6500; margin-bottom: 20px; }
+
+    .divider { height: 1px; background: #f0f0f0; margin: 22px 0; }
+
+    /* PIN boxes */
+    .pin-boxes { display: flex; gap: 10px; }
+    .pin-box { width: 52px; height: 56px; border: 2px solid #eee; border-radius: 12px; text-align: center; font-size: 22px; font-weight: 700; font-family: 'Poppins', sans-serif; transition: border-color 0.2s; background: #fafafa; outline: none; }
+    .pin-box:focus { border-color: #E5AD04; box-shadow: 0 0 0 3px rgba(229,173,4,0.12); background: #fff; }
+
+    .send-btn { width: 100%; background: #E5AD04; color: #000; border: none; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.25s; font-family: 'Poppins', sans-serif; margin-top: 8px; }
+    .send-btn:hover { background: #F9B036; transform: translateY(-2px); }
+
+    .form-error { color: #dc3545; font-size: 12px; margin-top: 4px; }
+
+    .info-panel { background: #fff; border-radius: 16px; padding: 22px; border: 1px solid #eee; margin-bottom: 16px; }
+    .info-panel h4 { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: #020202; }
+    .info-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .key { color: #9a9a9a; }
+    .info-row .val { font-weight: 600; color: #020202; }
+</style>
+{% endblock %}
+
+{% block subscriber_content %}
+
+    <a href="{% url 'wallet:wallet_dashboard' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Wallet</a>
+
+    <div class="page-header">
+        <h1>Send Gold Coins</h1>
+        <p>Transfer coins to any active Gold Privilege subscriber using their GP ID.</p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-7 mb-4">
+            <div class="balance-pill">
+                <i class="fas fa-coins coin"></i>
+                Your balance: <strong>{{ wallet.balance|floatformat:0|intcomma }} coins</strong>
+            </div>
+
+            <div class="limit-info">
+                <i class="fas fa-info-circle me-1"></i>
+                Daily limit: <strong>{{ config.daily_transfer_limit|floatformat:0|intcomma }} coins</strong> —
+                Remaining today: <strong>{{ wallet.remaining_daily_limit|floatformat:0|intcomma }} coins</strong>
+            </div>
+
+            <div class="transfer-card">
+                <form method="post" id="transferForm">
+                    {% csrf_token %}
+
+                    <!-- Recipient -->
+                    <div class="mb-4">
+                        <label class="f-label">Recipient GP ID</label>
+                        <div class="gp-row">
+                            <input type="text" name="gp_id" id="gpIdInput" class="f-control"
+                                   placeholder="e.g. GP-A3X9K2" style="text-transform:uppercase;"
+                                   value="{{ form.gp_id.value|default:'' }}" maxlength="10" autocomplete="off">
+                            <button type="button" class="lookup-btn" onclick="lookupRecipient()">
+                                <i class="fas fa-search me-1"></i>Find
+                            </button>
+                        </div>
+                        <div id="recipientPreview" class="recipient-preview"></div>
+                        {% if form.gp_id.errors %}<div class="form-error">{{ form.gp_id.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <!-- Amount -->
+                    <div class="mb-4">
+                        <label class="f-label">Amount (coins)</label>
+                        <div style="display:flex;">
+                            <span style="display:flex;align-items:center;padding:0 12px;border:2px solid #eee;border-right:none;border-radius:10px 0 0 10px;background:#f8f9fa;">
+                                <i class="fas fa-coins" style="color:#E5AD04;"></i>
+                            </span>
+                            <input type="number" name="amount" id="amountInput" class="f-control"
+                                   style="border-radius:0 10px 10px 0;border-left:none;"
+                                   placeholder="0" min="{{ config.min_transfer_amount }}" max="{{ wallet.balance }}"
+                                   value="{{ form.amount.value|default:'' }}"
+                                   oninput="updateAmountPreview(this.value)">
+                        </div>
+                        <div id="amountPreview" style="font-size:12px;color:#9a9a9a;margin-top:4px;"></div>
+                        <div style="font-size:12px;color:#9a9a9a;margin-top:2px;">Minimum: {{ config.min_transfer_amount|floatformat:0 }} coins</div>
+                        {% if form.amount.errors %}<div class="form-error">{{ form.amount.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <!-- Note -->
+                    <div class="mb-4">
+                        <label class="f-label">Message (optional)</label>
+                        <input type="text" name="note" class="f-control" placeholder="e.g. Happy Birthday!" maxlength="200" value="{{ form.note.value|default:'' }}">
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- PIN -->
+                    <div class="mb-4">
+                        <label class="f-label"><i class="fas fa-lock me-1" style="color:#E5AD04;"></i>Wallet PIN</label>
+                        <p style="font-size:13px;color:#9a9a9a;margin-bottom:12px;">Enter your 4–6 digit PIN to confirm this transfer.</p>
+                        <div class="pin-boxes" id="pinBoxes">
+                            <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off" oninput="moveToNext(this,0)" onkeydown="handleBack(event,0)">
+                            <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off" oninput="moveToNext(this,1)" onkeydown="handleBack(event,1)">
+                            <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off" oninput="moveToNext(this,2)" onkeydown="handleBack(event,2)">
+                            <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off" oninput="moveToNext(this,3)" onkeydown="handleBack(event,3)">
+                        </div>
+                        <input type="hidden" name="pin" id="pinHidden">
+                        {% if form.pin.errors %}<div class="form-error mt-2">{{ form.pin.errors.0 }}</div>{% endif %}
+                    </div>
+
+                    <button type="submit" class="send-btn" onclick="assemblePin()">
+                        <i class="fas fa-paper-plane me-2"></i>Send Coins
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-4 offset-lg-1">
+            <div class="info-panel">
+                <h4><i class="fas fa-info-circle me-2" style="color:#E5AD04;"></i>Transfer Info</h4>
+                <div class="info-row"><span class="key">Your GP ID</span><span class="val">{{ request.user.gp_id }}</span></div>
+                <div class="info-row"><span class="key">Your balance</span><span class="val">{{ wallet.balance|floatformat:0|intcomma }} coins</span></div>
+                <div class="info-row"><span class="key">Min. transfer</span><span class="val">{{ config.min_transfer_amount|floatformat:0 }} coins</span></div>
+                <div class="info-row"><span class="key">Daily limit</span><span class="val">{{ config.daily_transfer_limit|floatformat:0|intcomma }} coins</span></div>
+                <div class="info-row"><span class="key">Remaining today</span><span class="val" style="color:#28a745;">{{ wallet.remaining_daily_limit|floatformat:0|intcomma }} coins</span></div>
+            </div>
+
+            <div class="info-panel">
+                <h4>📌 Important</h4>
+                <ul style="font-size:13px;color:#5a5a5a;padding-left:18px;margin:0;line-height:2;">
+                    <li>Transfers are <strong>instant and irreversible</strong></li>
+                    <li>Always verify the GP ID before sending</li>
+                    <li>Coins can only be sent to <strong>active subscribers</strong></li>
+                    <li>5 wrong PINs locks wallet for 30 minutes</li>
+                    <li>Coins <strong>cannot be withdrawn</strong> to a bank account</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function lookupRecipient() {
+        const gp = document.getElementById('gpIdInput').value.trim().toUpperCase();
+        const preview = document.getElementById('recipientPreview');
+        if (!gp) { preview.style.display = 'none'; return; }
+        fetch(`{% url 'wallet:lookup_recipient' %}?gp_id=${gp}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => r.json())
+        .then(data => {
+            preview.style.display = 'block';
+            if (data.success) {
+                preview.className = 'recipient-preview ok';
+                preview.innerHTML = `<i class="fas fa-check-circle me-2"></i><strong>${data.name}</strong> (${data.gp_id})`;
+            } else {
+                preview.className = 'recipient-preview error';
+                preview.innerHTML = `<i class="fas fa-times-circle me-2"></i>${data.error}`;
+            }
+        });
+    }
+
+    document.getElementById('gpIdInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); lookupRecipient(); }
+    });
+
+    function updateAmountPreview(val) {
+        const el = document.getElementById('amountPreview');
+        const amount = parseFloat(val) || 0;
+        el.textContent = amount > 0 ? `≈ ₦${amount.toLocaleString()} equivalent` : '';
+    }
+
+    function moveToNext(input, index) {
+        input.value = input.value.replace(/\D/g, '').slice(0, 1);
+        if (input.value) {
+            const boxes = document.querySelectorAll('.pin-box');
+            if (index < boxes.length - 1) boxes[index + 1].focus();
+        }
+        assemblePin();
+    }
+
+    function handleBack(e, index) {
+        if (e.key === 'Backspace') {
+            const boxes = document.querySelectorAll('.pin-box');
+            if (!boxes[index].value && index > 0) { boxes[index - 1].focus(); boxes[index - 1].value = ''; }
+            setTimeout(assemblePin, 10);
+        }
+    }
+
+    function assemblePin() {
+        document.getElementById('pinHidden').value = Array.from(document.querySelectorAll('.pin-box')).map(i => i.value).join('');
+    }
+</script>
+{% endblock %}

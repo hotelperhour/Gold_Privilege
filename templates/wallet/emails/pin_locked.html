@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallet PIN Locked</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #a02020 0%, #6b1010 100%); color: white; padding: 40px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 26px; }
+        .header .sub { color: rgba(255,255,255,0.75); font-size: 13px; margin-top: 6px; }
+        .lock-icon { font-size: 48px; margin-top: 10px; }
+        .content { padding: 30px 28px; color: #333; }
+        .content p { line-height: 1.7; margin: 10px 0; font-size: 15px; }
+        .detail-box { background: #fff1f0; border-left: 4px solid #dc3545; border-radius: 4px; padding: 16px 20px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f5c6c6; font-size: 14px; }
+        .detail-row:last-child { border-bottom: none; }
+        .label { color: #777; }
+        .value { font-weight: bold; color: #a02020; }
+        .warning { background: #fff8e1; border: 1px solid #ffe066; border-radius: 6px; padding: 14px 18px; font-size: 14px; color: #7a6500; margin: 20px 0; line-height: 1.6; }
+        .steps { background: #f8f9fa; border-radius: 6px; padding: 16px 20px; margin: 20px 0; }
+        .steps h4 { margin: 0 0 12px; font-size: 14px; color: #020202; }
+        .steps ol { margin: 0; padding-left: 18px; font-size: 14px; color: #555; line-height: 2; }
+        .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Wallet PIN Locked</h1>
+            <div class="sub">Too many incorrect PIN attempts</div>
+            <div class="lock-icon">&#128274;</div>
+        </div>
+
+        <div class="content">
+            <p>Hi {{ user_name }},</p>
+            <p>Your Gold Privilege wallet PIN has been entered incorrectly too many times. Your wallet has been <strong>temporarily locked</strong> for security.</p>
+
+            <div class="detail-box">
+                <div class="detail-row">
+                    <span class="label">Locked At</span>
+                    <span class="value">{{ locked_at }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Unlocks At</span>
+                    <span class="value">{{ locked_until }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Lock Duration</span>
+                    <span class="value">30 minutes</span>
+                </div>
+            </div>
+
+            <div class="warning">
+                <strong>Was this you?</strong><br>
+                If you forgot your PIN and were trying to remember it, simply wait until the unlock time and try again.<br><br>
+                <strong>Was this NOT you?</strong><br>
+                If you did not make these attempts, your account may be at risk. Contact our support team immediately.
+            </div>
+
+            <div class="steps">
+                <h4>What happens next:</h4>
+                <ol>
+                    <li>Wait until <strong>{{ locked_until }}</strong></li>
+                    <li>Return to your wallet and try your PIN again</li>
+                    <li>If you've forgotten your PIN, use the "Change PIN" option</li>
+                </ol>
+            </div>
+
+            <p>Best regards,<br><strong>The Gold Privilege Team</strong></p>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2026 Gold Privilege. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

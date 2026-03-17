@@ -3,7 +3,8 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from .managers import CustomUserManager
-
+import random
+import string
 
 NIGERIAN_STATES = [
     ('AB', 'Abia'),
@@ -49,6 +50,13 @@ COUNTRY_CHOICES = [
     ('NG', 'Nigeria')
 ]
 
+# ── NEW: GP ID generator ──────────────────────────────────────────────────────
+def generate_gp_id():
+    """Generate a unique Gold Privilege user ID, e.g. GP-A3X9K2."""
+    while True:
+        code = 'GP-' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+        if not CustomUser.objects.filter(gp_id=code).exists():
+            return code
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     """
@@ -69,6 +77,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         choices=UserType.choices,
         default=UserType.SUBSCRIBER,
     )
+    gp_id = models.CharField(
+        _('GP ID'),
+        max_length=10,
+        unique=True,
+        editable=False,
+        blank=True,
+        default='',
+        help_text='Unique Gold Privilege identifier, e.g. GP-A3X9K2. Auto-generated on creation.',
+    )
     
     # System Fields
     is_staff = models.BooleanField(default=False)
@@ -85,6 +102,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         verbose_name = _('user')
         verbose_name_plural = _('users')
         ordering = ['-date_joined']
+
+    # ── MODIFIED save() — auto-generates gp_id on first save ─────────────────
+    def save(self, *args, **kwargs):
+        if not self.gp_id:
+            self.gp_id = generate_gp_id()
+        super().save(*args, **kwargs)
     
     def __str__(self):
         # Show name if available, otherwise email

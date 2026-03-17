@@ -676,11 +676,7 @@
                         <i class="far fa-comment-dots"></i>
                         <h4>No reviews yet</h4>
                         <p>Be the first to drop a review</p>
-                        {% if user.is_authenticated and can_access %}
-                            <a href="{% url 'venues:submit_review' venue.slug %}" class="btn-write-review">
-                                <i class="fas fa-star"></i> Write a Review
-                            </a>
-                        {% endif %}
+                        
                     </div>
                 {% endif %}
 

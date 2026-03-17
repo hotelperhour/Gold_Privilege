@@ -1,0 +1,197 @@
+
+{% extends 'base_subscriber.html' %}
+{% load static %}
+
+{% block title %}Service Confirmed – Gold Privilege{% endblock %}
+
+{% block subscriber_content %}
+<style>
+* { font-family: 'Poppins', sans-serif; }
+:root { --gold: #E5AD04; --black: #000; --radius: 16px; }
+
+.confirm-wrap {
+    max-width: 540px;
+    margin: 40px auto;
+    text-align: center;
+}
+
+.tick-circle {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: #d4edda; display: flex; align-items: center;
+    justify-content: center; margin: 0 auto 24px;
+}
+.tick-circle i { font-size: 36px; color: #28a745; }
+
+.confirm-wrap h1 {
+    font-size: 26px; font-weight: 700; color: var(--black); margin-bottom: 8px;
+}
+.confirm-wrap .sub-line {
+    font-size: 15px; color: #6b7280; margin-bottom: 36px;
+}
+
+.details-card {
+    background: #fff; border-radius: var(--radius);
+    padding: 28px 24px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    text-align: left;
+    margin-bottom: 28px;
+}
+.details-card h3 {
+    font-size: 14px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; color: var(--gold);
+    margin: 0 0 18px;
+}
+.detail-row {
+    display: flex; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid #f3f4f6;
+    font-size: 14px;
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-row .label { color: #6b7280; }
+.detail-row .value { font-weight: 600; color: var(--black); }
+
+/* Voucher code box */
+.voucher-code-box {
+    background: #fff8e1; border: 2px dashed var(--gold);
+    border-radius: 12px; padding: 20px;
+    text-align: center; margin-bottom: 20px;
+}
+.voucher-code-box .code-label {
+    font-size: 12px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.6px; color: #6b7280; margin-bottom: 10px;
+}
+.voucher-code-box .code-value {
+    font-size: 22px; font-weight: 800; letter-spacing: 3px;
+    color: var(--black); word-break: break-all;
+}
+.btn-copy {
+    background: var(--gold); color: #000; border: none;
+    padding: 8px 20px; border-radius: 8px; font-size: 13px;
+    font-weight: 600; cursor: pointer; margin-top: 12px;
+}
+
+.instruction-list {
+    list-style: none; padding: 0; margin: 0 0 24px;
+    background: #f9f9f9; border-radius: 12px; padding: 16px 20px;
+    text-align: left; font-size: 14px;
+}
+.instruction-list li {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 6px 0; color: #374151;
+}
+.instruction-list li .step-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--gold); color: #000; font-size: 11px;
+    font-weight: 700; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1px;
+}
+
+.btn-done {
+    display: inline-block; background: var(--black); color: #fff;
+    padding: 14px 36px; border-radius: 12px; font-size: 15px;
+    font-weight: 600; text-decoration: none; transition: opacity 0.2s;
+}
+.btn-done:hover { opacity: 0.85; color: #fff; text-decoration: none; }
+</style>
+
+<div class="confirm-wrap">
+    <div class="tick-circle">
+        <i class="fas fa-check"></i>
+    </div>
+
+    {% if purchase.service.delivery_type == 'API_INSTANT' %}
+        <h1>Delivered!</h1>
+        <p class="sub-line">
+            ₦{{ purchase.amount|floatformat:0 }} {{ purchase.service.name }}
+            has been sent to {{ purchase.recipient_phone }}.
+        </p>
+    {% else %}
+        <h1>Voucher Ready!</h1>
+        <p class="sub-line">Your voucher code is below. Keep it safe.</p>
+    {% endif %}
+
+    <!-- Voucher code (manual only) -->
+    {% if purchase.voucher %}
+    <div class="voucher-code-box">
+        <div class="code-label">Your Voucher Code</div>
+        <div class="code-value" id="voucher-code">{{ purchase.voucher.voucher_code }}</div>
+        {% if purchase.voucher.voucher_pin %}
+        <div style="font-size:14px;color:#6b7280;margin-top:6px;">
+            PIN: <strong>{{ purchase.voucher.voucher_pin }}</strong>
+        </div>
+        {% endif %}
+        <button class="btn-copy" onclick="copyCode()">
+            <i class="fas fa-copy"></i> Copy Code
+        </button>
+    </div>
+
+    <!-- How to use instructions -->
+    <ul class="instruction-list">
+        {% if 'uber' in purchase.service.name|lower %}
+        <li><span class="step-num">1</span> Open the Uber app on your phone.</li>
+        <li><span class="step-num">2</span> Go to <strong>Account → Wallet → Add Gift Card</strong>.</li>
+        <li><span class="step-num">3</span> Enter the code above and tap <strong>Add</strong>.</li>
+        <li><span class="step-num">4</span> Your balance will be credited instantly.</li>
+        {% elif 'bolt' in purchase.service.name|lower %}
+        <li><span class="step-num">1</span> Open the Bolt app on your phone.</li>
+        <li><span class="step-num">2</span> Go to <strong>Menu → Voucher</strong>.</li>
+        <li><span class="step-num">3</span> Enter the code above and confirm.</li>
+        {% elif 'fuel' in purchase.service.name|lower or 'petrol' in purchase.service.name|lower %}
+        <li><span class="step-num">1</span> Visit any participating fuel station.</li>
+        <li><span class="step-num">2</span> Present this code to the attendant.</li>
+        <li><span class="step-num">3</span> The attendant will process your purchase.</li>
+        {% else %}
+        <li><span class="step-num">1</span> Follow the redemption steps for {{ purchase.service.name }}.</li>
+        <li><span class="step-num">2</span> Use the code above when prompted.</li>
+        {% endif %}
+    </ul>
+    {% endif %}
+
+    <!-- Transaction details -->
+    <div class="details-card">
+        <h3>Transaction Details</h3>
+        <div class="detail-row">
+            <span class="label">Reference</span>
+            <span class="value">{{ purchase.reference }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Service</span>
+            <span class="value">{{ purchase.service.name }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Amount</span>
+            <span class="value">₦{{ purchase.amount|floatformat:0 }}</span>
+        </div>
+        {% if purchase.recipient_phone %}
+        <div class="detail-row">
+            <span class="label">Delivered to</span>
+            <span class="value">{{ purchase.recipient_phone }}</span>
+        </div>
+        {% endif %}
+        <div class="detail-row">
+            <span class="label">Status</span>
+            <span class="value" style="color:#28a745;">✓ {{ purchase.get_status_display }}</span>
+        </div>
+        <div class="detail-row">
+            <span class="label">Date</span>
+            <span class="value">{{ purchase.created_at|date:"M d, Y H:i" }}</span>
+        </div>
+    </div>
+
+    <a href="{% url 'services:home' %}" class="btn-done">
+        Done
+    </a>
+</div>
+
+<script>
+function copyCode() {
+    const code = document.getElementById('voucher-code').textContent.trim();
+    navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector('.btn-copy');
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> Copy Code'; }, 2000);
+    });
+}
+</script>
+{% endblock %}

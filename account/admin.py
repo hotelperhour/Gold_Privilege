@@ -94,18 +94,20 @@ class CustomUserAdmin(BaseUserAdmin):
     model = CustomUser
     
     list_display = (
-        'email', 'display_name', 'user_type',
+        'email', 'display_name', 'user_type','display_gp_id',
         'is_active', 'is_verified', 'date_joined'
     )
     list_filter = (
         'user_type', 'is_staff', 'is_active',
         'is_verified', 'date_joined'
     )
+    readonly_fields = ('display_gp_id',)
     
     # Fieldsets for editing existing users
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        (_('User Type'), {'fields': ('user_type',)}),
+        (_('User Type'), {'fields': ('user_type', 'display_gp_id')}),
+        
         (_('Permissions'), {
             'fields': ('is_active', 'is_verified', 'is_staff', 'is_superuser',
                       'groups', 'user_permissions'),
@@ -124,7 +126,7 @@ class CustomUserAdmin(BaseUserAdmin):
         }),
     )
     
-    search_fields = ('email',)
+    search_fields = ('email', 'gp_id')
     ordering = ('-date_joined',)
     filter_horizontal = ('groups', 'user_permissions',)
     
@@ -172,6 +174,12 @@ class CustomUserAdmin(BaseUserAdmin):
         # Auto-create UserProfile for subscribers
         if obj.user_type == CustomUser.UserType.SUBSCRIBER:
             UserProfile.objects.get_or_create(user=obj)
+
+    def display_gp_id(self, obj):
+        return obj.gp_id
+    display_gp_id.short_description = 'GP ID'
+    display_gp_id.admin_order_field = 'gp_id'   # allows sorting by gp_id
+
 
 
 # ==================== SEPARATE PROFILE ADMINS (For advanced filtering) ====================

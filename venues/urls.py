@@ -14,7 +14,7 @@ urlpatterns = [
     # User actions
     path('<slug:slug>/favorite/', views.toggle_favorite, name='toggle_favorite'),
     path('<slug:slug>/review/', views.submit_review, name='submit_review'),
-    path('/favorites/', views.my_favorites, name='my_favorites'),
+    path('favorites/', views.my_favorites, name='my_favorites'),
     
     # AJAX endpoints
     path('api/search/', views.venue_search_autocomplete, name='search_autocomplete'),

@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'subscriptions.apps.SubscriptionsConfig',
     'venues.apps.VenuesConfig',
     'bookings.apps.BookingsConfig',
+    'services.apps.ServicesConfig',
+    'wallet.apps.WalletConfig',
     'django.contrib.humanize',
     
 ]
@@ -80,6 +82,7 @@ TEMPLATES = [
                 "django.contrib.messages.context_processors.messages",
                 'venues.context_processors.mapbox_settings',
                 'subscriptions.context_processors.active_subscription',
+                'wallet.context_processors.wallet_context',
             ],
         },
     },
@@ -182,6 +185,10 @@ PAYSTACK_PUBLIC_KEY = config('PAYSTACK_PUBLIC_KEY')
 
 # Mapbox Configuration
 MAPBOX_ACCESS_TOKEN = config('MAPBOX_ACCESS_TOKEN')
+
+RELOADLY_CLIENT_ID = config('RELOADLY_CLIENT_ID')
+RELOADLY_CLIENT_SECRET = config('RELOADLY_CLIENT_SECRET')
+RELOADLY_SANDBOX = True   # False for live
 
 # settings.py - Add this
 CACHES = {

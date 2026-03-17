@@ -1,0 +1,173 @@
+{% extends "base_subscriber.html" %}
+{% load static %}
+
+{% block title %}{% if wallet.pin_set %}Change PIN{% else %}Set Wallet PIN{% endif %} — Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: #6c757d; text-decoration: none; font-size: 14px; margin-bottom: 20px; }
+    .back-link:hover { color: #E5AD04; }
+
+    .pin-card { background: #fff; border-radius: 20px; padding: 40px 36px; max-width: 460px; border: 1px solid #eee; }
+
+    .pin-icon-header { text-align: center; margin-bottom: 30px; }
+    .pin-icon-wrap { width: 68px; height: 68px; background: linear-gradient(135deg, #020202, #5c3001); border-radius: 18px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+    .pin-icon-wrap i { font-size: 28px; color: #E5AD04; }
+    .pin-icon-header h2 { font-size: 22px; font-weight: 700; color: #020202; margin-bottom: 6px; }
+    .pin-icon-header p  { font-size: 14px; color: #9a9a9a; margin: 0; }
+
+    .f-label { font-size: 13px; font-weight: 600; color: #020202; margin-bottom: 10px; display: block; }
+
+    .pin-boxes { display: flex; gap: 12px; margin-bottom: 4px; }
+    .pin-box { width: 56px; height: 60px; border: 2px solid #eee; border-radius: 12px; text-align: center; font-size: 24px; font-weight: 700; font-family: 'Poppins', sans-serif; color: #020202; transition: border-color 0.2s, box-shadow 0.2s; background: #fafafa; outline: none; }
+    .pin-box:focus { border-color: #E5AD04; box-shadow: 0 0 0 3px rgba(229,173,4,0.15); background: #fff; }
+    .pin-box.filled { border-color: #020202; background: #fff; }
+
+    .field-hint  { font-size: 12px; color: #aaa; margin-bottom: 22px; }
+    .field-error { font-size: 12px; color: #dc3545; margin-top: 4px; }
+    #matchHint   { font-size: 12px; margin-top: 4px; display: none; }
+
+    .divider { height: 1px; background: #f0f0f0; margin: 22px 0; }
+
+    .submit-btn { width: 100%; background: #E5AD04; color: #000; border: none; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 700; cursor: pointer; transition: all 0.25s; font-family: 'Poppins', sans-serif; margin-top: 8px; }
+    .submit-btn:hover { background: #F9B036; transform: translateY(-2px); }
+
+    .lock-banner { background: #fff1f0; border: 1px solid #f5c6c6; border-radius: 12px; padding: 13px 16px; font-size: 13px; color: #a02020; margin-bottom: 20px; }
+
+    .pin-tips { background: #fffdf0; border: 1px solid #ffe599; border-radius: 12px; padding: 15px 18px; margin-top: 22px; }
+    .pin-tips h5 { font-size: 13px; font-weight: 600; color: #7a6500; margin-bottom: 8px; }
+    .pin-tips ul { font-size: 12px; color: #7a6500; padding-left: 18px; margin: 0; line-height: 1.9; }
+</style>
+{% endblock %}
+
+{% block subscriber_content %}
+
+    <a href="{% url 'wallet:wallet_dashboard' %}" class="back-link"><i class="fas fa-arrow-left"></i> Back to Wallet</a>
+
+    {% if wallet.is_pin_locked %}
+    <div class="lock-banner">
+        <i class="fas fa-ban me-2"></i>
+        <strong>PIN temporarily locked.</strong> Try again after {{ wallet.pin_locked_until|date:"H:i" }}.
+    </div>
+    {% endif %}
+
+    <div class="pin-card">
+        <div class="pin-icon-header">
+            <div class="pin-icon-wrap"><i class="fas fa-lock"></i></div>
+            <h2>{% if wallet.pin_set %}Change Your PIN{% else %}Set Your PIN{% endif %}</h2>
+            <p>{% if wallet.pin_set %}Verify your current PIN then set a new one.{% else %}Create a 4–6 digit PIN to secure coin transfers.{% endif %}</p>
+        </div>
+
+        <form method="post" id="pinForm">
+            {% csrf_token %}
+
+            {% if wallet.pin_set %}
+            <div class="mb-4">
+                <label class="f-label">Current PIN</label>
+                <div class="pin-boxes" id="currentPinBoxes">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off" oninput="movePin(this,0,'current')" onkeydown="backPin(event,0,'current')">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off" oninput="movePin(this,1,'current')" onkeydown="backPin(event,1,'current')">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off" oninput="movePin(this,2,'current')" onkeydown="backPin(event,2,'current')">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="off" oninput="movePin(this,3,'current')" onkeydown="backPin(event,3,'current')">
+                </div>
+                <input type="hidden" name="current_pin" id="currentPinHidden">
+                {% if form.current_pin.errors %}<div class="field-error">{{ form.current_pin.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="divider"></div>
+            {% endif %}
+
+            <div class="mb-1">
+                <label class="f-label">New PIN</label>
+                <div class="pin-boxes" id="newPinBoxes">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="new-password" oninput="movePin(this,0,'new')" onkeydown="backPin(event,0,'new')">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="new-password" oninput="movePin(this,1,'new')" onkeydown="backPin(event,1,'new')">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="new-password" oninput="movePin(this,2,'new')" onkeydown="backPin(event,2,'new')">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="new-password" oninput="movePin(this,3,'new')" onkeydown="backPin(event,3,'new')">
+                </div>
+                <input type="hidden" name="new_pin" id="newPinHidden">
+                {% if form.new_pin.errors %}<div class="field-error">{{ form.new_pin.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="field-hint">4–6 digits. Don't use your bank PIN.</div>
+
+            <div class="mb-1">
+                <label class="f-label">Confirm New PIN</label>
+                <div class="pin-boxes" id="confirmPinBoxes">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="new-password" oninput="movePin(this,0,'confirm')" onkeydown="backPin(event,0,'confirm')">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="new-password" oninput="movePin(this,1,'confirm')" onkeydown="backPin(event,1,'confirm')">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="new-password" oninput="movePin(this,2,'confirm')" onkeydown="backPin(event,2,'confirm')">
+                    <input type="password" class="pin-box" maxlength="1" inputmode="numeric" autocomplete="new-password" oninput="movePin(this,3,'confirm')" onkeydown="backPin(event,3,'confirm')">
+                </div>
+                <input type="hidden" name="confirm_pin" id="confirmPinHidden">
+                <div id="matchHint"></div>
+                {% if form.confirm_pin.errors %}<div class="field-error">{{ form.confirm_pin.errors.0 }}</div>{% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="field-error mt-2">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
+            {% endif %}
+
+            <button type="submit" class="submit-btn" onclick="assemblePins()">
+                <i class="fas fa-shield-alt me-2"></i>
+                {% if wallet.pin_set %}Update PIN{% else %}Set PIN{% endif %}
+            </button>
+        </form>
+
+        <div class="pin-tips">
+            <h5><i class="fas fa-lightbulb me-1"></i> PIN Tips</h5>
+            <ul>
+                <li>Do not reuse your bank or phone PIN</li>
+                <li>Never share your PIN with anyone</li>
+                <li>5 wrong attempts lock wallet for 30 minutes</li>
+                <li>Gold Privilege staff will never ask for your PIN</li>
+            </ul>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function movePin(input, index, section) {
+        input.value = input.value.replace(/\D/g, '').slice(0, 1);
+        if (input.value) {
+            input.classList.add('filled');
+            const boxes = document.querySelectorAll(`#${section}PinBoxes .pin-box`);
+            if (index < boxes.length - 1) boxes[index + 1].focus();
+        } else { input.classList.remove('filled'); }
+        assembleSection(section);
+        if (section === 'confirm') checkMatch();
+    }
+
+    function backPin(e, index, section) {
+        if (e.key === 'Backspace') {
+            const boxes = document.querySelectorAll(`#${section}PinBoxes .pin-box`);
+            if (!boxes[index].value && index > 0) {
+                boxes[index - 1].focus();
+                boxes[index - 1].value = '';
+                boxes[index - 1].classList.remove('filled');
+            }
+            setTimeout(() => assembleSection(section), 10);
+        }
+    }
+
+    function assembleSection(section) {
+        const boxes = document.querySelectorAll(`#${section}PinBoxes .pin-box`);
+        document.getElementById(`${section}PinHidden`).value = Array.from(boxes).map(b => b.value).join('');
+    }
+
+    function checkMatch() {
+        const nv = document.getElementById('newPinHidden').value;
+        const cv = document.getElementById('confirmPinHidden').value;
+        const hint = document.getElementById('matchHint');
+        if (cv.length >= 4) {
+            hint.style.display = 'block';
+            hint.style.color   = nv === cv ? '#28a745' : '#dc3545';
+            hint.textContent   = nv === cv ? '✓ PINs match' : '✗ PINs do not match';
+        } else { hint.style.display = 'none'; }
+    }
+
+    function assemblePins() {
+        ['current', 'new', 'confirm'].forEach(s => assembleSection(s));
+    }
+</script>
+{% endblock %}

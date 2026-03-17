@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You Received Gold Coins</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 20px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header { background: linear-gradient(135deg, #020202 0%, #5c3001 100%); color: white; padding: 40px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 26px; }
+        .header .sub { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 6px; }
+        .amount-badge { background: #28a745; color: #fff; font-size: 28px; font-weight: bold; padding: 10px 22px; border-radius: 8px; display: inline-block; margin: 14px 0 0; }
+        .content { padding: 30px 28px; color: #333; }
+        .content p { line-height: 1.7; margin: 10px 0; font-size: 15px; }
+        .detail-box { background: #f8f9fa; border-left: 4px solid #28a745; border-radius: 4px; padding: 16px 20px; margin: 20px 0; }
+        .detail-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        .detail-row:last-child { border-bottom: none; }
+        .label { color: #777; }
+        .value { font-weight: bold; color: #020202; }
+        .value.green { color: #28a745; font-size: 16px; }
+        .message-box { background: #f0fff4; border: 1px solid #b7ebc8; border-radius: 6px; padding: 12px 16px; font-size: 14px; color: #1a6b35; margin: 16px 0; font-style: italic; }
+        .notice { background: #fff8e1; border: 1px solid #ffe066; border-radius: 6px; padding: 12px 16px; font-size: 13px; color: #7a6500; margin: 20px 0; }
+        .btn { display: inline-block; background: #E5AD04; color: #000; padding: 12px 30px; border-radius: 6px; text-decoration: none; font-weight: bold; margin: 16px 0; font-size: 15px; }
+        .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>You Received Coins!</h1>
+            <div class="sub">Gold Coins have been added to your wallet</div>
+            <div class="amount-badge">+{{ amount }} coins</div>
+        </div>
+
+        <div class="content">
+            <p>Hi {{ recipient_name }},</p>
+            <p><strong>{{ sender_name }}</strong> has sent you Gold Coins!</p>
+
+            <div class="detail-box">
+                <div class="detail-row">
+                    <span class="label">From</span>
+                    <span class="value">{{ sender_name }} ({{ sender_gp_id }})</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Amount Received</span>
+                    <span class="value green">{{ amount }} coins</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">New Balance</span>
+                    <span class="value">{{ new_balance }} coins</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Date</span>
+                    <span class="value">{{ transaction_date }}</span>
+                </div>
+            </div>
+
+            {% if note %}
+            <div class="message-box">
+                Message from {{ sender_name }}: "{{ note }}"
+            </div>
+            {% endif %}
+
+            <div class="notice">
+                Gold Coins can only be spent in the <strong>Discount Store</strong>. They cannot be withdrawn to a bank account.
+            </div>
+
+            <a href="{{ wallet_url }}" class="btn">Spend My Coins</a>
+
+            <p>Best regards,<br><strong>The Gold Privilege Team</strong></p>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2026 Gold Privilege. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

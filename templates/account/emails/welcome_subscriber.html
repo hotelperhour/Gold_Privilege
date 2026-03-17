@@ -47,6 +47,79 @@
             font-weight: bold;
             margin: 20px 0;
         }
+
+        /* ── Wallet section (added) ── */
+        .wallet-section {
+            background: linear-gradient(135deg, #020202, #5c3001);
+            border-radius: 8px;
+            padding: 22px 20px;
+            margin: 24px 0;
+            color: #fff;
+        }
+        .wallet-section h3 {
+            margin: 0 0 8px;
+            font-size: 17px;
+            color: #E5AD04;
+        }
+        .wallet-section p {
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+            margin: 0 0 14px;
+            line-height: 1.6;
+        }
+        .wallet-features {
+            display: block;
+            margin: 0 0 16px;
+            padding: 0;
+            list-style: none;
+        }
+        .wallet-features li {
+            font-size: 13px;
+            color: rgba(255,255,255,0.85);
+            padding: 4px 0;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.5;
+        }
+        .wallet-features li::before {
+            content: '✦';
+            color: #E5AD04;
+            position: absolute;
+            left: 0;
+            font-size: 10px;
+            top: 5px;
+        }
+        .gp-id-display {
+            background: rgba(229, 173, 4, 0.15);
+            border: 1px solid rgba(229, 173, 4, 0.4);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 14px;
+        }
+        .gp-id-display strong {
+            color: #E5AD04;
+            font-size: 15px;
+            letter-spacing: 1px;
+        }
+        .wallet-notice {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            margin: 0;
+        }
+        .wallet-btn {
+            display: inline-block;
+            background: #E5AD04;
+            color: #000;
+            padding: 10px 22px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        /* ── end wallet section ── */
+
         .footer {
             background-color: #f9f9f9;
             padding: 20px;
@@ -63,10 +136,34 @@
             <h1>Welcome to Gold Privilege</h1>
         </div>
         <div class="content">
-            <p>Hello Subscriber,</p>
+            <p>Hello {{ user_name }},</p>
             <p>Thank you for joining the Gold Privilege subscription program. We're excited to have you on board!</p>
             <p>As a valued subscriber, you'll gain access to exclusive benefits, resources, and support to help grow your business with us.</p>
             <a href="{{ user_dashboard_url }}" class="button">Access Your Dashboard</a>
+
+            <!-- ── Wallet section ── -->
+            <div class="wallet-section">
+                <h3>🪙 Your Gold Coins Wallet is Ready</h3>
+                <p>A Gold Coins wallet has been automatically created for you. Start earning and spending coins right away.</p>
+
+                <div class="gp-id-display">
+                    Your GP ID: <strong>{{ gp_id }}</strong><br>
+                    <span style="font-size:12px;">Share this ID so other members can send you coins</span>
+                </div>
+
+                <ul class="wallet-features">
+                    <li>Buy Gold Coins with your card or bank transfer</li>
+                    <li>Earn coins through cashback and referrals</li>
+                    <li>Spend coins in the Discount Store</li>
+                    <li>Send coins to other subscribers using their GP ID</li>
+                </ul>
+
+                <p class="wallet-notice">Note: Gold Coins cannot be withdrawn to a bank account. Coins are for spending only.</p>
+                <br>
+                <a href="{{ wallet_url }}" class="wallet-btn">Go to My Wallet</a>
+            </div>
+            <!-- ── end wallet section ── -->
+
             <p>If you have any questions, feel free to reach out to our subscriber support team.</p>
             <p>Best regards,<br>The Gold Privilege Team</p>
         </div>
