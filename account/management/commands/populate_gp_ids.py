@@ -44,8 +44,7 @@ class Command(BaseCommand):
         for user in users_needing_id:
             new_id = _generate_unique_gp_id(existing_ids)
             existing_ids.add(new_id)
-            user.gp_id = new_id
-            user.save(update_fields=['gp_id'])
+            CustomUser.objects.filter(pk=user.pk).update(gp_id=new_id)   # ← no signal
             updated += 1
             if updated % 50 == 0:
                 self.stdout.write(f'  {updated}/{total} done...')
