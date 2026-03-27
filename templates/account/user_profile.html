@@ -492,6 +492,113 @@
                 </div>
             </div>
         </div>
+        <div class="preferences-card" style="border-top: 3px solid #E5AD04;">
+            <h3>
+                <i class="fas fa-share-alt" style="color: #E5AD04;"></i>
+                Refer a Friend
+            </h3>
+        
+            <p style="font-size: 13px; color: #6c757d; margin-bottom: 16px; line-height: 1.6;">
+                Share your unique referral link. You earn
+                <strong style="color: #E5AD04;">Gold Coins</strong> every time someone
+                subscribes using it.
+            </p>
+        
+            <!-- Referral link display -->
+            <div style="
+                background: #f8f9fa;
+                border: 1px solid #e0e0e0;
+                border-radius: 8px;
+                padding: 10px 14px;
+                margin-bottom: 12px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            ">
+                <i class="fas fa-link" style="color: #E5AD04; font-size: 13px; flex-shrink: 0;"></i>
+                <span id="referralLinkText" style="
+                    font-size: 12px;
+                    color: #555;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    flex: 1;
+                ">{{ request.scheme }}://{{ request.get_host }}/register/?ref={{ user.gp_id }}</span>
+            </div>
+        
+            <!-- Copy button -->
+            <button
+                onclick="copyReferralLink()"
+                id="copyReferralBtn"
+                style="
+                    width: 100%;
+                    background: #E5AD04;
+                    color: #000;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 10px 16px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    font-family: 'Poppins', sans-serif;
+                    transition: background 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                "
+                onmouseover="this.style.background='#F9B036'"
+                onmouseout="this.style.background='#E5AD04'"
+            >
+                <i class="fas fa-copy" id="copyIcon"></i>
+                <span id="copyBtnText">Copy Referral Link</span>
+            </button>
+        
+            <!-- Stats row -->
+            <div style="
+                display: flex;
+                gap: 8px;
+                margin-top: 14px;
+            ">
+                <div style="
+                    flex: 1;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    padding: 10px;
+                    text-align: center;
+                ">
+                    <div style="font-size: 20px; font-weight: 700; color: #020202;">
+                        {{ referral_stats.total_referred }}
+                    </div>
+                    <div style="font-size: 11px; color: #9a9a9a; margin-top: 2px;">Referred</div>
+                </div>
+                <div style="
+                    flex: 1;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                    padding: 10px;
+                    text-align: center;
+                ">
+                    <div style="font-size: 20px; font-weight: 700; color: #28a745;">
+                        {{ referral_stats.total_converted }}
+                    </div>
+                    <div style="font-size: 11px; color: #9a9a9a; margin-top: 2px;">Subscribed</div>
+                </div>
+                <div style="
+                    flex: 1;
+                    background: linear-gradient(135deg, #020202, #5c3001);
+                    border-radius: 8px;
+                    padding: 10px;
+                    text-align: center;
+                ">
+                    <div style="font-size: 20px; font-weight: 700; color: #E5AD04;">
+                        {{ referral_stats.total_coins_earned }}
+                    </div>
+                    <div style="font-size: 11px; color: rgba(255,255,255,0.6); margin-top: 2px;">Coins</div>
+                </div>
+            </div>
+        </div>
+<!-- ── end referral card ── -->
     </div>
     
     
@@ -743,5 +850,36 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+<script>
+function copyReferralLink() {
+    const linkText = document.getElementById('referralLinkText').textContent.trim();
+    const btn      = document.getElementById('copyReferralBtn');
+    const icon     = document.getElementById('copyIcon');
+    const text     = document.getElementById('copyBtnText');
+ 
+    navigator.clipboard.writeText(linkText).then(function() {
+        // Visual feedback
+        btn.style.background  = '#28a745';
+        icon.className        = 'fas fa-check';
+        text.textContent      = 'Copied!';
+ 
+        setTimeout(function() {
+            btn.style.background  = '#E5AD04';
+            icon.className        = 'fas fa-copy';
+            text.textContent      = 'Copy Referral Link';
+        }, 2500);
+    }).catch(function() {
+        // Fallback for older browsers
+        const el = document.createElement('textarea');
+        el.value = linkText;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        text.textContent = 'Copied!';
+        setTimeout(() => text.textContent = 'Copy Referral Link', 2500);
+    });
+}
 </script>
 {% endblock %}

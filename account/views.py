@@ -1,4 +1,3 @@
-from django.http import request
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -44,7 +43,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from datetime import datetime, date
 from django.utils import timezone
-
+from wallet.models import ReferralRecord
+import logging
+logger = logging.getLogger(__name__)
 
 class UnifiedRegistrationView(TemplateView):
     """Unified registration view for both customers and partners"""
@@ -57,6 +58,21 @@ class UnifiedRegistrationView(TemplateView):
         context['partner_form'] = PartnerRegistrationForm()
         context['active_tab'] = 'customer'  # default
         return context
+
+    def get(self, request, *args, **kwargs):
+        """Capture referral code from URL and store in session."""
+        ref_code = request.GET.get('ref', '').strip().upper()
+        if ref_code:
+            # Validate the code belongs to a real active subscriber
+            from account.models import CustomUser
+            if CustomUser.objects.filter(
+                gp_id=ref_code,
+                user_type=CustomUser.UserType.SUBSCRIBER,
+                is_active=True,
+            ).exists():
+                request.session['referral_code'] = ref_code
+            # If invalid, silently ignore — don't block registration
+        return super().get(request, *args, **kwargs)
     
     def post(self, request, *args, **kwargs):
         # Determine which form to use based on the URL
@@ -74,13 +90,26 @@ class UnifiedRegistrationView(TemplateView):
             user = customer_form.save(commit=True)
             user.is_active = False
             user.save()
+
+            # ── Referral: create ReferralRecord if a valid code is in session ──
+            ref_code = request.session.pop('referral_code', None)
+            if ref_code:
+                try:
+                    referrer = CustomUser.objects.get(
+                        gp_id=ref_code,
+                        user_type=CustomUser.UserType.SUBSCRIBER,
+                        is_active=True,
+                    )
+                    if referrer.pk != user.pk:  
+                        ReferralRecord.objects.get_or_create(
+                            referrer=referrer,
+                            referred_user=user,
+                        )
+                except CustomUser.DoesNotExist:
+                    pass  
             
             self.send_activation_email(user, 'subscriber')
             
-            messages.success(
-                request,
-                'Registration successful! Please check your email to activate your account.'
-            )
             return redirect('account:activation_sent')
         
         # Form has errors - re-render with context
@@ -117,40 +146,70 @@ class UnifiedRegistrationView(TemplateView):
         })
     
     def send_activation_email(self, user, user_type):
-        """Send activation email"""
-        current_site = get_current_site(self.request)
-        token = default_token_generator.make_token(user)
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        
-        if user_type == 'partner':
-            subject = 'Activate Your Gold Privilege Partner Account'
-            template = 'account/emails/activation_email_partner.html'
-        else:
-            subject = 'Activate Your Gold Privilege Account'
-            template = 'account/emails/activation_email.html'
-        
-        html_message = render_to_string(template, {
-            'user': user,
-            'domain': current_site.domain,
-            'uid': uid,
-            'token': token,
-            'protocol': 'https' if self.request.is_secure() else 'http',
-        })
-        
-        plain_message = strip_tags(html_message)
-        
-        email = EmailMultiAlternatives(
-            subject=subject,
-            body=plain_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[user.email]
-        )
-        email.attach_alternative(html_message, "text/html")
-        
+        """Send activation email with proper logging so failures are never silent."""
+        logger.info(f'Sending activation email to {user.email} (type={user_type})')
+ 
         try:
-            email.send()
+            current_site = get_current_site(self.request)
+            token = default_token_generator.make_token(user)
+            uid   = urlsafe_base64_encode(force_bytes(user.pk))
+ 
+            if user_type == 'partner':
+                subject  = 'Activate Your Gold Privilege Partner Account'
+                template = 'account/emails/activation_email_partner.html'
+            else:
+                subject  = 'Activate Your Gold Privilege Account'
+                template = 'account/emails/activation_email.html'
+ 
         except Exception as e:
-            messages.error(self.request, f"Failed to send activation email: {str(e)}")
+            logger.error(
+                f'Failed to prepare activation email for {user.email}: {e}',
+                exc_info=True,
+            )
+            return
+ 
+        # Render template separately so a template error doesn't look like
+        # an SMTP error in the logs
+        try:
+            html_message = render_to_string(template, {
+                'user':     user,
+                'domain':   current_site.domain,
+                'uid':      uid,
+                'token':    token,
+                'protocol': 'https' if self.request.is_secure() else 'http',
+            })
+            plain_message = strip_tags(html_message)
+        except Exception as e:
+            logger.error(
+                f'Failed to render activation email template ({template}) '
+                f'for {user.email}: {e}',
+                exc_info=True,
+            )
+            return
+ 
+        # Send
+        try:
+            email_obj = EmailMultiAlternatives(
+                subject=subject,
+                body=plain_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[user.email],
+            )
+            email_obj.attach_alternative(html_message, 'text/html')
+            email_obj.send()
+            logger.info(f'Activation email sent successfully to {user.email}')
+ 
+        except Exception as e:
+            logger.error(
+                f'SMTP failure sending activation email to {user.email}: {e}',
+                exc_info=True,
+            )
+            # Show visible error on the page so the user knows to try again
+            messages.error(
+                self.request,
+                'We could not send your activation email. '
+                'Please try registering again or contact support.'
+            )
     
     def notify_admins_new_partner(self, user):
         """Notify admins of new partner application"""
@@ -220,37 +279,55 @@ def activate(request, uidb64, token):
         user.is_active = True
         user.is_verified = True
         user.save()
-        send_welcome_email(user)
+        send_welcome_email(user, request)
         messages.success(request, "Your account has been activated successfully! Please log in.")
         return redirect('account:login')
     else:
         return render(request, 'account/activation_invalid.html')
 
-def send_welcome_email(user):
-    """Send welcome email after activation"""
+def send_welcome_email(user, request=None):
+    """Send welcome email after activation."""
     subject = 'Welcome to Gold Privilege!'
-    
+ 
     if user.user_type == 'PARTNER':
         template = 'account/emails/welcome_partner.html'
     else:
         template = 'account/emails/welcome_subscriber.html'
-    
-    html_message = render_to_string(template, {'user': user,'user_name': user.get_full_name(), 'gp_id': user.gp_id, 'wallet_url': request.build_absolute_uri(reverse('wallet:wallet_dashboard'))})
-
+ 
+    # Build wallet URL safely — use request if available, fall back to settings
+    if request is not None:
+        wallet_url = request.build_absolute_uri(
+            reverse('wallet:wallet_dashboard')
+        )
+        dashboard_url = request.build_absolute_uri(
+            reverse('account:dashboard')
+        )
+    else:
+        base = getattr(settings, 'SITE_URL', 'https://goldprivilege.net')
+        wallet_url    = f'{base}/wallet/'
+        dashboard_url = f'{base}/dashboard/'
+ 
+    html_message = render_to_string(template, {
+        'user':              user,
+        'user_name':         user.get_full_name(),
+        'gp_id':             user.gp_id,
+        'wallet_url':        wallet_url,
+        'user_dashboard_url': dashboard_url,
+    })
     plain_message = strip_tags(html_message)
-    
+ 
     email = EmailMultiAlternatives(
         subject=subject,
         body=plain_message,
         from_email=settings.DEFAULT_FROM_EMAIL,
-        to=[user.email]
+        to=[user.email],
     )
-    email.attach_alternative(html_message, "text/html")
-    
+    email.attach_alternative(html_message, 'text/html')
+ 
     try:
         email.send()
     except Exception as e:
-        print(f"Failed to send welcome email: {str(e)}")
+        print(f'Failed to send welcome email: {str(e)}')
 
 
 # ==================== LOGIN/LOGOUT VIEWS ====================
@@ -574,10 +651,22 @@ def profile_view(request):
         else:
             form = UserProfileUpdateForm(instance=profile, user=user)
         
+        from wallet.models import ReferralRecord
+        from django.db.models import Sum
+    
+        referral_stats = {
+            'total_referred':   ReferralRecord.objects.filter(referrer=user).count(),
+            'total_converted':  ReferralRecord.objects.filter(referrer=user, is_paid=True).count(),
+            'total_coins_earned': ReferralRecord.objects.filter(
+                referrer=user, is_paid=True
+            ).aggregate(total=Sum('coins_awarded'))['total'] or 0,
+        }
+        
         return render(request, template, {
             'user': user,
             'profile': profile,
             'form': form,
+            'referral_stats': referral_stats,
         })
 
 

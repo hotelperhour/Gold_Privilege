@@ -371,97 +371,95 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://js.paystack.co/v1/inline.js"></script>
 
 
 <script src="https://js.paystack.co/v1/inline.js"></script>  <!-- Keep v1 for now to avoid bigger changes -->
 
 <script>
     const PAYSTACK_PUBLIC_KEY = "{{ paystack_public_key }}";
-    const PAYMENT_REFERENCE = "{{ payment.gateway_reference }}";  // This is correct - you set it as gateway_reference
-    const PAYMENT_AMOUNT = {{ payment.amount|floatformat:2 }} * 100;
-    const USER_EMAIL = "{{ request.user.email }}";
-
-    const payButton = document.getElementById("pay-button");
+    const PAYMENT_REFERENCE   = "{{ payment.gateway_reference }}";
+    const PAYMENT_AMOUNT      = {{ payment.amount|floatformat:2 }} * 100;
+    const USER_EMAIL          = "{{ request.user.email }}";
+ 
+    const payButton      = document.getElementById("pay-button");
     const loadingOverlay = document.getElementById("loading-overlay");
     let paymentInProgress = false;
-
+ 
     function payWithPaystack() {
         if (paymentInProgress) return;
-
+ 
         paymentInProgress = true;
         payButton.disabled = true;
-        loadingOverlay.classList.add("active");
-
+        payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Opening Paystack...';
+ 
+        // NOTE: Do NOT show the full loading overlay here.
+        // Showing it before the popup opens can obscure the Paystack iframe
+        // on some browsers, and the 15-second timeout causes a false error
+        // while the user is legitimately filling out the payment form.
+ 
         const handler = PaystackPop.setup({
-            key: PAYSTACK_PUBLIC_KEY,
-            email: USER_EMAIL,
-            amount: PAYMENT_AMOUNT,
+            key:      PAYSTACK_PUBLIC_KEY,
+            email:    USER_EMAIL,
+            amount:   PAYMENT_AMOUNT,
             currency: "NGN",
-            ref: PAYMENT_REFERENCE,
-
-            // 🔥 CRITICAL: Success callback - redirect to your verification endpoint
+            ref:      PAYMENT_REFERENCE,
+ 
             callback: function(response) {
-                // response.reference will match PAYMENT_REFERENCE
-                window.location.href = "{% url 'subscriptions:payment_callback' %}?reference=" + response.reference;
+                // Payment confirmed — show loading while we redirect to verify
+                payButton.innerHTML = '<i class="fas fa-check-circle"></i> Payment Received — Activating...';
+                loadingOverlay.classList.add("active");
+                window.location.href =
+                    "{% url 'subscriptions:payment_callback' %}?reference=" + response.reference;
             },
-
-            // 🔥 CRITICAL: Close / error handler - clean up UI
+ 
             onClose: function() {
+                // User closed the popup without paying — reset cleanly, no alert
                 paymentInProgress = false;
                 payButton.disabled = false;
-                loadingOverlay.classList.remove("active");
-                alert("Payment cancelled or closed. You have not been charged.");
+                payButton.innerHTML = '\uD83D\uDD12 Pay \u20A6{{ payment.amount|floatformat:2|intcomma }} Securely';
             }
         });
-
-        // Add a timeout fallback in case the iframe never loads
-        setTimeout(function() {
-            if (loadingOverlay.classList.contains("active")) {
-                loadingOverlay.classList.remove("active");
-                payButton.disabled = false;
-                paymentInProgress = false;
-                alert("Payment popup failed to load. Try again or check your internet/adblocker.");
-            }
-        }, 15000);  // 15 seconds
-
+ 
         handler.openIframe();
+ 
+        // After the popup opens, restore button text so it doesnt stay as spinner
+        setTimeout(function() {
+            if (paymentInProgress && payButton.innerHTML.includes('fa-spin')) {
+                payButton.innerHTML = '\uD83D\uDD12 Pay \u20A6{{ payment.amount|floatformat:2|intcomma }} Securely';
+            }
+        }, 2000);
     }
-    // ── Countdown Timer (mirrors the 15-min backend expiry) ──
+ 
+    // Countdown Timer
     const countdownEl  = document.getElementById('countdown-timer');
     const countdownBox = document.getElementById('countdown-container');
-    let timeRemaining  = 15 * 60; // must match views.py timedelta(minutes=15)
-
+    let timeRemaining  = 15 * 60;
+ 
     function updateCountdown() {
         const minutes = Math.floor(timeRemaining / 60);
         const seconds = timeRemaining % 60;
-
         countdownEl.textContent =
-            `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-
-        // Turn red when under 2 minutes
+            String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+ 
         if (timeRemaining <= 120) {
             countdownBox.classList.add('urgent');
         }
-
+ 
         if (timeRemaining <= 0) {
             clearInterval(countdownInterval);
             payButton.disabled = true;
-            payButton.innerHTML = '<i class="fas fa-clock"></i> Payment Session Expired';
+            payButton.innerHTML = '<i class="fas fa-clock"></i> Session Expired';
             countdownBox.innerHTML =
-                '<i class="fas fa-times-circle"></i> <span>Session expired — please start again</span>';
-            setTimeout(() => {
+                '<i class="fas fa-times-circle"></i><span>Session expired</span>';
+            setTimeout(function() {
                 window.location.href = "{% url 'subscriptions:plans_list' %}";
             }, 3000);
             return;
         }
-
         timeRemaining--;
     }
-
+ 
     const countdownInterval = setInterval(updateCountdown, 1000);
-    updateCountdown(); 
-
-    
+    updateCountdown();
 </script>
 {% endblock %}

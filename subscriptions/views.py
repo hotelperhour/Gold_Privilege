@@ -17,7 +17,8 @@ import requests
 import secrets
 from subscriptions.utils import get_subscription_state, can_subscribe_to_plan
 from account.permissions import subscriber_required
-
+from services.utils import get_all_service_quotas
+from services.models import ServiceCategory, DeliveryType
 from .models import SubscriptionPlan, PromoCode, Subscription, Payment, PlanFeature, PlanFeatureAssignment
 from .utils import get_subscription_state
 from collections import defaultdict
@@ -33,7 +34,8 @@ def plans_list(request):
     plans = list(SubscriptionPlan.objects.filter(
         is_active=True
     ).prefetch_related(
-        'feature_assignments__feature'
+        'feature_assignments__feature',
+        'service_quotas__service'          # prefetch service quotas
     ).order_by('display_order', 'price'))
 
     # Filter only available plans
@@ -42,36 +44,32 @@ def plans_list(request):
     # Get subscription state
     sub_state = get_subscription_state(request.user) if request.user.is_authenticated else None
 
-    # ═══════════════════════════════════════════════════════════════
-    # PROGRESSIVE FEATURE COMPARISON (for cards - NO quotas)
-    # ═══════════════════════════════════════════════════════════════
-    
+    # ─────────────────────────────────────────────────────────────
+    # PROGRESSIVE FEATURE COMPARISON (for cards)
+    # ─────────────────────────────────────────────────────────────
     previous_plan_features_dict = {}
-    
     for i, plan in enumerate(available_plans):
         if i > 0:
             previous_plan = available_plans[i-1]
             previous_features = set(
-                assignment.feature.id 
+                assignment.feature.id
                 for assignment in previous_plan.feature_assignments.all()
             )
             previous_plan_features_dict[i] = previous_features
         else:
             previous_plan_features_dict[i] = set()
 
-    # ═══════════════════════════════════════════════════════════════
-    # BUILD COMPARISON TABLE WITH SMART ORDERING
-    # Industry Standard: Show features common to ALL plans first
-    # ═══════════════════════════════════════════════════════════════
-    
+    # ─────────────────────────────────────────────────────────────
+    # BUILD COMPARISON TABLE WITH SMART ORDERING (venue features)
+    # ─────────────────────────────────────────────────────────────
     comparison_features = []
-    
+
     # Get all unique features
     all_features = set()
     for plan in available_plans:
         for assignment in plan.feature_assignments.all():
             all_features.add(assignment.feature)
-    
+
     # Categorize features by availability
     feature_availability = {}
     for feature in all_features:
@@ -84,44 +82,86 @@ def plans_list(request):
             'count': len(available_in),
             'plan_ids': available_in
         }
-    
-    # Sort: Features in ALL plans first, then by display_order
+
+    # Sort: features in ALL plans first, then by display_order
     sorted_features = sorted(
         all_features,
         key=lambda f: (
-            -feature_availability[f.id]['count'],  # More plans first (negative for descending)
-            f.display_order  # Then by display order
+            -feature_availability[f.id]['count'],   # more plans first
+            f.display_order
         )
     )
-    
-    # Build comparison data
+
+    # Build feature rows
     for feature in sorted_features:
         feature_row = {
             'id': feature.id,
             'name': feature.name,
             'quotas': {}
         }
-        
         for plan in available_plans:
             try:
                 assignment = PlanFeatureAssignment.objects.get(
                     plan=plan,
                     feature=feature
                 )
-                # Format quota
                 if assignment.usage_limit >= 999:
                     quota_display = "Unlimited"
                 elif assignment.usage_limit == 1:
                     quota_display = "✓"
                 else:
                     quota_display = f"×{assignment.usage_limit}"
-                
                 feature_row['quotas'][plan.id] = quota_display
             except PlanFeatureAssignment.DoesNotExist:
                 feature_row['quotas'][plan.id] = None
-        
         comparison_features.append(feature_row)
 
+    # ─────────────────────────────────────────────────────────────
+    # ADD DIGITAL SERVICES (airtime, data, vouchers) TO THE TABLE
+    # ─────────────────────────────────────────────────────────────
+    # Gather service quotas for each plan
+    service_quotas_by_plan = {}
+    all_services = set()
+    for plan in available_plans:
+        quotas = plan.service_quotas.select_related('service').all()
+        service_quotas_by_plan[plan.id] = quotas
+        for sq in quotas:
+            all_services.add(sq.service)
+
+    # Sort services by category and name
+    sorted_services = sorted(all_services, key=lambda s: (s.category, s.name))
+
+    for service in sorted_services:
+        service_row = {
+            'id': f'service_{service.id}',
+            'name': service.name,
+            'quotas': {}
+        }
+        for plan in available_plans:
+            found = None
+            for sq in service_quotas_by_plan.get(plan.id, []):
+                if sq.service == service:
+                    found = sq
+                    break
+            if found:
+                if found.is_unlimited():
+                    quota_display = "Unlimited"
+                else:
+                    cat = service.category
+                    if cat == ServiceCategory.DATA:
+                        quota_display = f"{found.monthly_data_gb} GB"
+                    elif service.delivery_type == DeliveryType.MANUAL_CODE:
+                        quota_display = f"{found.monthly_voucher_count} voucher(s)"
+                    else:  # AIRTIME or other value‑based
+                        quota_display = f"₦{found.monthly_allowance:,.0f}"
+                service_row['quotas'][plan.id] = quota_display
+            else:
+                service_row['quotas'][plan.id] = None
+        comparison_features.append(service_row)
+
+    # ─────────────────────────────────────────────────────────────
+    # RENDER
+    # ─────────────────────────────────────────────────────────────
     context = {
         'plans': available_plans,
         'subscription_state': sub_state or {},
@@ -129,7 +169,6 @@ def plans_list(request):
         'comparison_features': comparison_features,
         'has_active_subscription': sub_state and sub_state.get('has_active', False) if sub_state else False,
     }
-
     return render(request, 'subscriptions/plans_list.html', context)
 
 
@@ -308,11 +347,14 @@ def subscribe_to_plan(request, slug):
             logger.error(f"Subscription creation failed: {str(e)}", exc_info=True)
             messages.error(request, 'An error occurred. Please try again.')
             return redirect('subscriptions:plan_detail', slug=slug)
-    
+
+            
+    service_quotas = plan.service_quotas.select_related('service').all()
     # GET: Show form
     return render(request, 'subscriptions/subscribe.html', {
         'plan': plan,
         'action': action, 
+        'service_quotas': service_quotas,
     })
 
 
@@ -371,25 +413,34 @@ def my_subscription(request):
         user=request.user,
         status__in=['ACTIVE', 'TRIAL']
     ).select_related('plan').first()
-    
-    # Get subscription history
+ 
     past_subscriptions = Subscription.objects.filter(
         user=request.user,
         status__in=['EXPIRED', 'CANCELLED']
     ).select_related('plan').order_by('-created_at')[:5]
-    
-    # Check for pending payments
+ 
     pending_payment = None
     if subscription and subscription.status == Subscription.Status.PENDING:
         pending_payment = Payment.objects.filter(
             subscription=subscription,
             status=Payment.PaymentStatus.PENDING
         ).first()
-    
+ 
+    # ── ADD: digital services quota for this subscription ──
+    service_quotas = []
+    if subscription:
+        try:
+            from services.utils import get_all_service_quotas
+            service_quotas = get_all_service_quotas(request.user, subscription)
+        except Exception as e:
+            logger.error(f'Failed to load service quotas for {request.user.email}: {e}')
+    # ────────────────────────────────────────────────────────
+ 
     return render(request, 'subscriptions/my_subscription.html', {
-        'subscription': subscription,
+        'subscription':      subscription,
         'past_subscriptions': past_subscriptions,
-        'pending_payment': pending_payment,
+        'pending_payment':   pending_payment,
+        'service_quotas':    service_quotas,   # ← NEW
     })
 
 
@@ -564,57 +615,83 @@ class SubscriptionSuccessView(TemplateView):
         context = super().get_context_data(**kwargs)
         
         if self.request.user.is_authenticated:
-            context['subscription'] = Subscription.objects.filter(
+            from services.utils import get_all_service_quotas
+            subscription = Subscription.objects.filter(
                 user=self.request.user,
                 status__in=['ACTIVE', 'TRIAL']
             ).select_related('plan').first()
+            context['subscription'] = subscription
+            if subscription:
+                context['service_quotas'] = get_all_service_quotas(self.request.user, subscription)
         
         return context
-    
 
 def payment_callback(request):
+    """
+    Paystack browser redirect after payment.
+    This is the PRIMARY activation path — most users land here before
+    the webhook arrives.
+ 
+    _maybe_award_referral_coins MUST be called here, not only in the webhook,
+    because by the time the webhook arrives the payment is already SUCCESS
+    and the webhook guard returns early.
+    """
+    from subscriptions.webhooks import _maybe_award_referral_coins
+ 
     reference = request.GET.get('reference')
-
+ 
     if not reference:
         messages.error(request, 'No payment reference provided.')
         return redirect('subscriptions:plans_list')
-
+ 
     if not verify_payment_with_paystack(reference):
         messages.error(request, 'Payment verification failed.')
         return redirect('subscriptions:plans_list')
-
+ 
     payment = Payment.objects.filter(payment_reference=reference).first()
-
+ 
     if not payment:
         messages.error(request, 'Payment record not found.')
         return redirect('subscriptions:plans_list')
-
-    # 🔒 Prevent double-processing
+ 
+    # Prevent double-processing (webhook may have already handled it)
     if payment.status == Payment.PaymentStatus.SUCCESS:
         return redirect('subscriptions:success')
-
+ 
     with transaction.atomic():
-        # ✅ MARK PAYMENT AS SUCCESS
-        payment.status = Payment.PaymentStatus.SUCCESS
-        payment.paid_at = timezone.now()
-        payment.gateway_reference = reference
+        payment.status             = Payment.PaymentStatus.SUCCESS
+        payment.paid_at            = timezone.now()
+        payment.gateway_reference  = reference
         payment.save()
-
+ 
         subscription = payment.subscription
         if subscription.status == Subscription.Status.PENDING:
             subscription.status = Subscription.Status.ACTIVE
             subscription.save()
-
+ 
             if subscription.promo_code_used:
                 PromoCode.objects.filter(
                     pk=subscription.promo_code_used.pk
                 ).update(uses_count=F('uses_count') + 1)
-
+ 
         logger.info(
-            f"Payment {payment.payment_reference} completed, "
+            f"Payment {payment.payment_reference} completed via callback, "
             f"Subscription {subscription.subscription_id} activated"
         )
-
+ 
+    # ── Award referral coins if applicable ───────────────────────────────────
+    # Called OUTSIDE the atomic block so a failure here cannot roll back
+    # the subscription activation that just succeeded.
+    try:
+        _maybe_award_referral_coins(subscription.user)
+    except Exception as e:
+        logger.error(
+            f'Referral coin award failed for user {subscription.user.email} '
+            f'(payment {reference}): {e}',
+            exc_info=True
+        )
+    # ─────────────────────────────────────────────────────────────────────────
+ 
     return redirect('subscriptions:success')
 
 

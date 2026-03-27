@@ -242,6 +242,39 @@
     <a href="{% url 'subscriptions:my_subscription' %}">Manage Plan</a>
 </div>
 
+
+{% for item in quota_summary %}
+    {% if item.service.category == 'HOTEL_VOUCHER' %}
+ 
+    <!-- Hotel voucher notice — shown once if the plan includes hotel vouchers -->
+    <div style="
+        background: #FFF8E1;
+        border: 1px solid #FFE082;
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        font-size: 14px;
+        color: #5a4500;
+        line-height: 1.6;
+    ">
+        <span style="font-size: 20px; flex-shrink: 0;">🏨</span>
+        <div>
+            <strong>Hotel Vouchers</strong> — Your Gold Privilege hotel voucher codes
+            can only be redeemed at
+            <a href="https://www.hotelsperhour.com" target="_blank"
+               style="color: #E5AD04; font-weight: 700; text-decoration: none;">
+                www.hotelsperhour.com
+            </a>.
+            Enter the code at checkout to apply your discount or credit.
+        </div>
+    </div>
+ 
+    {% endif %}
+{% endfor %}
+
 {% if grouped %}
     {% for category, items in grouped.items %}
         <div class="section-heading">{{ category }}</div>

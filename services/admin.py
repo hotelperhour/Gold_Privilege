@@ -4,12 +4,19 @@ Dynamic inline fields: quota field shown depends on service category/delivery_ty
 updated via JavaScript so it switches immediately on change (no save-reload needed).
 """
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.utils.html import format_html
 from .models import (
     Service, ServicePlanQuota, VoucherInventory,
     ServicePurchase, ServiceQuotaUsage, ServiceCategory, DeliveryType
 )
+import csv
+import io
+from django import forms
+from django.shortcuts import render, redirect
+from django.urls import path
+from decimal import Decimal
+
 
 
 # ──────────────────────────────────────────────
@@ -19,11 +26,17 @@ from .models import (
 class ServicePlanQuotaInline(admin.TabularInline):
     model   = ServicePlanQuota
     extra   = 1
-    fields  = ('plan', 'monthly_allowance', 'monthly_data_gb', 'monthly_voucher_count')
-    verbose_name        = "Plan Quota"
-    verbose_name_plural = "Plan Quotas (set the correct field for this service type)"
-
-
+    fields  = (
+        'plan',
+        'monthly_allowance',        # AIRTIME
+        'monthly_data_gb',          # DATA
+        'monthly_voucher_count',    # VOUCHER: how many per month
+        'voucher_type',             # VOUCHER: FIXED or PERCENT
+        'voucher_fixed_amount',     # VOUCHER + FIXED: naira value
+        'voucher_discount_percentage',  # VOUCHER + PERCENT: %
+    )
+    verbose_name = "Plan Quota"
+    verbose_name_plural = "Plan Quotas (set correct fields for this service type)"
 # ──────────────────────────────────────────────
 # SERVICE ADMIN
 # ──────────────────────────────────────────────
@@ -79,6 +92,7 @@ class ServiceAdmin(admin.ModelAdmin):
             'AIRTIME':      ('#0d6efd', '#e7f3ff'),
             'DATA':         ('#198754', '#d1e7dd'),
             'RIDE_VOUCHER': ('#fd7e14', '#fff3cd'),
+            'HOTEL_VOUCHER': ('#6f42c1', '#f3e7ff'),
             'FUEL_VOUCHER': ('#dc3545', '#f8d7da'),
             'OTHER':        ('#6c757d', '#f8f9fa'),
         }
@@ -151,15 +165,17 @@ class ServiceAdmin(admin.ModelAdmin):
 
 @admin.register(ServicePlanQuota)
 class ServicePlanQuotaAdmin(admin.ModelAdmin):
-    list_display  = ('plan', 'service', 'category_col', 'quota_display')
+    list_display  = ('plan', 'service', 'category_col', 'quota_display', 'voucher_entitlement')
     list_filter   = ('plan', 'service__category')
     search_fields = ('plan__name', 'service__name')
-
+ 
     def category_col(self, obj):
         return obj.service.get_category_display()
     category_col.short_description = 'Service Type'
-
+ 
     def quota_display(self, obj):
+        from django.utils.html import format_html
+        from .models import ServiceCategory, DeliveryType
         cat = obj.service.category
         if cat == ServiceCategory.DATA:
             if obj.monthly_data_gb is None:
@@ -169,75 +185,216 @@ class ServicePlanQuotaAdmin(admin.ModelAdmin):
             if obj.monthly_voucher_count is None:
                 return format_html('<span style="color:#198754;font-weight:bold">∞ Unlimited vouchers</span>')
             return format_html('<strong>{}</strong> vouchers/month', obj.monthly_voucher_count)
-        # Airtime
         if obj.monthly_allowance is None:
             return format_html('<span style="color:#198754;font-weight:bold">∞ Unlimited ₦</span>')
         return format_html('<strong>₦{}</strong>/month', f'{obj.monthly_allowance:,.0f}')
     quota_display.short_description = 'Monthly Quota'
+ 
+    def voucher_entitlement(self, obj):
+        """Shows what specific voucher value this plan provides."""
+        from django.utils.html import format_html
+        from .models import DeliveryType, VoucherType
+        if obj.service.delivery_type != DeliveryType.MANUAL_CODE:
+            return '—'
+        if not obj.voucher_type:
+            return format_html('<span style="color:#dc3545;font-size:12px;">⚠ Not configured</span>')
+        if obj.voucher_type == VoucherType.FIXED_AMOUNT:
+            val = f'₦{obj.voucher_fixed_amount:,.0f}' if obj.voucher_fixed_amount else '—'
+        else:
+            val = f'{obj.voucher_discount_percentage}% off' if obj.voucher_discount_percentage else '—'
+        return format_html('<span style="color:#198754;font-weight:bold">{}</span>', val)
+    voucher_entitlement.short_description = 'Voucher Value'
 
 
 # ──────────────────────────────────────────────
 # VOUCHER INVENTORY
 # ──────────────────────────────────────────────
 
+class VoucherCSVUploadForm(forms.Form):
+    """
+    Form for uploading vouchers in bulk via CSV.
+ 
+    Expected CSV columns (header row required):
+        code, service_id, amount, voucher_type, discount_percentage, expires_at
+ 
+    Example rows:
+        HPH-ABC123,3,5000,FIXED,,2026-12-31
+        HPH-DEF456,3,0,PERCENT,20.00,2026-12-31
+ 
+    - voucher_type: FIXED or PERCENT
+    - discount_percentage: leave blank for FIXED vouchers
+    - expires_at: YYYY-MM-DD format, or blank for no expiry
+    """
+    csv_file = forms.FileField(
+        label='CSV File',
+        help_text=(
+            'Required columns: code, service_id, amount, voucher_type, '
+            'discount_percentage, expires_at. '
+            'See column notes above. Max 1000 rows per upload.'
+        ),
+    )
+    default_service = forms.ModelChoiceField(
+        queryset=None,  # set in __init__
+        required=False,
+        label='Default Service (optional)',
+        help_text='Used when the CSV row has no service_id column.',
+    )
+ 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Import here to avoid circular import
+        from services.models import Service
+        self.fields['default_service'].queryset = Service.objects.filter(is_active=True)
+ 
+ 
+# ── REPLACE your existing VoucherInventoryAdmin with this ─────────────────
+ 
 @admin.register(VoucherInventory)
 class VoucherInventoryAdmin(admin.ModelAdmin):
-    list_display  = (
-        'service', 'masked_code', 'amount_display',
-        'status_badge', 'assigned_to', 'expires_at', 'created_at'
-    )
-    list_filter   = ('service', 'status')
-    search_fields = ('voucher_code', 'assigned_to__email')
-    readonly_fields = ('assigned_to', 'assigned_at', 'created_at')
-    actions       = ['mark_available', 'mark_expired', 'export_csv']
-
-    def masked_code(self, obj):
-        c = obj.voucher_code
-        return (c[:4] + '••••' + c[-4:]) if len(c) > 8 else '••••'
-    masked_code.short_description = 'Code'
-
-    def amount_display(self, obj):
-        return f'₦{obj.amount:,.0f}'
-    amount_display.short_description = 'Amount'
-
-    def status_badge(self, obj):
-        colours = {
-            'AVAILABLE': ('#198754', '#d1e7dd'),
-            'ASSIGNED':  ('#fd7e14', '#fff3cd'),
-            'USED':      ('#6c757d', '#f8f9fa'),
-            'EXPIRED':   ('#dc3545', '#f8d7da'),
+    list_display = [
+        'voucher_code', 'service', 'voucher_type', 'display_value_col',
+        'status', 'assigned_to', 'expires_at', 'created_at',
+    ]
+    list_filter  = ['service', 'status', 'voucher_type']
+    search_fields = ['voucher_code', 'assigned_to__email']
+    readonly_fields = ['assigned_to', 'assigned_at', 'created_at']
+ 
+    # Register the extra URL for bulk upload
+    def get_urls(self):
+        urls = super().get_urls()
+        extra = [
+            path(
+                'bulk-upload/',
+                self.admin_site.admin_view(self.bulk_upload_view),
+                name='services_voucherinventory_bulk_upload',
+            ),
+        ]
+        return extra + urls
+ 
+    # Add a button to the changelist page header
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['bulk_upload_url'] = 'bulk-upload/'
+        return super().changelist_view(request, extra_context=extra_context)
+ 
+    @admin.display(description='Value')
+    def display_value_col(self, obj):
+        """Shows ₦5,000 for fixed or 20% for percentage."""
+        return obj.display_value
+ 
+    # ── Bulk upload view ──────────────────────────────────────────────────
+ 
+    def bulk_upload_view(self, request):
+        from services.models import Service, VoucherInventory
+ 
+        if request.method == 'POST':
+            form = VoucherCSVUploadForm(request.POST, request.FILES)
+            if form.is_valid():
+                csv_file = form.cleaned_data['csv_file']
+                default_service = form.cleaned_data.get('default_service')
+ 
+                # Decode and parse
+                try:
+                    decoded = csv_file.read().decode('utf-8-sig')  # handles BOM
+                    reader  = csv.DictReader(io.StringIO(decoded))
+                except Exception as e:
+                    messages.error(request, f'Could not read file: {e}')
+                    return redirect('.')
+ 
+                created = 0
+                skipped = 0
+                errors  = []
+ 
+                for i, row in enumerate(reader, start=2):  # start=2 because row 1 is header
+                    if i > 1001:  # max 1000 data rows
+                        errors.append('Stopped at row 1001 — max 1000 rows per upload.')
+                        break
+ 
+                    code = (row.get('code') or '').strip()
+                    if not code:
+                        errors.append(f'Row {i}: missing code — skipped.')
+                        skipped += 1
+                        continue
+ 
+                    # Skip duplicates silently
+                    if VoucherInventory.objects.filter(voucher_code=code).exists():
+                        skipped += 1
+                        continue
+ 
+                    # Service
+                    service_id = (row.get('service_id') or '').strip()
+                    if service_id:
+                        try:
+                            service = Service.objects.get(pk=service_id)
+                        except Service.DoesNotExist:
+                            errors.append(f'Row {i}: service_id {service_id} not found — skipped.')
+                            skipped += 1
+                            continue
+                    elif default_service:
+                        service = default_service
+                    else:
+                        errors.append(f'Row {i}: no service_id and no default service — skipped.')
+                        skipped += 1
+                        continue
+ 
+                    # Voucher type
+                    vtype_raw = (row.get('voucher_type') or 'FIXED').strip().upper()
+                    vtype     = 'PERCENT' if vtype_raw in ('PERCENT', 'PERCENTAGE_DISCOUNT') else 'FIXED'
+ 
+                    # Amount
+                    try:
+                        amount = Decimal(row.get('amount') or '0')
+                    except Exception:
+                        amount = Decimal('0')
+ 
+                    # Discount %
+                    try:
+                        disc = Decimal(row.get('discount_percentage') or '0') or None
+                    except Exception:
+                        disc = None
+ 
+                    # Expiry
+                    expires_raw = (row.get('expires_at') or '').strip()
+                    expires_at  = None
+                    if expires_raw:
+                        try:
+                            from datetime import date
+                            expires_at = date.fromisoformat(expires_raw)
+                        except ValueError:
+                            errors.append(f'Row {i}: bad expires_at "{expires_raw}" — ignored.')
+ 
+                    VoucherInventory.objects.create(
+                        voucher_code        = code,
+                        service             = service,
+                        amount              = amount,
+                        voucher_type        = vtype,
+                        discount_percentage = disc,
+                        expires_at          = expires_at,
+                        status              = VoucherInventory.VoucherStatus.AVAILABLE,
+                    )
+                    created += 1
+ 
+                # Summary
+                msg = f'Upload complete: {created} vouchers created, {skipped} skipped (duplicates or errors).'
+                if errors:
+                    msg += f' Warnings: {"; ".join(errors[:5])}'
+                    messages.warning(request, msg)
+                else:
+                    messages.success(request, msg)
+ 
+                return redirect('../')  # back to changelist
+ 
+        else:
+            form = VoucherCSVUploadForm()
+ 
+        context = {
+            **self.admin_site.each_context(request),
+            'form':        form,
+            'title':       'Bulk Upload Vouchers',
+            'opts':        VoucherInventory._meta,
+            'app_label':   VoucherInventory._meta.app_label,
         }
-        fg, bg = colours.get(obj.status, ('#000', '#fff'))
-        return format_html(
-            '<span style="color:{};background:{};padding:2px 8px;border-radius:4px;font-size:12px">{}</span>',
-            fg, bg, obj.status
-        )
-    status_badge.short_description = 'Status'
-
-    def mark_available(self, request, qs):
-        qs.update(status='AVAILABLE')
-    mark_available.short_description = 'Mark selected as Available'
-
-    def mark_expired(self, request, qs):
-        qs.update(status='EXPIRED')
-    mark_expired.short_description = 'Mark selected as Expired'
-
-    def export_csv(self, request, qs):
-        import csv
-        from django.http import HttpResponse
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="vouchers.csv"'
-        w = csv.writer(response)
-        w.writerow(['Service', 'Code', 'PIN', 'Amount', 'Status', 'Assigned To', 'Expires'])
-        for v in qs:
-            w.writerow([
-                v.service.name, v.voucher_code, v.voucher_pin,
-                v.amount, v.status,
-                v.assigned_to.email if v.assigned_to else '',
-                v.expires_at or '',
-            ])
-        return response
-    export_csv.short_description = 'Export to CSV'
+        return render(request, 'admin/services/voucherinventory/bulk_upload.html', context)
 
 
 # ──────────────────────────────────────────────

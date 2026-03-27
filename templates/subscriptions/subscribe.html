@@ -471,6 +471,33 @@
                 {% endfor %}
             </ul>
 
+            <!-- Digital Services -->
+            <p class="sub-included-title" style="margin-top: 16px;">Digital Services Included</p>
+            <ul class="sub-features">
+                {% for quota in service_quotas %}
+                    <li>
+                        {{ quota.service.name }}
+                        <span style="color: var(--gold-primary); font-weight: 600; margin-left: 8px;">
+                            {% if quota.is_unlimited %}
+                                Unlimited
+                            {% else %}
+                                {% if quota.service.category == 'DATA' %}
+                                    {{ quota.monthly_data_gb }} GB
+                                {% elif quota.service.delivery_type == 'MANUAL_CODE' %}
+                                    {{ quota.monthly_voucher_count }} voucher(s)
+                                {% else %}
+                                    ₦{{ quota.monthly_allowance|floatformat:0 }}
+                                {% endif %}
+                            {% endif %}
+                        </span>
+                    </li>
+                {% empty %}
+                    <li>No digital services included with this plan.</li>
+                {% endfor %}
+            </ul>
+
+            
+
             <hr class="sub-divider">
 
             <!-- ═══ WHITE INNER BOX — Order Summary ═══ -->

@@ -37,12 +37,17 @@ class ServiceCategory(models.TextChoices):
     DATA         = 'DATA',         _('Internet Data')
     RIDE_VOUCHER = 'RIDE_VOUCHER', _('Ride Voucher')
     FUEL_VOUCHER = 'FUEL_VOUCHER', _('Fuel Voucher')
+    HOTEL_VOUCHER= 'HOTEL_VOUCHER', _('Hotel Voucher')
     OTHER        = 'OTHER',        _('Other Service')
 
 
 class DeliveryType(models.TextChoices):
     API_INSTANT = 'API_INSTANT', _('API – Instant Delivery (Reloadly)')
     MANUAL_CODE = 'MANUAL_CODE', _('Manual – Voucher Code')
+
+class VoucherType(models.TextChoices):
+    FIXED_AMOUNT       = 'FIXED',      'Fixed Amount (₦)'
+    PERCENTAGE_DISCOUNT = 'PERCENT',   'Percentage Discount (%)'
 
 
 class NetworkProvider(models.TextChoices):
@@ -126,6 +131,7 @@ class Service(models.Model):
             'AIRTIME':      'fa-mobile-alt',
             'DATA':         'fa-wifi',
             'RIDE_VOUCHER': 'fa-car',
+            'HOTEL_VOUCHER': 'fa-bed',
             'FUEL_VOUCHER': 'fa-gas-pump',
             'OTHER':        'fa-concierge-bell',
         }
@@ -191,6 +197,23 @@ class ServicePlanQuota(models.Model):
         null=True, blank=True,
         help_text='VOUCHER: Number of voucher codes per month. Blank = unlimited.'
     )
+    voucher_type = models.CharField(
+        max_length=10,
+        choices=VoucherType.choices,
+        null=True, blank=True,
+        help_text=(
+            'VOUCHER: Which type of voucher this plan provides. '
+            'FIXED = naira value, PERCENT = percentage discount.'
+        ),
+    )
+    voucher_fixed_amount = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True,
+        help_text='VOUCHER + FIXED only: Face value in naira. e.g. 20000 = ₦20,000 voucher.',
+    )
+    voucher_discount_percentage = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        help_text='VOUCHER + PERCENT only: Discount percentage. e.g. 15.00 = 15% off.',
+    )
 
     class Meta:
         unique_together     = ['plan', 'service']
@@ -224,6 +247,33 @@ class ServicePlanQuota(models.Model):
             return self.monthly_voucher_count
         return self.monthly_allowance
 
+    @property
+    def limit_display(self):
+        """Human-readable monthly limit (e.g., '₦10,000', '5 GB', '2 vouchers')"""
+        if self.is_unlimited():
+            return "Unlimited"
+        cat = self.service.category
+        if cat == ServiceCategory.DATA:
+            return f"{self.monthly_data_gb} GB"
+        if self.service.delivery_type == DeliveryType.MANUAL_CODE:
+            return f"{self.monthly_voucher_count} voucher(s)"
+        # Airtime or other value-based
+        return f"₦{self.monthly_allowance:,.0f}"
+
+    @property
+    def icon(self):
+        """Font Awesome icon HTML for the service category"""
+        cat = self.service.category
+        icons = {
+            ServiceCategory.AIRTIME:      '<i class="fas fa-mobile-alt"></i>',
+            ServiceCategory.DATA:         '<i class="fas fa-wifi"></i>',
+            ServiceCategory.RIDE_VOUCHER: '<i class="fas fa-car"></i>',
+            ServiceCategory.HOTEL_VOUCHER:'<i class="fas fa-bed"></i>',
+            ServiceCategory.FUEL_VOUCHER: '<i class="fas fa-gas-pump"></i>',
+            ServiceCategory.OTHER:        '<i class="fas fa-concierge-bell"></i>',
+        }
+        return icons.get(cat, '<i class="fas fa-star"></i>')
+
 
 # ──────────────────────────────────────────────
 # VOUCHER INVENTORY
@@ -241,7 +291,20 @@ class VoucherInventory(models.Model):
                                      related_name='vouchers')
     voucher_code = models.CharField(max_length=200, unique=True)
     voucher_pin  = models.CharField(max_length=100, blank=True)
-    amount       = models.DecimalField(max_digits=10, decimal_places=2)
+    voucher_type = models.CharField(
+    max_length=10,
+    choices=VoucherType.choices,
+    default=VoucherType.FIXED_AMOUNT,
+    help_text='Fixed: deducts exact naira amount. Percent: deducts a % off.',
+    )
+    
+    discount_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True, blank=True,
+        help_text='Only used when voucher_type is PERCENTAGE_DISCOUNT. e.g. 20.00 = 20% off.',
+    )
+    amount       = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='leave at 0 for percentage-based vouchers')
     cost_price   = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     status       = models.CharField(max_length=20, choices=VoucherStatus.choices,
                                     default=VoucherStatus.AVAILABLE, db_index=True)
@@ -266,6 +329,17 @@ class VoucherInventory(models.Model):
         if self.expires_at and self.expires_at < timezone.now().date():
             return False
         return True
+
+    @property
+    def display_value(self):
+        """Human-readable value for admin and templates."""
+        if self.voucher_type == VoucherType.PERCENTAGE_DISCOUNT:
+            return f'{self.discount_percentage}% discount'
+        return f'₦{self.amount:,.0f}'
+    
+    @property
+    def is_percentage(self):
+        return self.voucher_type == VoucherType.PERCENTAGE_DISCOUNT
 
 
 # ──────────────────────────────────────────────

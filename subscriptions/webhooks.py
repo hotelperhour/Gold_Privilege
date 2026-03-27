@@ -25,7 +25,9 @@ import hmac
 import json
 import logging
 from django.utils import timezone
-
+from wallet.models import ReferralRecord, WalletConfig
+from wallet.utils import credit_wallet
+from wallet.models import WalletTransaction
 from .models import Payment, Subscription
 
 logger = logging.getLogger(__name__)
@@ -121,89 +123,92 @@ def paystack_webhook(request):
 
 def handle_charge_success(data):
     """
-    Handle successful payment with validation
-    
-    Critical validations:
-    - Payment exists and is pending
-    - Amount matches expected amount
-    - Payment hasn't been processed before
-    - User owns the payment
+    Handle successful payment with validation.
+    Called by Paystack webhook — may arrive AFTER payment_callback has
+    already processed the payment. The is_paid guard in
+    _maybe_award_referral_coins makes it safe to call from both paths.
     """
-    reference = data.get('reference')
-    # Paystack returns amount in kobo (Nigerian currency lowest unit)
+    reference      = data.get('reference')
     gateway_amount = Decimal(str(data.get('amount', 0))) / 100
-    
+ 
+    subscription_user = None  # track for referral call outside atomic block
+ 
     try:
         with transaction.atomic():
-            # Lock payment record to prevent race conditions
             payment = Payment.objects.select_for_update().get(
                 gateway_reference=reference
             )
-            
-            # Prevent double-processing
+ 
+            # If payment_callback already processed this, skip silently
             if payment.status != Payment.PaymentStatus.PENDING:
-                logger.warning(
-                    f"Attempted to process non-pending payment: {payment.payment_id} "
-                    f"(Status: {payment.status})"
+                logger.info(
+                    f"Webhook: payment {payment.payment_id} already processed "
+                    f"(status={payment.status}) — skipping."
                 )
                 return
-            
-            # CRITICAL: Validate amount matches
+ 
+            # Validate amount
             expected_amount = payment.amount
-            
-            # Allow for minor rounding differences (0.01 tolerance)
             if abs(gateway_amount - expected_amount) > Decimal('0.01'):
                 logger.error(
-                    f"PAYMENT AMOUNT MISMATCH - Payment: {payment.payment_id}, "
+                    f"PAYMENT AMOUNT MISMATCH — Payment: {payment.payment_id}, "
                     f"Expected: {expected_amount}, Received: {gateway_amount}"
                 )
-                
-                payment.status = Payment.PaymentStatus.FAILED
+                payment.status           = Payment.PaymentStatus.FAILED
                 payment.gateway_response = data
                 payment.save()
-                
-                # Alert admin
                 send_admin_alert(
                     subject='Payment Amount Mismatch',
-                    message=f'Payment {payment.payment_id} amount mismatch. '
-                            f'Expected: {expected_amount}, Received: {gateway_amount}'
+                    message=(
+                        f'Payment {payment.payment_id} amount mismatch. '
+                        f'Expected: {expected_amount}, Received: {gateway_amount}'
+                    ),
                 )
                 return
-            
-            # Update payment status
-            payment.status = Payment.PaymentStatus.SUCCESS
-            payment.paid_at = timezone.now()
+ 
+            payment.status           = Payment.PaymentStatus.SUCCESS
+            payment.paid_at          = timezone.now()
             payment.gateway_response = data
             payment.save()
-            
-            logger.info(f"Payment successful: {payment.payment_id}")
-            
-            # Activate subscription
+            logger.info(f"Webhook: payment successful: {payment.payment_id}")
+ 
             subscription = payment.subscription
-            
             if subscription.status == Subscription.Status.PENDING:
                 subscription.status = Subscription.Status.ACTIVE
                 subscription.save()
-                
+                subscription_user = subscription.user  # capture for referral call
                 logger.info(
-                    f"Subscription activated: {subscription.subscription_id} "
+                    f"Webhook: subscription activated: {subscription.subscription_id} "
                     f"for user {subscription.user.email}"
                 )
-                
-                # Send confirmation email
                 send_payment_confirmation_email(payment)
             else:
                 logger.warning(
-                    f"Subscription already active: {subscription.subscription_id}"
+                    f"Webhook: subscription already active: {subscription.subscription_id}"
                 )
-    
+ 
     except Payment.DoesNotExist:
-        logger.error(f"Payment not found for reference: {reference}")
+        logger.error(f"Webhook: payment not found for reference: {reference}")
+        return
     except Exception as e:
         logger.error(
-            f"Error handling charge success for reference {reference}: {e}", 
-            exc_info=True
+            f"Webhook: error handling charge success for reference {reference}: {e}",
+            exc_info=True,
         )
+        return
+ 
+    # ── Award referral coins OUTSIDE the atomic block ────────────────────────
+    # This means a referral failure can never roll back the subscription.
+    # is_paid guard makes this idempotent — safe to call even if
+    # payment_callback already called it first.
+    if subscription_user:
+        try:
+            _maybe_award_referral_coins(subscription_user)
+        except Exception as e:
+            logger.error(
+                f'Webhook: referral coin award failed for {subscription_user.email}: {e}',
+                exc_info=True,
+            )
 
 
 def handle_charge_failed(data):
@@ -338,6 +343,81 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+
+def _maybe_award_referral_coins(user):
+    """
+    Award referral coins to the referrer when the referred user
+    completes their FIRST subscription payment.
+ 
+    Called once inside handle_charge_success() after subscription is
+    marked ACTIVE. Safe to call multiple times — is_paid guard makes
+    it idempotent.
+    """
+    from .models import Payment  # subscriptions.models.Payment
+ 
+    # Count this user's successful subscription payments.
+    # BUG 1 FIX: use Payment.PaymentStatus.SUCCESS, not 'COMPLETED'
+    completed_payments = Payment.objects.filter(
+        subscription__user=user,
+        status=Payment.PaymentStatus.SUCCESS,   # ← was 'COMPLETED' — WRONG
+    ).count()
+ 
+    # Only award on the very first payment
+    if completed_payments != 1:
+        return
+ 
+    # Check if this user was referred and bonus not yet paid
+    try:
+        record = ReferralRecord.objects.select_for_update().get(
+            referred_user=user,
+            is_paid=False,
+        )
+    except ReferralRecord.DoesNotExist:
+        return  # Not a referred user — nothing to do
+ 
+    # Get admin-configurable reward amount
+    config = WalletConfig.get_config()
+    coins  = config.referral_coins_reward  # default 500
+ 
+    # Get or create the referrer's wallet
+    from wallet.models import Wallet
+    referrer_wallet, _ = Wallet.objects.get_or_create(user=record.referrer)
+ 
+    # Credit and mark paid atomically
+    with transaction.atomic():
+        credit_wallet(
+            wallet=referrer_wallet,
+            amount=coins,
+            txn_type=WalletTransaction.TransactionType.REFERRAL,
+            note=f'Referral bonus: {user.get_full_name()} ({user.gp_id}) subscribed',
+        )
+        record.coins_awarded = coins
+        record.awarded_at    = timezone.now()   # BUG 2 FIX: was broken __import__ hack
+        record.is_paid       = True
+        record.save(update_fields=['coins_awarded', 'awarded_at', 'is_paid'])
+ 
+    logger.info(
+        f'Referral bonus: {coins} coins credited to {record.referrer.email} '
+        f'for referring {user.email}'
+    )
+ 
+    # Email the referrer (failure must never break the webhook)
+    try:
+        from wallet.emails import _send
+        _send(
+            subject=f'You earned {coins:,} Gold Coins — referral bonus!',
+            template_name='referral_bonus.html',
+            context={
+                'referrer_name': record.referrer.get_full_name(),
+                'referred_name': user.get_full_name(),
+                'coins_awarded': f'{coins:,}',
+                'awarded_at':    timezone.now().strftime('%d %b %Y'),
+            },
+            recipient_email=record.referrer.email,
+        )
+    except Exception as e:
+        logger.error(f'Referral bonus email failed: {e}')
 
 
 # PRODUCTION MONITORING

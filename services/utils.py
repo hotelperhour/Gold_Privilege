@@ -29,7 +29,7 @@ from django.conf import settings
 from .models import (
     Service, DeliveryType, ServiceCategory,
     ServicePlanQuota, ServiceQuotaUsage,
-    ServicePurchase, VoucherInventory,
+    ServicePurchase, VoucherInventory,VoucherType
 )
 
 logger = logging.getLogger(__name__)
@@ -521,51 +521,68 @@ def refund_quota_atomic(user, service, subscription, amount):
 # VOUCHER ASSIGNMENT
 # ─────────────────────────────────────────────────────
 
-def assign_voucher_atomic(user, service, amount):
-    """Atomically assign one available voucher. skip_locked=True prevents deadlocks."""
+def assign_voucher_atomic(user, service, voucher_type, value):
+    """
+    Atomically assign one available voucher of given type and value.
+    voucher_type: 'FIXED' or 'PERCENT'
+    value: for FIXED -> amount (Decimal), for PERCENT -> discount_percentage (Decimal)
+    """
     try:
         with transaction.atomic():
-            voucher = (
-                VoucherInventory.objects
-                .select_for_update(skip_locked=True)
-                .filter(service=service, status=VoucherInventory.VoucherStatus.AVAILABLE, amount=amount)
-                .exclude(expires_at__lt=timezone.now().date())
-                .first()
-            )
-            if not voucher:
-                return None, (
-                    f"No {service.name} vouchers of ₦{amount:,.0f} are available right now. "
-                    "Please contact support or try again later."
+            if voucher_type == VoucherType.FIXED_AMOUNT:
+                voucher = (
+                    VoucherInventory.objects
+                    .select_for_update(skip_locked=True)
+                    .filter(
+                        service=service,
+                        status=VoucherInventory.VoucherStatus.AVAILABLE,
+                        voucher_type=VoucherType.FIXED_AMOUNT,
+                        amount=value
+                    )
+                    .exclude(expires_at__lt=timezone.now().date())
+                    .first()
                 )
+            else:  # PERCENTAGE_DISCOUNT
+                voucher = (
+                    VoucherInventory.objects
+                    .select_for_update(skip_locked=True)
+                    .filter(
+                        service=service,
+                        status=VoucherInventory.VoucherStatus.AVAILABLE,
+                        voucher_type=VoucherType.PERCENTAGE_DISCOUNT,
+                        discount_percentage=value
+                    )
+                    .exclude(expires_at__lt=timezone.now().date())
+                    .first()
+                )
+
+            if not voucher:
+                label = f"₦{value}" if voucher_type == VoucherType.FIXED_AMOUNT else f"{value}% off"
+                return None, f"No {service.name} voucher of {label} is available."
+
             voucher.status      = VoucherInventory.VoucherStatus.ASSIGNED
             voucher.assigned_to = user
             voucher.assigned_at = timezone.now()
             voucher.save(update_fields=['status', 'assigned_to', 'assigned_at'])
+
         return voucher, None
+
     except Exception as exc:
         logger.error("assign_voucher_atomic failed user=%s service=%s: %s",
                      user.email, service.name, exc, exc_info=True)
         return None, "An error occurred assigning your voucher. Please try again."
-
-
 # ─────────────────────────────────────────────────────
 # MAIN ORCHESTRATOR
 # ─────────────────────────────────────────────────────
 
 def process_service_request(user, service, subscription, amount,
-                             phone=None, network=None,
-                             variation_code=None, data_gb=None):
+                            phone=None, network=None,
+                            variation_code=None, data_gb=None,
+                            voucher_type=None, voucher_value=None):
     """
-    Full pipeline:
-      1. Active subscription check
-      2. Pre-flight quota check
-      3. Per-transaction limit validation
-      4. Atomic quota deduction
-      5. Deliver (Reloadly or voucher)
-      6. On failure → refund + mark FAILED
-
-    For data: amount = naira cost, data_gb = Decimal GB of the bundle.
-    The quota deduction uses data_gb (GB), not naira.
+    Full pipeline for service request.
+    For voucher services, supply voucher_type and voucher_value.
+    amount can be 0 for percentage vouchers (or the face value for fixed).
     """
     if subscription.status not in ('ACTIVE', 'TRIAL'):
         return None, "Your subscription is not active."
@@ -576,80 +593,77 @@ def process_service_request(user, service, subscription, amount,
     if not allowed:
         return None, msg
 
-    cat = service.category
+    # Per-transaction limit validation (skip for vouchers with percentage)
+    if service.delivery_type != DeliveryType.MANUAL_CODE or voucher_type == VoucherType.FIXED_AMOUNT:
+        check_value = data_gb if service.category == ServiceCategory.DATA else amount
+        unit_label  = 'GB' if service.category == ServiceCategory.DATA else '₦'
 
-    # Per-transaction limit validation
-    # For data: amount = GB to buy; for airtime: amount = naira
-    check_value = data_gb if cat == ServiceCategory.DATA else amount
-    unit_label  = 'GB' if cat == ServiceCategory.DATA else '₦'
+        if min_limit and check_value < min_limit:
+            return None, f"Minimum is {min_limit} {unit_label} per transaction."
 
-    if min_limit and check_value < min_limit:
-        return None, f"Minimum is {min_limit} {unit_label} per transaction."
+        if max_limit and check_value > max_limit:
+            if remaining is not None and check_value > remaining:
+                return None, (
+                    f"This would exceed your monthly balance. "
+                    f"You have {remaining} {unit_label} remaining."
+                )
+            return None, f"Maximum is {max_limit} {unit_label} per transaction."
 
-    if max_limit and check_value > max_limit:
-        if remaining is not None and check_value > remaining:
-            return None, (
-                f"This would exceed your monthly balance. "
-                f"You have {remaining} {unit_label} remaining."
-            )
-        return None, f"Maximum is {max_limit} {unit_label} per transaction."
+    # Deduct quota (for vouchers, we deduct 1 "count" – amount is ignored)
+    if service.delivery_type == DeliveryType.MANUAL_CODE:
+        deduct_amount = Decimal('1')
+    else:
+        deduct_amount = data_gb if service.category == ServiceCategory.DATA else amount
 
-    # Deduct quota (GB for data, naira for airtime, 1 for vouchers)
-    deduct_amount = data_gb if cat == ServiceCategory.DATA else amount
     ok, err = deduct_quota_atomic(user, service, subscription, deduct_amount)
     if not ok:
         return None, err
 
     purchase = ServicePurchase.objects.create(
-        user             = user,
-        service          = service,
-        subscription     = subscription,
-        amount           = amount,
-        data_gb          = data_gb,
-        variation_code   = variation_code or '',
-        recipient_phone  = phone or '',
-        network_provider = network or '',
-        status           = ServicePurchase.PurchaseStatus.PROCESSING,
-        used_quota       = True,
+        user=user, service=service, subscription=subscription,
+        amount=amount, data_gb=data_gb, variation_code=variation_code or '',
+        recipient_phone=phone or '', network_provider=network or '',
+        status=ServicePurchase.PurchaseStatus.PROCESSING,
+        used_quota=True,
     )
 
     if service.delivery_type == DeliveryType.API_INSTANT:
+        # ... (unchanged)
         api = ReloadlyAPI()
-
-        if cat == ServiceCategory.AIRTIME:
+        if service.category == ServiceCategory.AIRTIME:
             success, resp = api.buy_airtime(
                 network=network, phone=phone,
                 amount=amount, purchase_reference=purchase.reference,
             )
-        # elif cat == ServiceCategory.DATA:
-        #     success, resp = api.buy_data(
-        #         network=network, phone=phone,
-        #         variation_code=variation_code or '',
-        #         amount=amount, data_gb=data_gb,
-        #         purchase_reference=purchase.reference,
-        #     )
         else:
-            resp, success = {'error': 'Unknown API service category.'}, False
+            # (data handling could be added later)
+            resp, success = {'error': 'Data purchases not yet implemented via API.'}, False
 
         if success:
-            purchase.status             = ServicePurchase.PurchaseStatus.DELIVERED
-            purchase.api_response       = resp
+            purchase.status = ServicePurchase.PurchaseStatus.DELIVERED
+            purchase.api_response = resp
             purchase.api_transaction_id = str(resp.get('transactionId', ''))
-            purchase.delivered_at       = timezone.now()
+            purchase.delivered_at = timezone.now()
             purchase.save()
             return purchase, None
         else:
-            purchase.status       = ServicePurchase.PurchaseStatus.FAILED
+            purchase.status = ServicePurchase.PurchaseStatus.FAILED
             purchase.api_response = resp
             purchase.save()
             refund_quota_atomic(user, service, subscription, deduct_amount)
             return None, resp.get('error', 'Delivery failed. Your quota has been refunded.')
 
     elif service.delivery_type == DeliveryType.MANUAL_CODE:
-        voucher, err = assign_voucher_atomic(user, service, amount)
+        # Determine which voucher to assign
+        if voucher_type and voucher_value is not None:
+            voucher, err = assign_voucher_atomic(user, service, voucher_type, voucher_value)
+        else:
+            # Fallback for old fixed‑amount only (should not happen with new template)
+            voucher, err = assign_voucher_atomic(user, service, VoucherType.FIXED_AMOUNT, amount)
+
         if voucher:
-            purchase.voucher      = voucher
-            purchase.status       = ServicePurchase.PurchaseStatus.DELIVERED
+            purchase.voucher = voucher
+            purchase.status = ServicePurchase.PurchaseStatus.DELIVERED
             purchase.delivered_at = timezone.now()
             purchase.save()
             return purchase, None

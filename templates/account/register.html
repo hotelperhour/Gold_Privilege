@@ -640,6 +640,29 @@
                             <span class="error-message" style="margin-left: 30px;">{{ customer_form.terms_accepted.errors.0 }}</span>
                         {% endif %}
                     </div>
+
+                    <!-- Referral banner — only shown when a valid referral code is in the session -->
+                    {% if request.session.referral_code %}
+                    <div style="
+                        background: linear-gradient(135deg, #fff8e1, #fff3cc);
+                        border: 1px solid #E5AD04;
+                        border-radius: 8px;
+                        padding: 12px 16px;
+                        margin-bottom: 18px;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        font-size: 13px;
+                        color: #7a6500;
+                    ">
+                        <span style="font-size: 20px;">&#127881;</span>
+                        <div>
+                            <strong>You were invited!</strong><br>
+                            Referral code <strong>{{ request.session.referral_code }}</strong> applied.
+                            You're joining through a friend's referral link.
+                        </div>
+                    </div>
+                    {% endif %}
                     
                     <button type="submit" class="submit-button">Create an Account</button>
                     

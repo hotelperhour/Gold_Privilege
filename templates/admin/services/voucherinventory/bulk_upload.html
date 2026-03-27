@@ -1,0 +1,56 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}Bulk Upload Vouchers{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>Bulk Upload Vouchers</h1>
+
+    <div class="module">
+        <div style="background: var(--message-bg, #fff8e1); border: 1px solid var(--border-color, #ffe082); border-radius: 4px; padding: 16px 20px; margin-bottom: 24px; font-size: 14px; line-height: 1.7;">
+            <strong>CSV Format:</strong> The first row must be the header row. Required columns:<br>
+            <code>code, service_id, amount, voucher_type, discount_percentage, expires_at</code><br><br>
+            <strong>Examples:</strong><br>
+            <code>HPH-ABC123, 3, 5000, FIXED, , 2026-12-31</code> — ₦5,000 fixed voucher for service ID 3<br>
+            <code>HPH-DEF456, 3, 0, PERCENT, 20.00, 2026-12-31</code> — 20% discount voucher<br>
+            <code>HPH-GHI789, 3, 5000, FIXED, , </code> — no expiry date<br><br>
+            <strong>Notes:</strong>
+            <ul style="margin: 8px 0 0 18px; padding: 0;">
+                <li>Duplicate codes are automatically skipped</li>
+                <li>Maximum 1,000 rows per upload</li>
+                <li>voucher_type must be FIXED or PERCENT</li>
+                <li>Leave discount_percentage blank for FIXED vouchers</li>
+                <li>Leave expires_at blank for no expiry</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="module">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <fieldset class="module aligned">
+                {% for field in form %}
+                <div class="form-row">
+                    <div>
+                        <label class="required" for="{{ field.id_for_label }}">{{ field.label }}:</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                        <div class="help">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                        <div class="errorlist">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </fieldset>
+
+            <div class="submit-row" style="text-align: center;">
+                <input type="submit" value="Upload Vouchers" class="default" style="display: inline-block;">
+                <a href="../" class="button" style="display: inline-block; margin-left: 10px;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

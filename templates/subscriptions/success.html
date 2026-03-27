@@ -273,6 +273,23 @@
         <p class="text-muted">Your subscription details will appear here shortly.</p>
         {% endif %}
 
+        <!-- Digital Services -->
+        <div class="benefits-section" style="margin-top: 24px;">
+            <h4>Digital Services Included:</h4>
+            <ul class="benefits-list">
+                {% for item in service_quotas %}
+                    <li>
+                        {{ item.service.name }}
+                        <span style="color: var(--gold-primary); font-weight: 600;">
+                            {{ item.display_limit }} per month
+                        </span>
+                    </li>
+                {% empty %}
+                    <li>No digital services available with this plan.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
         <!-- Action Buttons -->
         <div class="action-buttons">
             <a href="{% url 'subscriptions:my_subscription' %}" class="btn-custom btn-primary-custom">

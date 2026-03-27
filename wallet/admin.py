@@ -61,7 +61,7 @@ class WalletAdmin(admin.ModelAdmin):
     readonly_fields = (
         'user', 'balance', 'pin_set', 'pin_failed_attempts',
         'pin_locked_until', 'daily_transfer_total', 'daily_transfer_date',
-        'created_at', 'updated_at',
+        'created_at', 'updated_at','wallet_pin'
     )
     inlines = [WalletTransactionInline]
 
@@ -70,7 +70,7 @@ class WalletAdmin(admin.ModelAdmin):
             'fields': ('user', 'balance'),
         }),
         ('PIN Status', {
-            'fields': ('pin_set', 'pin_failed_attempts', 'pin_locked_until'),
+            'fields': ('pin_set', 'pin_failed_attempts', 'pin_locked_until', 'wallet_pin'),
         }),
         ('Daily Transfer', {
             'fields': ('daily_transfer_total', 'daily_transfer_date'),

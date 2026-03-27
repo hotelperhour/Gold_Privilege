@@ -3,136 +3,365 @@
 {% load services_tags %}
 {% block title %}{{ service.name }} – Gold Privilege{% endblock %}
 
-{% block subscriber_content %}
+{% block extra_css %}
 <style>
 * { font-family: 'Poppins', sans-serif; box-sizing: border-box; }
 :root {
-    --gold: #E5AD04; --gold-light: #F9B036;
-    --black: #000; --grey: #f5f5f5; --text-muted: #6b7280; --radius: 16px;
+    --gold: #E5AD04;
+    --gold-light: #F9B036;
+    --gold-pale: #FFF8E1;
+    --gold-pale-border: #FFE082;
+    --black: #111;
+    --grey-bg: #F7F8FA;
+    --border: #E5E7EB;
+    --text-muted: #6B7280;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    --mtn-color: #FFCB00;
+    --glo-color: #47A23F;
+    --airtel-color: #E40000;
+    --mobile-color: #007B5E;
 }
 
+/* ── Back link ── */
 .back-link {
     display: inline-flex; align-items: center; gap: 8px;
     color: var(--text-muted); font-size: 14px; font-weight: 500;
     text-decoration: none; margin-bottom: 28px;
+    transition: color 0.2s;
 }
 .back-link:hover { color: var(--black); }
 
+/* ── Page layout ── */
 .page-layout {
     display: grid;
-    grid-template-columns: 1fr 360px;
-    gap: 32px;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
     align-items: start;
 }
 
-/* Form card */
+/* ── Form card ── */
 .form-card {
-    background: #fff; border-radius: var(--radius);
-    padding: 36px 32px; box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
 }
-.form-card h2 { font-size: 22px; font-weight: 700; color: var(--black); margin: 0 0 6px; }
-.form-card .service-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; }
+.form-card h2 { font-size: 21px; font-weight: 700; color: var(--black); margin: 0 0 6px; }
+.form-card .service-sub { font-size: 14px; color: var(--text-muted); margin-bottom: 28px; line-height: 1.6; }
 
-.form-group { margin-bottom: 20px; }
-.form-label { display: block; font-size: 14px; font-weight: 600; color: var(--black); margin-bottom: 8px; }
+.form-group { margin-bottom: 22px; }
+.form-label { display: block; font-size: 13px; font-weight: 600; color: var(--black); margin-bottom: 10px; letter-spacing: 0.2px; }
+
 .form-control {
-    width: 100%; padding: 12px 16px; border: 1.5px solid #e5e7eb;
-    border-radius: 10px; font-size: 15px; font-family: 'Poppins', sans-serif;
-    outline: none; transition: border-color 0.2s;
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-family: 'Poppins', sans-serif;
+    color: var(--black);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #fff;
 }
-.form-control:focus { border-color: var(--gold); }
+.form-control::placeholder { color: #b0b8c4; }
+.form-control:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(229,173,4,0.12);
+}
 
-/* Network selector */
-.network-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+/* ── Network selector — circular images ── */
+.network-grid {
+    display: flex;
+    gap: 14px;
+    flex-wrap: nowrap;
+}
 .network-option { display: none; }
-.network-label {
-    border: 2px solid #e5e7eb; border-radius: 10px; padding: 12px 8px;
-    text-align: center; cursor: pointer; font-size: 13px; font-weight: 600;
-    color: var(--text-muted); transition: all 0.2s; display: block;
-}
-.network-option:checked + .network-label { border-color: var(--gold); background: #fff8e1; color: var(--black); }
-.network-label:hover { border-color: var(--gold-light); }
 
-/* Amount chips */
-.amount-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.network-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex: 1;
+    min-width: 64px;
+}
+
+.network-img-wrap {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2.5px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f9f9f9;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.network-img-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+/* Fallback text badge if image missing */
+.network-img-wrap .net-fallback {
+    font-size: 11px;
+    font-weight: 700;
+    color: #555;
+}
+
+.network-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+    transition: color 0.2s;
+}
+
+/* Active states — border + text matches brand color */
+.network-option[value="mtn"]:checked ~ * .network-img-wrap,
+.net-mtn-checked .network-img-wrap {
+    border-color: var(--mtn-color);
+    box-shadow: 0 0 0 3px rgba(255,203,0,0.2);
+}
+.network-option[value="glo"]:checked ~ * .network-img-wrap {
+    border-color: var(--glo-color);
+    box-shadow: 0 0 0 3px rgba(71,162,63,0.2);
+}
+.network-option[value="airtel"]:checked ~ * .network-img-wrap {
+    border-color: var(--airtel-color);
+    box-shadow: 0 0 0 3px rgba(228,0,0,0.2);
+}
+.network-option[value="etisalat"]:checked ~ * .network-img-wrap {
+    border-color: var(--mobile-color);
+    box-shadow: 0 0 0 3px rgba(0,123,94,0.2);
+}
+
+/* JavaScript-driven active class approach (more reliable) */
+.network-label.active-mtn     .network-img-wrap { border-color: var(--mtn-color); box-shadow: 0 0 0 3px rgba(255,203,0,0.2); }
+.network-label.active-mtn     .network-name     { color: var(--mtn-color); }
+.network-label.active-glo     .network-img-wrap { border-color: var(--glo-color); box-shadow: 0 0 0 3px rgba(71,162,63,0.2); }
+.network-label.active-glo     .network-name     { color: var(--glo-color); }
+.network-label.active-airtel  .network-img-wrap { border-color: var(--airtel-color); box-shadow: 0 0 0 3px rgba(228,0,0,0.2); }
+.network-label.active-airtel  .network-name     { color: var(--airtel-color); }
+.network-label.active-etisalat .network-img-wrap { border-color: var(--mobile-color); box-shadow: 0 0 0 3px rgba(0,123,94,0.2); }
+.network-label.active-etisalat .network-name    { color: var(--mobile-color); }
+
+/* ── Amount hint bar — alert style ── */
+.amount-hint {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+.hint-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #FFF9E6;
+    border: 1px solid var(--gold-pale-border);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #111;
+}
+.hint-pill .hint-key { color: #7a6500; font-weight: 600; margin-right: 2px; }
+.hint-pill .hint-val { color: #111; font-weight: 700; }
+
+/* ── Amount chips (vouchers) ── */
+.amount-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .amount-chip-input { display: none; }
 .amount-chip {
-    border: 2px solid #e5e7eb; border-radius: 8px; padding: 10px 18px;
-    font-size: 14px; font-weight: 600; cursor: pointer; color: var(--text-muted);
-    transition: all 0.2s; display: block; text-align: center;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+    background: #fff;
 }
-.amount-chip-input:checked + .amount-chip { border-color: var(--gold); background: #fff8e1; color: var(--black); }
-.amount-chip.out-of-stock { opacity: 0.4; cursor: not-allowed; text-decoration: line-through; }
-
-/* Amount hint bar */
-.amount-hint {
-    display: flex; justify-content: space-between; align-items: center;
-    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
-    padding: 10px 14px; margin-top: 8px; font-size: 12px; color: var(--text-muted);
+.amount-chip .chip-price { font-size: 15px; font-weight: 700; color: var(--black); }
+.amount-chip .chip-status {
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #e8f5e9;
+    color: #2e7d32;
 }
-.amount-hint strong { color: var(--black); }
+.amount-chip.out-of-stock .chip-status {
+    background: #ffebee;
+    color: #c62828;
+    text-decoration: none;
+}
+.amount-chip.out-of-stock { opacity: 0.6; cursor: not-allowed; }
+.amount-chip-input:checked + .amount-chip {
+    border-color: var(--gold);
+    background: var(--gold-pale);
+    color: var(--black);
+}
+.amount-chip-input:checked + .amount-chip .chip-price { color: #7a6500; }
 
-/* Submit button */
+/* ── Submit button ── */
 .btn-submit {
-    width: 100%; padding: 16px; background: var(--gold); color: #000;
-    font-size: 16px; font-weight: 700; border: none; border-radius: 12px;
-    cursor: pointer; transition: all 0.2s; margin-top: 8px;
+    width: 100%; padding: 15px;
+    background: var(--gold); color: #000;
+    font-size: 15px; font-weight: 700;
+    border: none; border-radius: 10px;
+    cursor: pointer; transition: all 0.2s; margin-top: 4px;
+    font-family: 'Poppins', sans-serif;
 }
-.btn-submit:hover { background: var(--gold-light); transform: translateY(-2px); }
-.btn-submit:disabled { background: #e5e7eb; color: var(--text-muted); cursor: not-allowed; transform: none; }
+.btn-submit:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(229,173,4,0.3); }
+.btn-submit:disabled { background: #e5e7eb; color: var(--text-muted); cursor: not-allowed; transform: none; box-shadow: none; }
 
-/* Alert banners */
+/* ── Alert banners ── */
 .alert-banner {
-    border-radius: 10px; padding: 14px 18px; font-size: 14px;
+    border-radius: 10px; padding: 14px 16px; font-size: 14px;
     font-weight: 500; margin-bottom: 20px;
-    display: flex; gap: 10px; align-items: flex-start;
+    display: flex; gap: 10px; align-items: flex-start; line-height: 1.5;
 }
 .alert-warning { background: #fff3cd; border: 1px solid #ffc107; color: #856404; }
 .alert-danger  { background: #f8d7da; border: 1px solid #dc3545; color: #842029; }
 .alert-success { background: #d1e7dd; border: 1px solid #198754; color: #0f5132; }
 
-/* Quota card (right sidebar) */
+/* ════════════════════════════════════════════════════
+   QUOTA SIDEBAR — white background, black text
+════════════════════════════════════════════════════ */
 .quota-card {
-    background: var(--black); border-radius: var(--radius);
-    padding: 28px 24px; color: #fff; position: sticky; top: 24px;
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 24px 22px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: sticky;
+    top: 24px;
 }
 .quota-card h3 {
-    font-size: 13px; font-weight: 600; text-transform: uppercase;
-    letter-spacing: 0.6px; color: var(--gold); margin: 0 0 20px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--black);
+    margin: 0 0 18px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
-.quota-row {
-    display: flex; justify-content: space-between;
-    font-size: 14px; margin-bottom: 10px;
-}
-.quota-row .label { color: rgba(255,255,255,0.6); }
-.quota-row .value { font-weight: 700; color: #fff; }
-.quota-row .value.gold { color: var(--gold); }
-.quota-row .value.danger { color: #ff6b6b; }
+.quota-card h3 .q-icon { color: var(--gold); font-size: 15px; }
 
-.quota-bar { height: 8px; background: rgba(255,255,255,0.15); border-radius: 99px; overflow: hidden; margin: 16px 0; }
-.quota-bar-fill { height: 100%; border-radius: 99px; background: var(--gold); transition: width 0.4s ease; }
-.quota-bar-fill.danger { background: #dc3545; }
+.quota-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+.quota-row .label { color: #6B7280; }
+.quota-row .value { font-weight: 700; color: var(--black); }
+.quota-row .value.gold   { color: #b07b00; }
+.quota-row .value.danger { color: #dc3545; }
+
+/* Progress bar */
+.quota-bar {
+    height: 8px;
+    background: #f0f0f0;
+    border-radius: 99px;
+    overflow: hidden;
+    margin: 14px 0;
+}
+.quota-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: var(--gold);
+    transition: width 0.4s ease;
+}
+.quota-bar-fill.danger  { background: #dc3545; }
 .quota-bar-fill.warning { background: #ffc107; }
 
-.quota-divider { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 16px 0; }
+/* Gold alert note at bottom of quota card */
+.quota-note-box {
+    background: var(--gold-pale);
+    border: 1px solid var(--gold-pale-border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: 12px;
+    color: #5a4500;
+    line-height: 1.6;
+    margin-top: 16px;
+}
+.quota-note-box i { color: var(--gold); margin-right: 5px; }
 
-.quota-note { font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.6; }
-
-.limit-pill {
-    display: inline-block; background: rgba(229,173,4,0.15); color: var(--gold);
-    border: 1px solid rgba(229,173,4,0.3); border-radius: 6px;
-    padding: 4px 10px; font-size: 12px; font-weight: 600; margin-top: 4px;
+/* Per-top-up limits — small side-by-side cards */
+.limits-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    margin-bottom: 4px;
+}
+.limit-card {
+    flex: 1;
+    background: var(--gold-pale);
+    border: 1px solid var(--gold-pale-border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    text-align: center;
+}
+.limit-card .lc-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #7a6500;
+    margin-bottom: 4px;
+}
+.limit-card .lc-value {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--black);
 }
 
+.quota-divider { border: none; border-top: 1px solid #f0f0f0; margin: 14px 0; }
+
+/* Unavailable overlay */
+.out-of-stock .chip-price { text-decoration: line-through; }
+
+/* ── Responsive ── */
 @media (max-width: 960px) {
     .page-layout { grid-template-columns: 1fr; }
-    .quota-card { position: static; }
-    .network-grid { grid-template-columns: repeat(2, 1fr); }
+    .quota-card  { position: static; }
 }
-@media (max-width: 480px) {
-    .form-card { padding: 24px 20px; }
+@media (max-width: 600px) {
+    .network-grid { gap: 10px; }
+    .network-img-wrap { width: 52px; height: 52px; }
+    .network-name { font-size: 10px; }
+    .amount-chips { grid-template-columns: repeat(2, 1fr); }
+    .form-card { padding: 20px 16px; }
+}
+@media (max-width: 380px) {
+    .network-img-wrap { width: 46px; height: 46px; }
 }
 </style>
+{% endblock %}
+
+{% block subscriber_content %}
 
 <a href="{% url 'services:home' %}" class="back-link">
     <i class="fas fa-arrow-left"></i> Back to Services
@@ -140,7 +369,7 @@
 
 <div class="page-layout">
 
-    <!-- LEFT: request form -->
+    <!-- ── LEFT: Request form ── -->
     <div class="form-card">
         <h2>{{ service.name }}</h2>
         <p class="service-sub">
@@ -174,19 +403,27 @@
         <form method="post">
             {% csrf_token %}
 
-            <!-- Network selector (airtime/data) -->
+            <!-- ── Network selector with circular images ── -->
             {% if is_airtime or is_data %}
             <div class="form-group">
                 <label class="form-label">Select Network</label>
-                <div class="network-grid">
+                <div class="network-grid" id="networkGrid">
+
                     {% for value, label in networks %}
-                    <div>
+                    <label class="network-label" id="label_{{ value }}" for="net_{{ value }}">
                         <input type="radio" name="network" value="{{ value }}"
                                id="net_{{ value }}" class="network-option"
                                required {% if not allowed %}disabled{% endif %}>
-                        <label for="net_{{ value }}" class="network-label">{{ label }}</label>
-                    </div>
+                        <div class="network-img-wrap" id="wrap_{{ value }}">
+                            <img src="{% static 'images/networks/'|add:value|add:'.webp' %}"
+                                 alt="{{ label }}"
+                                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                            <span class="net-fallback" style="display:none;">{{ label|slice:":3"|upper }}</span>
+                        </div>
+                        <span class="network-name">{{ label }}</span>
+                    </label>
                     {% endfor %}
+
                 </div>
             </div>
 
@@ -202,93 +439,163 @@
             </div>
             {% endif %}
 
-            <!-- Amount -->
-            <div class="form-group">
-                <label class="form-label">
-                    {% if is_data %}Amount (GB){% else %}Amount (₦){% endif %}
-                </label>
-
-                {% if is_voucher and voucher_amounts %}
-                    <!-- Fixed denomination chips for vouchers -->
-                    <div class="amount-chips">
-                        {% for amt in voucher_amounts %}
-                        {% with in_stock=voucher_stock|get_item:amt %}
-                        <div>
-                            <input type="radio"
-                                   name="amount"
-                                   value="{{ amt }}"
-                                   id="amt_{{ amt }}"
-                                   class="amount-chip-input"
-                                   required
-                                   {% if not in_stock or not allowed %}disabled{% endif %}>
-                            <label for="amt_{{ amt }}"
-                                   class="amount-chip {% if not in_stock %}out-of-stock{% endif %}">
-                                ₦{{ amt|floatformat:0 }}
-                                {% if not in_stock %}<br><small>Out of stock</small>{% endif %}
-                            </label>
+            <!-- ── Amount / Voucher section ── -->
+<div class="form-group">
+ 
+    {% if is_voucher %}
+        <!-- ── VOUCHER: single plan-configured option ── -->
+        <label class="form-label">Your Plan Voucher</label>
+ 
+        {% if voucher_option %}
+            {% if voucher_option.in_stock %}
+                <!-- Voucher available — show confirm card, no amount input needed -->
+                <div style="
+                    border: 2px solid var(--gold);
+                    background: var(--gold-pale);
+                    border-radius: 12px;
+                    padding: 20px 18px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 16px;
+                    flex-wrap: wrap;
+                ">
+                    <div>
+                        <div style="font-size: 22px; font-weight: 800; color: #7a6500;">
+                            {{ voucher_option.label }}
                         </div>
-                        {% endwith %}
-                        {% endfor %}
+                        <div style="font-size: 12px; color: #9a7a00; margin-top: 4px;">
+                            {% if voucher_option.type == 'PERCENT' %}
+                                Percentage discount off your booking
+                            {% else %}
+                                Fixed credit applied at checkout
+                            {% endif %}
+                        </div>
+                        <div style="margin-top: 8px;">
+                            <span style="
+                                background: #e8f5e9; color: #2e7d32;
+                                font-size: 11px; font-weight: 600;
+                                padding: 3px 10px; border-radius: 4px;
+                            ">✓ Available</span>
+                        </div>
                     </div>
-
-                {% else %}
-                    <!-- Free-entry for airtime/data -->
-                    <input type="number"
-                            name="amount"
-                            id="amount"
-                            class="form-control"
-                            placeholder="{% if is_data %}e.g. 1.0{% else %}e.g. 500{% endif %}"
-                           step="{% if is_data %}0.5{% else %}50{% endif %}"
-                           {% if min_amount %}min="{{ min_amount }}"{% else %}{% if is_data %}min="0.5"{% else %}min="100"{% endif %}{% endif %}
-                           {% if max_amount %}max="{{ max_amount }}"{% endif %}
-                           required
-                           {% if not allowed %}disabled{% endif %}>
-
-                    <!-- Amount hint row -->
-                    <div class="amount-hint">
-    <span>
-        Min: <strong>
-            {% if is_data %}{{ min_amount|default:"0.5"|floatformat:1 }} GB
-            {% else %}₦{{ min_amount|default:100|floatformat:0 }}{% endif %}
-        </strong>
-    </span>
-    {% if max_amount %}
-    <span>
-        Max: <strong>
-            {% if is_data %}{{ max_amount|floatformat:1 }} GB
-            {% else %}₦{{ max_amount|floatformat:0 }}{% endif %}
-        </strong>
-    </span>
-    {% endif %}
-    {% if remaining and not plan_quota.is_unlimited %}
-    <span>
-        Left this month: <strong style="color:#E5AD04;">
-            {% if is_data %}{{ remaining|floatformat:2 }} GB
-            {% else %}₦{{ remaining|floatformat:0 }}{% endif %}
-        </strong>
-    </span>
-    {% endif %}
-</div>
-                {% endif %}
+                    <div style="font-size: 13px; color: #7a6500; max-width: 200px; line-height: 1.5;">
+                        {% if service.category == 'HOTEL_VOUCHER' %}
+                            Redeem at <strong>hotelsperhour.com</strong>
+                        {% endif %}
+                    </div>
+                </div>
+ 
+                <!-- Hidden input so form still submits (POST handler ignores this, derives from plan) -->
+                <input type="hidden" name="voucher_confirm" value="1">
+ 
+            {% else %}
+                <!-- Voucher out of stock -->
+                <div style="
+                    border: 2px solid #e5e7eb;
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    padding: 20px 18px;
+                    text-align: center;
+                ">
+                    <div style="font-size: 20px; font-weight: 800; color: #aaa; text-decoration: line-through;">
+                        {{ voucher_option.label }}
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <span style="
+                            background: #ffebee; color: #c62828;
+                            font-size: 12px; font-weight: 600;
+                            padding: 4px 12px; border-radius: 4px;
+                        ">Out of stock — check back soon</span>
+                    </div>
+                    <div style="font-size: 13px; color: #9a9a9a; margin-top: 12px;">
+                        New vouchers are replenished regularly. Your monthly allowance is preserved.
+                    </div>
+                </div>
+            {% endif %}
+ 
+        {% else %}
+            <!-- Plan doesn't have a voucher type configured yet -->
+            <div class="alert-banner alert-warning">
+                <i class="fas fa-exclamation-circle" style="margin-top:2px;"></i>
+                <div>
+                    Your plan does not have a voucher type configured for this service yet.
+                    Please contact support.
+                </div>
             </div>
+        {% endif %}
+ 
+    {% else %}
+        <!-- ── AIRTIME: free-entry amount ── -->
+        <label class="form-label">
+            {% if is_data %}Amount (GB){% else %}Amount (₦){% endif %}
+        </label>
+ 
+        <input type="number"
+               name="amount"
+               id="amount"
+               class="form-control"
+               placeholder="{% if is_data %}e.g. 1.0{% else %}e.g. 500{% endif %}"
+               step="{% if is_data %}0.5{% else %}50{% endif %}"
+               {% if min_amount %}min="{{ min_amount }}"{% else %}{% if is_data %}min="0.5"{% else %}min="100"{% endif %}{% endif %}
+               {% if max_amount %}max="{{ max_amount }}"{% endif %}
+               required
+               {% if not allowed %}disabled{% endif %}>
+ 
+        <!-- Amount hint pills -->
+        <div class="amount-hint">
+            {% if min_amount %}
+            <span class="hint-pill">
+                <span class="hint-key">Min:</span>
+                <span class="hint-val">
+                    {% if is_data %}{{ min_amount|default:"0.5"|floatformat:1 }} GB
+                    {% else %}₦{{ min_amount|default:100|floatformat:0 }}{% endif %}
+                </span>
+            </span>
+            {% endif %}
+            {% if max_amount %}
+            <span class="hint-pill">
+                <span class="hint-key">Max:</span>
+                <span class="hint-val">
+                    {% if is_data %}{{ max_amount|floatformat:1 }} GB
+                    {% else %}₦{{ max_amount|floatformat:0 }}{% endif %}
+                </span>
+            </span>
+            {% endif %}
+            {% if remaining and not plan_quota.is_unlimited %}
+            <span class="hint-pill">
+                <span class="hint-key">Left this month:</span>
+                <span class="hint-val">
+                    {% if is_data %}{{ remaining|floatformat:2 }} GB
+                    {% else %}₦{{ remaining|floatformat:0 }}{% endif %}
+                </span>
+            </span>
+            {% endif %}
+        </div>
+    {% endif %}
+ 
+</div>
+<!-- ── end Amount section ── -->
 
-            <button type="submit" class="btn-submit"
-                    {% if not allowed %}disabled{% endif %}>
-                {% if is_voucher %}Get Voucher Code
-                {% elif is_airtime %}Buy Airtime Now
-                {% elif is_data %}Buy Data Now
-                {% else %}Request Service{% endif %}
-            </button>
+           <button type="submit" class="btn-submit"
+        {% if not allowed %}disabled
+        {% elif is_voucher and voucher_option and not voucher_option.in_stock %}disabled
+        {% elif is_voucher and not voucher_option %}disabled
+        {% endif %}>
+    {% if is_voucher %}Get Voucher Code
+    {% elif is_airtime %}Buy Airtime Now
+    {% elif is_data %}Buy Data Now
+    {% else %}Request Service{% endif %}
+</button>
         </form>
     </div>
 
-    <!-- RIGHT: quota sidebar -->
+    <!-- ── RIGHT: Quota sidebar — white background ── -->
     <div class="quota-card">
-        <h3>📊 Your Monthly Quota</h3>
+        <h3><span class="q-icon">📊</span> Monthly Quota</h3>
 
         {% if allowed %}
             {% if is_voucher %}
-                <!-- Voucher: count-based display -->
                 {% if plan_quota and not plan_quota.is_unlimited %}
                 <div class="quota-row">
                     <span class="label">Vouchers remaining</span>
@@ -302,35 +609,27 @@
                 {% endif %}
 
             {% else %}
-                <!-- Airtime/data: value-based display -->
                 {% if plan_quota and not plan_quota.is_unlimited %}
                 <div class="quota-row">
-    <span class="label">Monthly allowance</span>
-    <span class="value">
-        {% if is_data %}{{ plan_quota.monthly_data_gb|floatformat:1 }} GB
-        {% else %}₦{{ plan_quota.monthly_allowance|floatformat:0 }}{% endif %}
-    </span>
-</div>
-<div class="quota-row">
-    <span class="label">Balance remaining</span>
-    <span class="value gold">
-        {% if is_data %}{{ remaining|floatformat:2 }} GB
-        {% else %}₦{{ remaining|floatformat:0 }}{% endif %}
-    </span>
-</div>
+                    <span class="label">Monthly allowance</span>
+                    <span class="value">
+                        {% if is_data %}{{ plan_quota.monthly_data_gb|floatformat:1 }} GB
+                        {% else %}₦{{ plan_quota.monthly_allowance|floatformat:0 }}{% endif %}
+                    </span>
+                </div>
+                <div class="quota-row">
+                    <span class="label">Balance remaining</span>
+                    <span class="value gold">
+                        {% if is_data %}{{ remaining|floatformat:2 }} GB
+                        {% else %}₦{{ remaining|floatformat:0 }}{% endif %}
+                    </span>
+                </div>
 
                 <!-- Progress bar -->
                 {% if plan_quota.monthly_allowance %}
-                {% with pct=remaining|floatformat:0 %}
                 <div class="quota-bar">
-                    <div class="quota-bar-fill
-                        {% if remaining < plan_quota.monthly_allowance|divisibleby:4 %}danger
-                        {% elif remaining < plan_quota.monthly_allowance|divisibleby:2 %}warning{% endif %}"
-                        style="width: {{ remaining|floatformat:0 }}px;"
-                        id="quota-bar-fill">
-                    </div>
+                    <div class="quota-bar-fill" id="quota-bar-fill"></div>
                 </div>
-                {% endwith %}
                 {% endif %}
 
                 {% else %}
@@ -340,66 +639,97 @@
                 </div>
                 {% endif %}
 
-                <!-- Per-transaction limits -->
+                <!-- Per-transaction limits as side-by-side cards -->
                 {% if min_amount or max_amount %}
                 <hr class="quota-divider">
-                <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px;">Per top-up limits</div>
-                {% if min_amount %}
-                <div class="quota-row">
-                    <span class="label">Minimum per top-up</span>
-                    <span class="value">
-                        {% if is_data %}{{ min_amount|floatformat:1 }} GB
-                        {% else %}₦{{ min_amount|floatformat:0 }}{% endif %}
-                    </span>
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9a9a9a;margin-bottom:8px;">Per top-up limits</div>
+                <div class="limits-row">
+                    {% if min_amount %}
+                    <div class="limit-card">
+                        <div class="lc-label">Minimum</div>
+                        <div class="lc-value">
+                            {% if is_data %}{{ min_amount|floatformat:1 }} GB
+                            {% else %}₦{{ min_amount|floatformat:0 }}{% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if max_amount %}
+                    <div class="limit-card">
+                        <div class="lc-label">Maximum</div>
+                        <div class="lc-value">
+                            {% if is_data %}{{ max_amount|floatformat:1 }} GB
+                            {% else %}₦{{ max_amount|floatformat:0 }}{% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
-                {% if max_amount %}
-                <div class="quota-row">
-                    <span class="label">Maximum per top-up</span>
-                    <span class="value">
-                        {% if is_data %}{{ max_amount|floatformat:1 }} GB
-                        {% else %}₦{{ max_amount|floatformat:0 }}{% endif %}
-                    </span>
-                </div>
-                {% endif %}
                 {% endif %}
             {% endif %}
 
         {% else %}
-            <div style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.6;">
+            <div style="font-size:14px;color:#555;line-height:1.6;">
                 {{ quota_msg }}
             </div>
         {% endif %}
 
-        <hr class="quota-divider">
-        <p class="quota-note">
-            <i class="fas fa-info-circle" style="color:var(--gold);margin-right:6px;"></i>
-            Quota resets on the 1st of every month.
+        <!-- Gold alert note -->
+        <div class="quota-note-box">
+            <i class="fas fa-info-circle"></i>
+            Quota resets on the <strong>1st of every month</strong>.
             {% if is_airtime or is_data %}
             Top up any amount within your limits — as often as you like until your monthly balance runs out.
             {% else %}
             Voucher codes are revealed immediately after your request is approved.
             {% endif %}
-        </p>
+        </div>
     </div>
 
 </div>
 
-<!-- JS: set quota bar width correctly using percentage -->
+{% endblock %}
+
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
+    /* ── Quota bar ── */
     const fill = document.getElementById('quota-bar-fill');
     {% if plan_quota and not plan_quota.is_unlimited and remaining and not is_voucher %}
     if (fill) {
-        const allowance  = {{ plan_quota.monthly_allowance|default:0 }};
-        const remaining  = {{ remaining|default:0 }};
+        const allowance = {{ plan_quota.monthly_allowance|default:plan_quota.monthly_data_gb|default:0 }};
+        const remaining = {{ remaining|default:0 }};
         const pct = allowance > 0 ? Math.min(100, (remaining / allowance) * 100) : 0;
         fill.style.width = pct + '%';
         if (pct < 25) fill.classList.add('danger');
         else if (pct < 50) fill.classList.add('warning');
     }
     {% endif %}
+
+    /* ── Network selector: apply active class for colored border + text ── */
+    const networkColors = {
+        'mtn':      'active-mtn',
+        'glo':      'active-glo',
+        'airtel':   'active-airtel',
+        'etisalat': 'active-etisalat',
+    };
+
+    const radios = document.querySelectorAll('.network-option');
+    radios.forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            // Remove all active classes
+            document.querySelectorAll('.network-label').forEach(function(lbl) {
+                Object.values(networkColors).forEach(function(cls) {
+                    lbl.classList.remove(cls);
+                });
+            });
+            // Add the correct active class to the selected label
+            const label = document.querySelector('label[for="' + this.id + '"]');
+            if (label && networkColors[this.value]) {
+                label.classList.add(networkColors[this.value]);
+            }
+        });
+    });
+
 });
 </script>
-
 {% endblock %}

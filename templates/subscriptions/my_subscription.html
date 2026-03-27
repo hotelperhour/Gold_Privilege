@@ -488,6 +488,8 @@
             padding: 8px 6px;
         }
     }
+
+    
 </style>
 
 {% if subscription %}
@@ -541,6 +543,40 @@
                 </div>
             </div>
         </div>
+
+        <!-- Digital Services -->
+<div class="benefits-section">
+    <h3 class="benefits-heading">Digital Services:</h3>
+    <div class="benefits-grid">
+        {% for item in service_quotas %}
+            <div class="benefit-item">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    {% with service=item.service %}
+                        {% if service.category == 'AIRTIME' %}
+                            <i class="fas fa-mobile-alt"></i>
+                        {% elif service.category == 'DATA' %}
+                            <i class="fas fa-wifi"></i>
+                        {% elif service.category == 'RIDE_VOUCHER' %}
+                            <i class="fas fa-car"></i>
+                        {% elif service.category == 'HOTEL_VOUCHER' %}
+                            <i class="fas fa-bed"></i>
+                        {% elif service.category == 'FUEL_VOUCHER' %}
+                            <i class="fas fa-gas-pump"></i>
+                        {% else %}
+                            <i class="fas fa-concierge-bell"></i>
+                        {% endif %}
+                        <strong>{{ service.name }}</strong>
+                    {% endwith %}
+                </div>
+                <div style="font-size: 13px; color: #6B7280; margin-top: 2px;">
+                    {{ item.display_limit }} per month
+                </div>
+            </div>
+        {% empty %}
+            <div class="benefit-item">No digital services available with your plan.</div>
+        {% endfor %}
+    </div>
+</div>
         
         <div class="renewal-info">
             <i class="fas fa-sync-alt"></i>

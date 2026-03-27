@@ -610,6 +610,57 @@
                             {% endif %}
                         </ul>
 
+                                                <!-- Digital services block -->
+                        {% if plan.service_quotas.all %}
+                        <div style="margin-top: 28px; border-top: 1px solid rgba(255,255,255,0.25); padding-top: 20px;">
+                            <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: rgba(255,255,255,0.9); margin-bottom: 14px;">
+                                Digital Services
+                            </div>
+                            <ul style="list-style: none; padding: 0; margin: 0;">
+                                {% for quota in plan.service_quotas.all %}
+                                <li style="margin-bottom: 14px; display: flex; align-items: flex-start; gap: 10px;">
+                                    <!-- Icon (conditional) -->
+                                    <span style="font-size: 14px; width: 24px; flex-shrink: 0; color: rgba(255,255,255,0.9);">
+                                        {% if quota.service.category == 'AIRTIME' %}
+                                            <i class="fas fa-mobile-alt"></i>
+                                        {% elif quota.service.category == 'DATA' %}
+                                            <i class="fas fa-wifi"></i>
+                                        {% elif quota.service.category == 'RIDE_VOUCHER' %}
+                                            <i class="fas fa-car"></i>
+                                        {% elif quota.service.category == 'HOTEL_VOUCHER' %}
+                                            <i class="fas fa-bed"></i>
+                                        {% elif quota.service.category == 'FUEL_VOUCHER' %}
+                                            <i class="fas fa-gas-pump"></i>
+                                        {% else %}
+                                            <i class="fas fa-concierge-bell"></i>
+                                        {% endif %}
+                                    </span>
+
+                                    <!-- Service name and limit -->
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 14px; font-weight: 500; color: white;">
+                                            {{ quota.service.name }}
+                                        </div>
+                                        <div style="font-size: 12px; color: rgba(255,255,255,0.7);">
+                                            {% if quota.is_unlimited %}
+                                                Unlimited per month
+                                            {% else %}
+                                                {% if quota.service.category == 'DATA' %}
+                                                    {{ quota.monthly_data_gb }} GB per month
+                                                {% elif quota.service.delivery_type == 'MANUAL_CODE' %}
+                                                    {{ quota.monthly_voucher_count }} voucher(s) per month
+                                                {% else %}
+                                                    ₦{{ quota.monthly_allowance|floatformat:0 }} per month
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
                         <!-- ═══════════════════════════════════════════════════════════ -->
                         <!-- PERFECT BUTTON LOGIC FOR ALL SCENARIOS -->
                         <!-- ═══════════════════════════════════════════════════════════ -->
