@@ -39,6 +39,8 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = ['https://subsimian-bailee-figurally.ngrok-free.dev']
 # Application definition
 
+SITE_URL = "https://goldprivilege.net"
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -52,6 +54,8 @@ INSTALLED_APPS = [
     'bookings.apps.BookingsConfig',
     'services.apps.ServicesConfig',
     'wallet.apps.WalletConfig',
+    'discount_store.apps.DiscountStoreConfig',
+    'superadmin.apps.SuperadminConfig',
     'django.contrib.humanize',
     
 ]
@@ -83,6 +87,8 @@ TEMPLATES = [
                 'venues.context_processors.mapbox_settings',
                 'subscriptions.context_processors.active_subscription',
                 'wallet.context_processors.wallet_context',
+                'venues.context_processors.partner_payout_context',
+
             ],
         },
     },

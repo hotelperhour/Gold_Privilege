@@ -1,0 +1,196 @@
+{% extends 'superadmin/base_admin.html' %}
+{% load humanize %}
+
+{% block title %}Superadmin Dashboard - Gold Privilege{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Payout-first operational overview for Gold Privilege{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <div>
+        <h1>Superadmin Overview</h1>
+        <p>Monitor payout readiness, subscriber growth, venue supply, and payout settings in one place.</p>
+    </div>
+    <div class="action-row">
+        <form method="post" action="{% url 'superadmin:run_auto_create' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-gold"><i class="fas fa-bolt"></i>Run Auto-Create</button>
+        </form>
+        <a href="{% url 'superadmin:history' %}" class="btn-darkline"><i class="fas fa-clock-rotate-left"></i>View Payout History</a>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-top"><div><div class="stat-title">Subscribers</div><p class="stat-value">{{ dashboard_stats.subscriber_count|intcomma }}</p><div class="stat-note">Total registered members</div></div><div class="stat-icon"><i class="fas fa-users"></i></div></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-top"><div><div class="stat-title">Active Subscriptions</div><p class="stat-value">{{ dashboard_stats.active_subscriptions|intcomma }}</p><div class="stat-note">Currently billable access</div></div><div class="stat-icon"><i class="fas fa-id-card"></i></div></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-top"><div><div class="stat-title">Partners</div><p class="stat-value">{{ dashboard_stats.partner_count|intcomma }}</p><div class="stat-note">All partner profiles</div></div><div class="stat-icon"><i class="fas fa-handshake"></i></div></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-top"><div><div class="stat-title">Approved Venues</div><p class="stat-value">{{ dashboard_stats.approved_venues|intcomma }}</p><div class="stat-note">Live venue inventory</div></div><div class="stat-icon"><i class="fas fa-store"></i></div></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-top"><div><div class="stat-title">Open Payout Batches</div><p class="stat-value">{{ dashboard_stats.pending_batches|intcomma }}</p><div class="stat-note">Pending, approved, or failed</div></div><div class="stat-icon"><i class="fas fa-wallet"></i></div></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-top"><div><div class="stat-title">Pending Net</div><p class="stat-value">₦{{ dashboard_stats.pending_total_net|floatformat:2|intcomma }}</p><div class="stat-note">Net amount awaiting action</div></div><div class="stat-icon"><i class="fas fa-hourglass-half"></i></div></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-top"><div><div class="stat-title">Eligible Venues</div><p class="stat-value">{{ dashboard_stats.eligible_venues|intcomma }}</p><div class="stat-note">Ready to batch now</div></div><div class="stat-icon"><i class="fas fa-circle-check"></i></div></div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-top"><div><div class="stat-title">Lifetime Commission</div><p class="stat-value">₦{{ dashboard_stats.lifetime_commission|floatformat:2|intcomma }}</p><div class="stat-note">Platform earnings from venue payouts</div></div><div class="stat-icon"><i class="fas fa-coins"></i></div></div>
+    </div>
+</div>
+
+<div class="content-grid">
+    <div class="panel-card">
+        <div class="panel-header">
+            <div>
+                <h5>Current Payout Settings</h5>
+                <p class="panel-subtext">Visible here for operational clarity. Manage edits in Django Admin when needed.</p>
+            </div>
+            <a href="/admin/superadmin/payoutconfig/" class="btn-darkline">Open Admin</a>
+        </div>
+        <div class="panel-body">
+            <div class="row g-3">
+                <div class="col-md-6"><strong>Store Commission</strong><div class="text-muted">{{ config.store_commission_rate }}% {% if config.apply_commission_to_store %}(enabled){% else %}(disabled){% endif %}</div></div>
+                <div class="col-md-6"><strong>Subscription Commission</strong><div class="text-muted">{{ config.subscription_commission_rate }}% {% if config.apply_commission_to_subscription %}(enabled){% else %}(disabled){% endif %}</div></div>
+                <div class="col-md-6"><strong>Payout Delay</strong><div class="text-muted">{{ config.payout_delay_hours }} hours</div></div>
+                <div class="col-md-6"><strong>Minimum Payout</strong><div class="text-muted">₦{{ config.minimum_payout_amount|floatformat:2|intcomma }}</div></div>
+                <div class="col-md-6"><strong>Lifetime Sales Net</strong><div class="text-muted">₦{{ dashboard_stats.lifetime_sales_net|floatformat:2|intcomma }}</div></div>
+                <div class="col-md-6"><strong>Blocked Venues</strong><div class="text-muted">{{ dashboard_stats.blocked_venues|intcomma }}</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-card">
+        <div class="panel-header">
+            <div>
+                <h5>Recent Paid Payouts</h5>
+                <p class="panel-subtext">Most recent completed disbursements.</p>
+            </div>
+        </div>
+        <div class="panel-body p-0">
+            <div class="table-responsive">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>Venue</th><th>Reference</th><th>Net</th><th>Paid At</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for payout in recent_paid_payouts %}
+                        <tr>
+                            <td>{{ payout.venue.name }}</td>
+                            <td class="text-mono">{{ payout.reference }}</td>
+                            <td>₦{{ payout.total_net|floatformat:2|intcomma }}</td>
+                            <td>{{ payout.paid_at|date:"M j, Y g:i A" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4"><div class="empty-state"><i class="fas fa-inbox"></i><div>No completed payouts yet.</div></div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="table-panel mb-4">
+    <div class="panel-header">
+        <div>
+            <h5>Open Payout Batches</h5>
+            <p class="panel-subtext">Queues that still need review, transfer, or retry action.</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Reference</th><th>Venue</th><th>Status</th><th>Bookings</th><th>Net</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for payout in pending_payouts %}
+                <tr>
+                    <td class="text-mono">{{ payout.reference }}</td>
+                    <td>{{ payout.venue.name }}</td>
+                    <td>
+                        <span class="badge-soft {% if payout.status == 'PENDING' %}badge-gold{% elif payout.status == 'APPROVED' %}badge-info{% elif payout.status == 'FAILED' %}badge-danger{% else %}badge-muted{% endif %}">
+                            {{ payout.get_status_display }}
+                        </span>
+                    </td>
+                    <td>{{ payout.booking_count }}</td>
+                    <td>₦{{ payout.total_net|floatformat:2|intcomma }}</td>
+                    <td><a href="{% url 'superadmin:detail' payout.payout_id %}" class="btn-soft">Open</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6"><div class="empty-state"><i class="fas fa-check-circle"></i><div>No open payout batches.</div></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="content-grid">
+    <div class="panel-card">
+        <div class="panel-header"><div><h5>Ready for Payout Creation</h5><p class="panel-subtext">Eligible venues that meet current payout rules.</p></div></div>
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Venue</th><th>Eligible Sales</th><th>Eligible Net</th><th>Next Release</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for row in ready_rollups %}
+                    <tr>
+                        <td>{{ row.venue.name }}</td>
+                        <td>{{ row.eligible_records }}</td>
+                        <td>₦{{ row.eligible_net|floatformat:2|intcomma }}</td>
+                        <td>{{ row.next_release_at|date:"M j, Y g:i A" }}</td>
+                        <td>
+                            <form method="post" action="{% url 'superadmin:run_auto_create' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="venue_id" value="{{ row.venue.id }}">
+                                <button type="submit" class="btn-gold">Create</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5"><div class="empty-state"><i class="fas fa-hourglass-half"></i><div>No venues are ready right now.</div></div></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="panel-card">
+        <div class="panel-header"><div><h5>Blocked Venues</h5><p class="panel-subtext">Why a venue cannot be batched yet.</p></div></div>
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Venue</th><th>Total Sales</th><th>Eligible Net</th><th>Reason</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in blocked_rollups %}
+                    <tr>
+                        <td>{{ row.venue.name }}</td>
+                        <td>{{ row.total_records }}</td>
+                        <td>₦{{ row.eligible_net|floatformat:2|intcomma }}</td>
+                        <td>{{ row.blocker }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4"><div class="empty-state"><i class="fas fa-circle-check"></i><div>No blocked venues.</div></div></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+            
+        </div>
+    </div>
+</div>
+{% endblock %}

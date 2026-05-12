@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.generic import TemplateView
 from django.views.generic import ListView, DetailView, CreateView, UpdateView
-from django.db.models import Q, Avg, Count, Prefetch
+from django.db.models import Q, Avg, Count, Prefetch, Sum
 from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.http import require_POST
 from django.utils import timezone
@@ -11,10 +11,10 @@ from django.core.paginator import Paginator
 from django.urls import reverse_lazy, reverse
 from django.http import JsonResponse
 import json
-from account.permissions import subscriber_required, IsApprovedPartnerMixin
+from account.permissions import subscriber_required, IsApprovedPartnerMixin, approved_partner_required
 from .models import (
     Venue, VenueCategory, VenueAmenity, VenueImage, 
-    VenueReview, VenueFavorite
+    VenueReview, VenueFavorite, VenueAccessMode
 )
 from .forms import VenueForm, VenueImageFormSet, VenueReviewForm
 from django.views.decorators.csrf import csrf_exempt
@@ -37,7 +37,8 @@ class VenueListView(ListView):
     def get_queryset(self):
         """Filter and search venues"""
         queryset = Venue.objects.filter(
-            status='APPROVED'
+            status='APPROVED',
+            access_mode__in=['SUBSCRIPTION', 'BOTH'],
         ).select_related(
             'partner', 'partner__user'
         ).prefetch_related(
@@ -95,11 +96,15 @@ class VenueListView(ListView):
         # Add filter options
         context['categories'] = VenueCategory.choices
         # Calculate category counts - ADD THIS
+
+        SUBSCRIPTION_MODES = ['SUBSCRIPTION', 'BOTH']
         category_counts = {}
         for code, label in VenueCategory.choices:
             count = Venue.objects.filter(
                 status='APPROVED',
-                category=code
+                access_mode__in=SUBSCRIPTION_MODES,
+                category=code,
+               # access_mode__in=[VenueAccessMode.SUBSCRIPTION, VenueAccessMode.BOTH],
             ).count()
             if count > 0:
                 category_counts[code] = {
@@ -109,7 +114,8 @@ class VenueListView(ListView):
         context['category_counts'] = category_counts
         context['amenities'] = VenueAmenity.objects.filter(is_active=True)
         context['cities'] = Venue.objects.filter(
-            status='APPROVED'
+            status='APPROVED',
+            access_mode__in=SUBSCRIPTION_MODES,
         ).values_list('city', flat=True).distinct().order_by('city')
         
         # Preserve current filters
@@ -157,6 +163,7 @@ def venues_map_data(request):
     # Get the same filters as the list view
     queryset = Venue.objects.filter(
         status='APPROVED',
+        access_mode__in=['SUBSCRIPTION', 'BOTH'],
         latitude__isnull=False,
         longitude__isnull=False
     )
@@ -236,6 +243,14 @@ class VenueDetailView(DetailView):
         # Access logic (keep yours)
         can_access = False
         access_message = ""
+        context['venue_is_store_only'] = (venue.access_mode == 'STORE')
+        context['venue_is_locked_tier'] = (
+            # True only if accessible via subscription but tier is too low
+            venue.access_mode in ('SUBSCRIPTION', 'BOTH') and
+            not can_access and
+            venue.access_mode != 'STORE'
+        )
+        context['venue_star_tier'] = venue.star_tier
 
         if self.request.user.is_authenticated:
             can_access, access_message = venue.is_accessible_by(self.request.user)
@@ -967,3 +982,219 @@ class VenueCreateSuccessView(IsApprovedPartnerMixin, TemplateView):
         venue = get_object_or_404(Venue, id=venue_id, partner=self.request.user.partner_profile)
         context['venue'] = venue
         return context
+# ==================== PARTNER SALES & PAYOUTS ====================
+@login_required
+@approved_partner_required
+def partner_sales_report(request):
+    from superadmin.models import SalesRecord, PayoutRecord
+    
+
+    
+
+    partner_profile = request.user.partner_profile
+
+    sales_qs = (
+        SalesRecord.objects.filter(venue__partner=partner_profile)
+        .select_related("venue", "booking", "booking__user", "payout_record")
+        .order_by("-checked_in_at", "-created_at")
+    )
+
+    venue_id = request.GET.get("venue", "").strip()
+    source = request.GET.get("source", "").strip()
+    payout_state = request.GET.get("payout_state", "").strip()
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+
+    if venue_id:
+        sales_qs = sales_qs.filter(venue_id=venue_id)
+
+    if source in ["SUBSCRIPTION", "STORE"]:
+        sales_qs = sales_qs.filter(booking_source=source)
+
+    if payout_state == "UNPAID":
+        sales_qs = sales_qs.filter(payout_record__isnull=True)
+    elif payout_state == "IN_PROGRESS":
+        sales_qs = sales_qs.filter(
+            payout_record__status__in=[
+                PayoutRecord.Status.PENDING,
+                PayoutRecord.Status.APPROVED,
+                PayoutRecord.Status.FAILED,
+            ]
+        )
+    elif payout_state == "PAID":
+        sales_qs = sales_qs.filter(payout_record__status=PayoutRecord.Status.PAID)
+
+    if date_from:
+        sales_qs = sales_qs.filter(checked_in_at__date__gte=date_from)
+    if date_to:
+        sales_qs = sales_qs.filter(checked_in_at__date__lte=date_to)
+
+    paginator = Paginator(sales_qs, 12)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    all_sales = SalesRecord.objects.filter(venue__partner=partner_profile)
+
+    summary = all_sales.aggregate(
+        total_gross=Sum("gross_amount"),
+        total_commission=Sum("commission_amount"),
+        total_net=Sum("net_amount"),
+        total_sales=Count("id"),
+        store_sales=Count("id", filter=Q(booking_source="STORE")),
+        subscription_sales=Count("id", filter=Q(booking_source="SUBSCRIPTION")),
+    )
+
+    pending_balance = (
+        all_sales.filter(
+            Q(payout_record__isnull=True) |
+            Q(
+                payout_record__status__in=[
+                    PayoutRecord.Status.PENDING,
+                    PayoutRecord.Status.APPROVED,
+                    PayoutRecord.Status.FAILED,
+                ]
+            )
+        ).aggregate(total=Sum("net_amount"))["total"] or 0
+    )
+
+    paid_balance = (
+        all_sales.filter(payout_record__status=PayoutRecord.Status.PAID)
+        .aggregate(total=Sum("net_amount"))["total"] or 0
+    )
+
+    open_payouts = (
+        PayoutRecord.objects.filter(
+            venue__partner=partner_profile,
+            status__in=[
+                PayoutRecord.Status.PENDING,
+                PayoutRecord.Status.APPROVED,
+                PayoutRecord.Status.FAILED,
+            ],
+        )
+        .select_related("venue")
+        .order_by("-created_at")
+    )
+
+    venue_breakdown = (
+        all_sales.values("venue__name")
+        .annotate(
+            total_net=Sum("net_amount"),
+            total_gross=Sum("gross_amount"),
+            total_sales=Count("id"),
+        )
+        .order_by("-total_net")
+    )
+
+    context = {
+        "page_obj": page_obj,
+        "sales_records": page_obj.object_list,
+        "summary": summary,
+        "pending_balance": pending_balance,
+        "paid_balance": paid_balance,
+        "open_payouts": open_payouts[:8],
+        "venue_breakdown": venue_breakdown,
+        "venues": partner_profile.venues.order_by("name"),
+        "venue_filter": venue_id,
+        "source_filter": source,
+        "payout_state_filter": payout_state,
+        "date_from": date_from,
+        "date_to": date_to,
+    }
+    return render(request, "venues/partner/sales_report.html", context)
+
+
+@login_required
+@approved_partner_required
+def partner_payout_history(request):
+    from superadmin.models import PayoutRecord
+    
+
+    
+
+    partner_profile = request.user.partner_profile
+
+    payouts_qs = (
+        PayoutRecord.objects.filter(venue__partner=partner_profile)
+        .select_related("venue")
+        .order_by("-created_at")
+    )
+
+    venue_id = request.GET.get("venue", "").strip()
+    status = request.GET.get("status", "").strip()
+    date_from = request.GET.get("date_from", "").strip()
+    date_to = request.GET.get("date_to", "").strip()
+
+    if venue_id:
+        payouts_qs = payouts_qs.filter(venue_id=venue_id)
+
+    if status:
+        payouts_qs = payouts_qs.filter(status=status)
+
+    if date_from:
+        payouts_qs = payouts_qs.filter(created_at__date__gte=date_from)
+
+    if date_to:
+        payouts_qs = payouts_qs.filter(created_at__date__lte=date_to)
+
+    paginator = Paginator(payouts_qs, 12)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    payout_summary = PayoutRecord.objects.filter(venue__partner=partner_profile).aggregate(
+        total_batches=Count("id"),
+        total_paid=Sum("total_net", filter=Q(status=PayoutRecord.Status.PAID)),
+        total_pending=Sum(
+            "total_net",
+            filter=Q(
+                status__in=[
+                    PayoutRecord.Status.PENDING,
+                    PayoutRecord.Status.APPROVED,
+                    PayoutRecord.Status.FAILED,
+                ]
+            ),
+        ),
+        total_commission=Sum("total_commission"),
+    )
+
+    context = {
+        "page_obj": page_obj,
+        "payouts": page_obj.object_list,
+        "payout_summary": payout_summary,
+        "venues": partner_profile.venues.order_by("name"),
+        "venue_filter": venue_id,
+        "status_filter": status,
+        "date_from": date_from,
+        "date_to": date_to,
+        "status_choices": PayoutRecord.Status.choices,
+    }
+    return render(request, "venues/partner/payout_history.html", context)
+
+@login_required
+@approved_partner_required
+def partner_payout_detail(request, payout_uuid):
+    from superadmin.models import PayoutRecord, SalesRecord
+    """
+    Partner view of a single payout — shows all linked SalesRecords.
+    Security: filters by venue__partner so partners only see their own data.
+    """
+    partner_profile = request.user.partner_profile
+
+    payout = get_object_or_404(
+        PayoutRecord.objects.select_related("venue"),
+        payout_id=payout_uuid,
+        venue__partner=partner_profile,   # ← security gate
+    )
+
+    sales_records = (
+        payout.sales_records
+        .select_related("booking", "booking__user")
+        .order_by("-checked_in_at")
+    )
+
+    paginator = Paginator(sales_records, 20)
+    page_obj  = paginator.get_page(request.GET.get("page"))
+
+    context = {
+        "payout":       payout,
+        "page_obj":     page_obj,
+        "sales_records": page_obj.object_list,
+    }
+    return render(request, "venues/partner/payout_detail.html", context)

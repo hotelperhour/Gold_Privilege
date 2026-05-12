@@ -1,0 +1,684 @@
+{% extends 'base_subscriber.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}{{ product.name }} – Gold Privilege Store{% endblock %}
+
+{% block subscriber_content %}
+<style>
+* { font-family: 'Poppins', sans-serif; box-sizing: border-box; }
+:root {
+    --gold: #E5AD04;
+    --gold-light: #F9B036;
+    --gold-pale: #FFF8E1;
+    --gold-pale-border: #FFE082;
+    --black: #111111;
+    --border: #E5E7EB;
+    --text-muted: #6B7280;
+    --blue: #0872EF;
+    --radius: 14px;
+    --shadow: 0 2px 14px rgba(0,0,0,0.08);
+}
+
+/* ── Back link ── */
+.back-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    color: var(--text-muted); font-size: 14px; font-weight: 500;
+    text-decoration: none; margin-bottom: 24px;
+    transition: color 0.2s;
+}
+.back-link:hover { color: var(--black); text-decoration: none; }
+
+/* ── Page container ── */
+.product-detail-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ── Two-column grid (mirrors venue_detail) ── */
+.product-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: start;
+}
+
+/* ─── LEFT COLUMN ──────────────────────────────────────────── */
+.product-left { display: flex; flex-direction: column; }
+
+/* Product name + location on same row */
+.product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 3px;
+}
+.product-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--black);
+    margin: 0;
+    white-space: nowrap;
+}
+.product-location {
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* Main image (landscape) */
+.product-image-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 5px;
+    background: #f5f5f5;
+}
+.product-main-image {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.no-product-image {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 64px; color: #d1d5db;
+}
+.venue-category-badge {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    background: var(--gold-secondary);
+    border: 2px solid var(--gold-secondary);
+    padding: 5px 16px;
+    border-radius: 0px;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--black);
+    line-height: 1.7;
+}
+
+/* Stars + Book button row (like venue detail) */
+.image-bottom-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    gap: 12px;
+}
+.venue-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.rating-stars { color: var(--gold); font-size: 15px; }
+.rating-score { font-size: 15px; font-weight: 600; color: var(--black); white-space: nowrap; }
+.rating-count { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+
+.btn-buy {
+    background: var(--gold-secondary);
+    color: var(--black);
+    border: none;
+    padding: 11px 28px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.btn-buy:hover {
+    background: var(--gold);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(249, 176, 54, 0.4);
+    color: var(--black);
+    text-decoration: none;
+}
+
+/* About sections */
+.section-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--black);
+    margin: 0 0 14px 0;
+}
+.about-text {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text-muted);
+    margin-bottom: 36px;
+    white-space: pre-line;
+}
+
+/* Gallery */
+.gallery-section { margin-bottom: 20px; }
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+.gallery-item {
+    aspect-ratio: 191 / 120;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+.gallery-item:hover {
+    transform: scale(1.04);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+}
+.gallery-item img {
+    width: 100%; height: 100%; object-fit: cover;
+}
+
+/* Other products at venue (optional) */
+.other-products-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+}
+.mini-product-card {
+    background: #fff; border-radius: 12px;
+    box-shadow: var(--shadow); border: 1.5px solid var(--border);
+    overflow: hidden; text-decoration: none; color: inherit;
+    transition: transform 0.2s, border-color 0.2s;
+    display: block;
+}
+.mini-product-card:hover {
+    transform: translateY(-3px); border-color: var(--gold);
+    text-decoration: none; color: inherit;
+}
+.mini-card-img {
+    height: 90px; overflow: hidden; background: #f5f5f5;
+}
+.mini-card-img img { width: 100%; height: 100%; object-fit: cover; }
+.mini-card-body { padding: 10px 12px; }
+.mini-card-name { font-size: 13px; font-weight: 600; color: var(--black); margin-bottom: 3px; }
+.mini-card-price { font-size: 12px; color: var(--text-muted); }
+
+/* ─── RIGHT COLUMN ─────────────────────────────────────────── */
+.venue-right {
+    position: sticky;
+    top: 110px;
+}
+
+/* Venue Information Card */
+.venue-info-card {
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: var(--shadow);
+    margin-bottom: 28px;
+}
+.info-title {
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--black);
+    margin: 0 0 24px 0;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+}
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+.info-section { display: flex; flex-direction: column; }
+.info-header {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--black);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+.info-content {
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--text-muted);
+}
+.info-content a { color: var(--blue); text-decoration: none; }
+.info-content a:hover { text-decoration: underline; }
+
+/* Reviews section */
+.reviews-section { margin-top: 0; }
+.reviews-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.btn-write-review {
+    background: var(--blue);
+    color: white;
+    border: none;
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.btn-write-review:hover {
+    background: #0660d4;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(8,114,239,0.3);
+    color: white;
+    text-decoration: none;
+}
+.review-card {
+    background: white;
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow);
+}
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+.reviewer-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--black);
+    margin: 0 0 4px 0;
+}
+.review-stars { color: var(--gold); font-size: 13px; }
+.review-date  { font-size: 12px; color: var(--text-muted); }
+.review-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--black);
+    margin-bottom: 6px;
+}
+.review-text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+.empty-reviews {
+    text-align: center;
+    padding: 50px 24px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+}
+.empty-reviews i       { font-size: 52px; color: #dee2e6; margin-bottom: 16px; display: block; }
+.empty-reviews h4      { font-size: 18px; font-weight: 600; color: var(--black); margin-bottom: 8px; }
+.empty-reviews p       { color: var(--text-muted); margin-bottom: 22px; }
+
+/* Pagination */
+.reviews-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+.pagination-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: 1px solid #E5E5E5;
+    background: white;
+    color: var(--black);
+    font-weight: 500;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-decoration: none;
+}
+.pagination-btn:hover  { border-color: var(--gold); background: rgba(229,173,4,0.08); }
+.pagination-btn.active { background: var(--gold); border-color: var(--gold); color: white; }
+
+/* Simple purchase buttons (replaces booking card) */
+.purchase-buttons {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.btn-pay-coins, .btn-pay-card {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.btn-pay-coins {
+    background: var(--gold);
+    color: #000;
+}
+.btn-pay-coins:hover {
+    background: var(--gold-light);
+    transform: translateY(-2px);
+    color: #000;
+    text-decoration: none;
+}
+.btn-pay-card {
+    background: #fff;
+    color: var(--black);
+    border: 1.5px solid var(--border);
+}
+.btn-pay-card:hover {
+    border-color: var(--black);
+    text-decoration: none;
+    color: var(--black);
+}
+
+/* Responsive */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .product-layout { gap: 36px; }
+    .venue-right { position: static; }
+    .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+    .product-layout { grid-template-columns: 1fr; gap: 28px; }
+    .venue-right { position: static; }
+    .product-header { gap: 10px; }
+    .product-title { font-size: 22px; white-space: normal; }
+    .product-location { font-size: 13px; white-space: normal; }
+    .image-bottom-actions { flex-direction: row; align-items: center; gap: 8px; }
+    .rating-stars { font-size: 11px; }
+    .rating-score { font-size: 11px; }
+    .rating-count { display: none; }
+    .btn-buy { padding: 8px 14px; font-size: 11px; gap: 5px; }
+    .info-grid { grid-template-columns: 1fr 1fr; gap: 18px; }
+    .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 400px) {
+    .info-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<a href="{% url 'discount_store:store_home' %}" class="back-link">
+    <i class="fas fa-arrow-left"></i> Back to Store
+</a>
+
+<div class="product-detail-container">
+    <div class="product-layout">
+
+        <!-- ═══════════════════ LEFT COLUMN ═══════════════════ -->
+        <div class="product-left">
+
+            <!-- Name + location (same row) -->
+            <div class="product-header">
+                <h1 class="product-title">{{ product.name }}</h1>
+                <p class="product-location">{{ venue.name }} · {{ venue.city }}, {{ venue.state }}</p>
+            </div>
+
+            <!-- Main image with category badge -->
+            <div class="product-image-container">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-main-image">
+                {% elif venue.cover_image %}
+                    <img src="{{ venue.cover_image.url }}" alt="{{ venue.name }}" class="product-main-image">
+                {% else %}
+                    <div class="no-product-image"><i class="fas fa-store"></i></div>
+                {% endif %}
+                <div class="venue-category-badge">{{ venue.get_category_display }}</div>
+            </div>
+
+            <!-- Stars + Purchase button row -->
+            <div class="image-bottom-actions">
+                <div class="venue-rating">
+                    <span class="rating-stars">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= venue.average_rating %}
+                                <i class="fas fa-star"></i>
+                            {% else %}
+                                <i class="far fa-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </span>
+                    <span class="rating-score">{{ venue.average_rating|floatformat:1 }}</span>
+                    <span class="rating-count">({{ venue.total_reviews }} reviews)</span>
+                </div>
+
+                <!-- Single button that leads to checkout (no booking card) -->
+                <a href="{% url 'discount_store:store_checkout' product_id=product.id %}" class="btn-buy">
+                    <i class="fas fa-shopping-cart"></i> Purchase Now
+                </a>
+            </div>
+
+            <!-- About this experience -->
+            {% if product.description %}
+            <h3 class="section-title">About This Experience</h3>
+            <p class="about-text">{{ product.description }}</p>
+            {% endif %}
+
+            <!-- Venue description -->
+            <h3 class="section-title">About {{ venue.name }}</h3>
+            <p class="about-text">{{ venue.description }}</p>
+
+            <!-- Gallery -->
+            {% if venue.images.all %}
+            <div class="gallery-section">
+                <h3 class="section-title">Gallery</h3>
+                <div class="gallery-grid">
+                    {% for image in venue.images.all|slice:":6" %}
+                    <div class="gallery-item" onclick="openCarousel({{ forloop.counter0 }})">
+                        <img src="{{ image.image.url }}" alt="Gallery {{ forloop.counter }}" loading="lazy">
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Other products at same venue (optional) -->
+            {% if other_products %}
+            <h3 class="section-title">More at {{ venue.name }}</h3>
+            <div class="other-products-grid">
+                {% for op in other_products %}
+                <a href="{% url 'discount_store:product_detail' product_id=op.id %}" class="mini-product-card">
+                    <div class="mini-card-img">
+                        {% if op.image %}<img src="{{ op.image.url }}" alt="{{ op.name }}">
+                        {% elif venue.cover_image %}<img src="{{ venue.cover_image.url }}" alt="{{ op.name }}">{% endif %}
+                    </div>
+                    <div class="mini-card-body">
+                        <div class="mini-card-name">{{ op.name }}</div>
+                        <div class="mini-card-price">{{ op.coin_price|intcomma }} coins · ₦{{ op.price|floatformat:0|intcomma }}</div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+        </div><!-- /product-left -->
+
+        <!-- ═══════════════════ RIGHT COLUMN ═══════════════════ -->
+        <div class="venue-right">
+
+            <!-- Venue Information Card (same as venue detail) -->
+            <div class="venue-info-card">
+                <h3 class="info-title">Venue Information</h3>
+                <div class="info-grid">
+                    <div class="info-section">
+                        <div class="info-header">Location</div>
+                        <div class="info-content">
+                            {{ venue.address }}<br>
+                            {{ venue.city }}{% if venue.suburb %}, {{ venue.suburb }}{% endif %}<br>
+                            {{ venue.state }}
+                            {% if venue.latitude and venue.longitude %}
+                                <br><a href="https://www.google.com/maps?q={{ venue.latitude }},{{ venue.longitude }}" target="_blank">
+                                    <i class="fas fa-directions"></i> Get Directions
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="info-section">
+                        <div class="info-header">Contact</div>
+                        <div class="info-content">
+                            {% if venue.phone %}<a href="tel:{{ venue.phone }}">{{ venue.phone }}</a><br>{% endif %}
+                            {% if venue.email %}<a href="mailto:{{ venue.email }}">{{ venue.email }}</a><br>{% endif %}
+                            {% if venue.website %}<a href="{{ venue.website }}" target="_blank">Visit Website</a>{% endif %}
+                        </div>
+                    </div>
+                    <div class="info-section">
+                        <div class="info-header">Hours</div>
+                        <div class="info-content">
+                            {% if venue.open_24_hours %}Open 24 Hours
+                            {% elif venue.opening_time and venue.closing_time %}
+                                {{ venue.opening_time|time:"g:i A" }} – {{ venue.closing_time|time:"g:i A" }}
+                            {% else %}Contact venue for hours{% endif %}
+                        </div>
+                    </div>
+                    {% if venue.capacity %}
+                    <div class="info-section">
+                        <div class="info-header">Capacity</div>
+                        <div class="info-content">Up to {{ venue.capacity }} guests</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="info-section">
+                        <div class="info-header">Cancellation</div>
+                        <div class="info-content">
+                            Free cancellation up to <strong>{{ config.cancellation_cutoff_hours }}h</strong> before visit.
+                            Refund returned to your Gold Coins wallet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+
+            <!-- Reviews Section (mirrors venue detail) -->
+            <div class="reviews-section">
+                <div class="reviews-header">
+                    <h3 class="section-title" style="margin:0;">Reviews</h3>
+                    {% if user.is_authenticated and not user_has_reviewed %}
+                        <a href="{% url 'venues:submit_review' venue.slug %}" class="btn-write-review">
+                            <i class="fas fa-star"></i> Write a Review
+                        </a>
+                    {% endif %}
+                </div>
+
+                {% if review_count > 0 %}
+                    <div id="reviews-container">
+                        {% for review in reviews %}
+                        <div class="review-card">
+                            <div class="review-header">
+                                <div>
+                                    <h6 class="reviewer-name">{{ review.user.get_full_name }}</h6>
+                                    <div class="review-stars">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= review.rating %}<i class="fas fa-star"></i>
+                                            {% else %}<i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                <span class="review-date">{{ review.created_at|date:"M d, Y" }}</span>
+                            </div>
+                            {% if review.title %}<div class="review-title">{{ review.title }}</div>{% endif %}
+                            <p class="review-text">{{ review.review_text }}</p>
+                            {% if review.is_verified_visit %}
+                            <span style="background:rgba(41,204,151,0.15);color:#29CC97;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;">
+                                <i class="fas fa-check-circle"></i> Verified Visit
+                            </span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if is_paginated %}
+                    <div class="reviews-pagination">
+                        {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}" class="pagination-btn">
+                            <i class="fas fa-chevron-left" style="font-size:11px;"></i>
+                        </a>
+                        {% endif %}
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if num == page_obj.number %}
+                            <span class="pagination-btn active">{{ num }}</span>
+                            {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                            <a href="?page={{ num }}" class="pagination-btn">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+                        {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}" class="pagination-btn">
+                            <i class="fas fa-chevron-right" style="font-size:11px;"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-reviews">
+                        <i class="far fa-comment-dots"></i>
+                        <h4>No reviews yet</h4>
+                        <p>Be the first to experience {{ product.name }} and leave a review.</p>
+                        
+                        
+                    </div>
+                {% endif %}
+            </div>
+
+        </div><!-- /venue-right -->
+    </div><!-- /product-layout -->
+</div><!-- /product-detail-container -->
+
+<!-- Gallery Modal (same as venue detail) -->
+{% if venue.images.all %}
+<div class="modal fade" id="galleryModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="galleryCarousel" class="carousel slide" data-bs-ride="false">
+                    <div class="carousel-inner">
+                        {% for image in venue.images.all %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <img src="{{ image.image.url }}" class="d-block w-100" alt="{{ image.alt_text|default:venue.name }}"
+                                 style="max-height: 80vh; object-fit: contain;">
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function openCarousel(index) {
+    const modal = new bootstrap.Modal(document.getElementById('galleryModal'));
+    const carousel = document.getElementById('galleryCarousel');
+    modal.show();
+    if (carousel) {
+        const bs = new bootstrap.Carousel(carousel);
+        setTimeout(() => bs.to(index), 200);
+    }
+}
+</script>
+{% endblock %}

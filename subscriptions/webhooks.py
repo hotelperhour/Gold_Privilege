@@ -130,6 +130,10 @@ def handle_charge_success(data):
     """
     reference      = data.get('reference')
     gateway_amount = Decimal(str(data.get('amount', 0))) / 100
+    # Route by reference prefix — keeps payment categories cleanly separated
+    if reference and reference.startswith('GP-DS-'):
+        handle_store_order_payment(reference, gateway_amount, data)
+        return  # Do NOT fall through to subscription payment handling
  
     subscription_user = None  # track for referral call outside atomic block
  
@@ -418,6 +422,80 @@ def _maybe_award_referral_coins(user):
         )
     except Exception as e:
         logger.error(f'Referral bonus email failed: {e}')
+
+
+def handle_store_order_payment(reference, gateway_amount, data):
+    """
+    Handle successful Paystack payment for a Discount Store order.
+ 
+    Called by handle_charge_success when the reference starts with 'GP-DS-'.
+ 
+    The browser callback (card_payment_callback in discount_store/views.py)
+    is the PRIMARY path — it usually runs first.
+    This webhook is the server-to-server backup that handles:
+      - Users who close the browser before the callback redirects
+      - Network failures between Paystack and the user's browser
+ 
+    The order.status check makes this fully idempotent — safe to call
+    from both the callback and the webhook.
+    """
+    from django.db import transaction
+    from discount_store.models import StoreOrder
+    from discount_store.views import _create_booking_from_order, _award_cashback, _send_confirmation_email
+ 
+    try:
+        with transaction.atomic():
+            order = StoreOrder.objects.select_for_update().get(
+                paystack_reference=reference
+            )
+ 
+            # Idempotency guard — callback may have already processed this
+            if order.status != StoreOrder.OrderStatus.PENDING:
+                logger.info(
+                    f'Store order {order.reference} already processed '
+                    f'(status={order.status}) — webhook skipping.'
+                )
+                return
+ 
+            # Validate amount (same rule as subscription payments: 1 kobo tolerance)
+            if abs(gateway_amount - order.amount_paid) > Decimal('0.01'):
+                logger.error(
+                    f'STORE ORDER AMOUNT MISMATCH — Order: {order.reference}, '
+                    f'Expected: {order.amount_paid}, Received: {gateway_amount}'
+                )
+                send_admin_alert(
+                    subject=f'Store Order Amount Mismatch — {order.reference}',
+                    message=(
+                        f'Order {order.reference} for {order.user.email}. '
+                        f'Expected ₦{order.amount_paid}, received ₦{gateway_amount}.'
+                    ),
+                )
+                return
+ 
+            # Create booking
+            _create_booking_from_order(order)
+            logger.info(
+                f'Webhook: Store order {order.reference} paid and booking created '
+                f'for {order.user.email}'
+            )
+ 
+    except StoreOrder.DoesNotExist:
+        logger.error(f'Webhook: No store order found for reference: {reference}')
+        return
+    except Exception as e:
+        logger.error(
+            f'Webhook: Error handling store order payment for {reference}: {e}',
+            exc_info=True
+        )
+        return
+ 
+    # Cashback and email outside atomic block — failures must not roll back the booking
+    try:
+        order.refresh_from_db()
+        _award_cashback(order)
+        _send_confirmation_email(order)
+    except Exception as e:
+        logger.error(f'Webhook: Post-payment actions failed for {reference}: {e}', exc_info=True)
 
 
 # PRODUCTION MONITORING

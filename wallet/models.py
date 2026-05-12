@@ -151,6 +151,7 @@ class WalletTransaction(models.Model):
         PURCHASE      = 'PURCHASE',      'Coin Purchase (Real Money)'
         SPEND         = 'SPEND',         'Spent in Discount Store'
         CASHBACK      = 'CASHBACK',      'Cashback Earned'
+        CASHBACK_CLAWBACK = 'CASHBACK_CLAWBACK', 'Cashback Removed (Cancellation)'
         REFERRAL      = 'REFERRAL',      'Referral Bonus'
         TRANSFER_IN   = 'TRANSFER_IN',   'Received from User'
         TRANSFER_OUT  = 'TRANSFER_OUT',  'Sent to User'
@@ -158,10 +159,12 @@ class WalletTransaction(models.Model):
         REFUND        = 'REFUND',        'Refund (Cancellation)'
         ADMIN_CREDIT  = 'ADMIN_CREDIT',  'Admin Manual Credit'
         ADMIN_DEBIT   = 'ADMIN_DEBIT',   'Admin Manual Debit'
+        STORE_PURCHASE = 'STORE_PURCHASE', 'Discount Store Purchase'
+        STORE_REFUND   = 'STORE_REFUND',   'Discount Store Refund'
 
     CREDIT_TYPES = {
         'PURCHASE', 'CASHBACK', 'REFERRAL',
-        'TRANSFER_IN', 'MONTHLY_BONUS', 'REFUND', 'ADMIN_CREDIT',
+        'TRANSFER_IN', 'MONTHLY_BONUS', 'REFUND', 'ADMIN_CREDIT', 'STORE_REFUND'
     }
 
     transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)

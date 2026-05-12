@@ -1,0 +1,751 @@
+{% extends 'base_partner.html' %}
+{% load humanize %}
+
+{% block title %}Sales Report - Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-secondary: #F9B036;
+        --dark-bg: #020202;
+        --white: #FFFFFF;
+        --black: #000000;
+        --gray-600: #6c757d;
+        --gray-200: #E5E5E5;
+        --surface: #FFFFFF;
+        --success: #29CC97;
+        --info: #0DCAF0;
+        --danger: #DC3545;
+        --warning: #FFC107;
+    }
+
+    * { font-family: 'Poppins', sans-serif; }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--black);
+        margin: 0;
+    }
+
+    .page-header p {
+        font-size: 14px;
+        color: var(--gray-600);
+        margin: 6px 0 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btn-outline-gold,
+    .btn-gold-primary {
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all .25s ease;
+    }
+
+    .btn-outline-gold {
+        background: var(--white);
+        color: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+    }
+
+    .btn-outline-gold:hover {
+        background: rgba(229,173,4,.08);
+        color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+    }
+
+    .btn-gold-primary {
+        background: var(--gold-primary);
+        color: var(--black);
+        border: none;
+    }
+
+    .btn-gold-primary:hover {
+        background: var(--gold-secondary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(229,173,4,.25);
+    }
+
+    .partner-card,
+    .panel-card {
+        background: var(--surface);
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+
+    .partner-card .card-body {
+        padding: 20px;
+        text-align: center;
+    }
+
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+    }
+
+    .bg-warning-subtle { background: rgba(229,173,4,.15); }
+    .bg-success-subtle { background: rgba(41,204,151,.15); }
+    .bg-info-subtle { background: rgba(13,202,240,.15); }
+    .bg-primary-subtle { background: rgba(13,110,253,.15); }
+
+    .card-value {
+        font-size: 30px;
+        font-weight: 700;
+        color: var(--black);
+        margin: 0 0 4px;
+    }
+
+    .card-title {
+        color: var(--gray-600);
+        font-size: 14px;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .filters-container {
+        background: var(--surface);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.05);
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .filters-row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 15px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--black);
+        margin-bottom: 6px;
+    }
+
+    .filter-input {
+        padding: 10px 14px;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .filter-input:focus {
+        outline: none;
+        border-color: var(--gold-primary);
+        box-shadow: 0 0 0 3px rgba(229,173,4,.1);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 15px;
+    }
+
+    .btn-apply,
+    .btn-clear {
+        min-width: 140px;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all .25s ease;
+    }
+
+    .btn-apply {
+        background: var(--gold-primary);
+        color: var(--black);
+        border: none;
+    }
+
+    .btn-apply:hover { background: var(--gold-secondary); }
+
+    .btn-clear {
+        background: transparent;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+    }
+
+    .btn-clear:hover {
+        background: #f8f9fa;
+        border-color: var(--gray-600);
+    }
+
+    .table-section {
+        background: var(--surface);
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.05);
+        overflow: hidden;
+        margin-bottom: 24px;
+    }
+
+    .section-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .section-header h5 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--black);
+    }
+
+    .section-subtext {
+        margin: 0;
+        font-size: 13px;
+        color: var(--gray-600);
+    }
+
+    .data-table {
+        width: 100%;
+        margin: 0;
+    }
+
+    .data-table thead th {
+        padding: 18px 22px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--black);
+        border: none;
+        text-align: center;
+    }
+
+    .data-table thead th:first-child,
+    .data-table tbody td:first-child {
+        text-align: left;
+    }
+
+    .data-table tbody td {
+        padding: 18px 22px;
+        border: none;
+        border-top: 1px solid rgba(0,0,0,.05);
+        font-size: 14px;
+        color: var(--gray-600);
+        vertical-align: middle;
+        text-align: center;
+    }
+
+    .data-table tbody tr:hover {
+        background: rgba(229,173,4,.03);
+    }
+
+    .ref-main,
+    .amount-main {
+        font-weight: 600;
+        color: var(--black);
+    }
+
+    .sub-meta {
+        display: block;
+        font-size: 12px;
+        color: var(--gray-600);
+        margin-top: 4px;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+
+    .status-unbatched {
+        background: rgba(255,193,7,.15);
+        color: #8a6500;
+        border-color: rgba(255,193,7,.45);
+    }
+
+    .status-pending {
+        background: rgba(255,193,7,.15);
+        color: #8a6500;
+        border-color: rgba(255,193,7,.45);
+    }
+
+    .status-approved {
+        background: rgba(13,202,240,.15);
+        color: #0b7e95;
+        border-color: rgba(13,202,240,.45);
+    }
+
+    .status-paid {
+        background: rgba(41,204,151,.15);
+        color: #158a63;
+        border-color: rgba(41,204,151,.45);
+    }
+
+    .status-failed {
+        background: rgba(220,53,69,.12);
+        color: var(--danger);
+        border-color: rgba(220,53,69,.35);
+    }
+
+    .source-pill-store,
+    .source-pill-sub {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .source-pill-store {
+        background: #fff3db;
+        color: #8a5300;
+    }
+
+    .source-pill-sub {
+        background: rgba(0,0,0,.08);
+        color: var(--black);
+    }
+
+    .action-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--gray-200);
+        background: var(--white);
+        color: var(--black);
+        transition: all .25s ease;
+        text-decoration: none;
+    }
+
+    .action-btn:hover {
+        border-color: var(--gold-primary);
+        background: rgba(229,173,4,.1);
+        color: var(--gold-primary);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 56px 20px;
+    }
+
+    .empty-state i {
+        font-size: 56px;
+        color: #dee2e6;
+        margin-bottom: 16px;
+    }
+
+    .empty-state h4 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--black);
+        margin-bottom: 8px;
+    }
+
+    .empty-state p {
+        margin: 0;
+        color: var(--gray-600);
+    }
+
+    @media (max-width: 991px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .header-actions {
+            width: 100%;
+        }
+
+        .btn-outline-gold,
+        .btn-gold-primary {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .filters-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .data-table {
+            min-width: 980px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .page-header h1 { font-size: 24px; }
+        .card-value { font-size: 26px; }
+        .filters-row { grid-template-columns: 1fr; }
+        .filter-actions {
+            flex-direction: column;
+        }
+        .btn-apply,
+        .btn-clear,
+        .btn-outline-gold,
+        .btn-gold-primary {
+            width: 100%;
+            min-width: 0;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block partner_content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <h1>Sales Report</h1>
+            <p>Track venue earnings, commission deductions, and payout progress.</p>
+        </div>
+        <div class="header-actions">
+            <a href="{% url 'venues:partner_payout_history' %}" class="btn-gold-primary">
+                <i class="fas fa-wallet"></i>
+                View Payout History
+            </a>
+        </div>
+    </div>
+
+    <div class="row mb-4 g-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-warning-subtle"><i class="fas fa-receipt" style="color: var(--gold-primary);"></i></div>
+                    <h2 class="card-value">{{ summary.total_sales|default:0 }}</h2>
+                    <p class="card-title">Total Sales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-info-subtle"><i class="fas fa-coins" style="color: #0DCAF0;"></i></div>
+                    <h2 class="card-value">₦{{ summary.total_gross|default:0|floatformat:2|intcomma }}</h2>
+                    <p class="card-title">Gross Revenue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-primary-subtle"><i class="fas fa-minus-circle" style="color: #0D6EFD;"></i></div>
+                    <h2 class="card-value">₦{{ summary.total_commission|default:0|floatformat:2|intcomma }}</h2>
+                    <p class="card-title">Commission Removed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-success-subtle"><i class="fas fa-wallet" style="color: #29CC97;"></i></div>
+                    <h2 class="card-value">₦{{ summary.total_net|default:0|floatformat:2|intcomma }}</h2>
+                    <p class="card-title">Net Earnings</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4 g-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-warning-subtle"><i class="fas fa-hourglass-half" style="color: #8a6500;"></i></div>
+                    <h2 class="card-value">₦{{ pending_balance|floatformat:2|intcomma }}</h2>
+                    <p class="card-title">Pending Balance</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-success-subtle"><i class="fas fa-check-circle" style="color: #29CC97;"></i></div>
+                    <h2 class="card-value">₦{{ paid_balance|floatformat:2|intcomma }}</h2>
+                    <p class="card-title">Paid Out</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-info-subtle"><i class="fas fa-store" style="color: #0DCAF0;"></i></div>
+                    <h2 class="card-value">{{ summary.store_sales|default:0 }}</h2>
+                    <p class="card-title">Store Sales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-primary-subtle"><i class="fas fa-id-card" style="color: #0D6EFD;"></i></div>
+                    <h2 class="card-value">{{ summary.subscription_sales|default:0 }}</h2>
+                    <p class="card-title">Subscription Sales</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="filters-container">
+        <form method="get">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label class="filter-label">Venue</label>
+                    <select name="venue" class="filter-input">
+                        <option value="">All Venues</option>
+                        {% for venue in venues %}
+                        <option value="{{ venue.id }}" {% if venue_filter == venue.id|stringformat:"s" %}selected{% endif %}>{{ venue.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Source</label>
+                    <select name="source" class="filter-input">
+                        <option value="">All Sources</option>
+                        <option value="SUBSCRIPTION" {% if source_filter == 'SUBSCRIPTION' %}selected{% endif %}>Subscription</option>
+                        <option value="STORE" {% if source_filter == 'STORE' %}selected{% endif %}>Discount Store</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Payout State</label>
+                    <select name="payout_state" class="filter-input">
+                        <option value="">All States</option>
+                        <option value="UNPAID" {% if payout_state_filter == 'UNPAID' %}selected{% endif %}>Unpaid</option>
+                        <option value="IN_PROGRESS" {% if payout_state_filter == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+                        <option value="PAID" {% if payout_state_filter == 'PAID' %}selected{% endif %}>Paid</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Date From</label>
+                    <input type="date" name="date_from" class="filter-input" value="{{ date_from }}">
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Date To</label>
+                    <input type="date" name="date_to" class="filter-input" value="{{ date_to }}">
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <a href="{% url 'venues:partner_sales_report' %}" class="btn-clear text-center text-decoration-none">Clear</a>
+                <button type="submit" class="btn-apply">
+                    <i class="fas fa-filter me-2"></i>Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% if open_payouts %}
+    <div class="table-section">
+        <div class="section-header">
+            <div>
+                <h5><i class="fas fa-layer-group me-2"></i>Open Payout Batches</h5>
+                <p class="section-subtext">Batches currently under review, approved, or awaiting retry.</p>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Venue</th>
+                        <th>Status</th>
+                        <th>Bookings</th>
+                        <th>Net Amount</th>
+                        <th>Created</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payout in open_payouts %}
+                    <tr>
+                        <td><span class="ref-main">{{ payout.reference }}</span></td>
+                        <td>{{ payout.venue.name }}</td>
+                        <td>
+                            <span class="status-pill {% if payout.status == 'PENDING' %}status-pending{% elif payout.status == 'APPROVED' %}status-approved{% else %}status-failed{% endif %}">
+                                {{ payout.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ payout.booking_count }}</td>
+                        <td><span class="amount-main">₦{{ payout.total_net|floatformat:2|intcomma }}</span></td>
+                        <td>{{ payout.created_at|date:"M j, Y g:i A" }}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="{% url 'venues:partner_payout_detail' payout.payout_id %}" class="action-btn" title="View payout detail">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="table-section">
+        <div class="section-header">
+            <div>
+                <h5><i class="fas fa-list-alt me-2"></i>Sales Ledger</h5>
+                <p class="section-subtext">Each row represents a checked-in visit or completed store purchase.</p>
+            </div>
+        </div>
+
+        {% if sales_records %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Booking</th>
+                        <th>Venue</th>
+                        <th>Source</th>
+                        <th>Checked In</th>
+                        <th>Gross</th>
+                        <th>Commission</th>
+                        <th>Net</th>
+                        <th>Payout</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in sales_records %}
+                    <tr>
+                        <td>
+                            <span class="ref-main">{{ row.source_reference|default:row.booking.booking_reference }}</span>
+                            {% if row.booking %}
+                            <span class="sub-meta">{{ row.booking.user.get_full_name|default:row.booking.user.email }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ row.venue.name }}</td>
+                        <td>
+                            {% if row.booking_source == 'STORE' %}
+                                <span class="source-pill-store"><i class="fas fa-store me-1"></i>Store</span>
+                            {% else %}
+                                <span class="source-pill-sub"><i class="fas fa-id-card me-1"></i>Subscription</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ row.checked_in_at|date:"M j, Y g:i A" }}</td>
+                        <td>₦{{ row.gross_amount|floatformat:2|intcomma }}</td>
+                        <td>₦{{ row.commission_amount|floatformat:2|intcomma }}</td>
+                        <td><span class="amount-main">₦{{ row.net_amount|floatformat:2|intcomma }}</span></td>
+                        <td>
+                            {% if row.payout_record %}
+                                <span class="status-pill {% if row.payout_record.status == 'PAID' %}status-paid{% elif row.payout_record.status == 'APPROVED' %}status-approved{% elif row.payout_record.status == 'FAILED' %}status-failed{% else %}status-pending{% endif %}">
+                                    {{ row.payout_record.get_status_display }}
+                                </span>
+                                <span class="sub-meta">{{ row.payout_record.reference }}</span>
+                            {% else %}
+                                <span class="status-pill status-unbatched">Unbatched</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'partials/pagination.html' %}
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h4>No sales records found</h4>
+            <p>Try adjusting your filters or check back after new check-ins.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="table-section">
+        <div class="section-header">
+            <div>
+                <h5><i class="fas fa-chart-bar me-2"></i>Venue Breakdown</h5>
+                <p class="section-subtext">A quick rollup of sales performance by venue.</p>
+            </div>
+        </div>
+
+        {% if venue_breakdown %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Venue</th>
+                        <th>Sales Count</th>
+                        <th>Gross</th>
+                        <th>Net</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in venue_breakdown %}
+                    <tr>
+                        <td><span class="ref-main">{{ row.venue__name }}</span></td>
+                        <td>{{ row.total_sales }}</td>
+                        <td>₦{{ row.total_gross|floatformat:2|intcomma }}</td>
+                        <td><span class="amount-main">₦{{ row.total_net|floatformat:2|intcomma }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-chart-pie"></i>
+            <h4>No venue breakdown available</h4>
+            <p>Venue summaries will appear here once sales records exist.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

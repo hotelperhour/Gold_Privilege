@@ -713,7 +713,7 @@
                         {% for booking in page_obj %}
                         <tr>
                             <td>
-                                <span class="booking-ref">{{ booking.booking_reference }}</span>
+                                <span class="booking-ref">{{ booking.display_reference }}</span>
                             </td>
                             <td>
                                 <div class="member-info">
@@ -731,18 +731,14 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if booking.status == 'CONFIRMED' %}
-                                <form method="post" style="display: inline;">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="booking_reference" value="{{ booking.booking_reference }}">
-                                    <button type="submit" class="btn-action">
-                                        <i class="fas fa-check"></i> Check In
+                                {% if booking.status == 'CHECKED_IN' %}
+                                    <button class="btn-action" disabled>
+                                        <i class="fas fa-check-double"></i> Checked In
                                     </button>
-                                </form>
                                 {% else %}
-                                <button class="btn-action" disabled>
-                                    <i class="fas fa-check-double"></i> Checked In
-                                </button>
+                                    <span style="color:#6c757d; font-size:13px;">
+                                        Requires reference
+                                    </span>
                                 {% endif %}
                             </td>
                         </tr>

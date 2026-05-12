@@ -101,6 +101,16 @@ class SubscriptionPlan(models.Model):
         validators=[MinValueValidator(0)],
         help_text='Number of free trial days (0 for no trial)'
     )
+
+    venue_tier_access = models.PositiveSmallIntegerField(
+        default=1,
+        choices=[
+            (1, 'Level 1 — Standard venues'),
+            (2, 'Level 2 — Level 1 + Premium venues'),
+            (3, 'Level 3 — All venues'),
+        ],
+        help_text='Which venue star tiers this plan unlocks. Level 2 also includes Level 1.',
+    )
     
     # Features
     features = models.ManyToManyField(
@@ -458,7 +468,8 @@ class Subscription(models.Model):
         editable=False,
         help_text='Customer-facing reference (e.g., GP-SUB-A7X9)'
     )
-    
+   
+
     # Relations
     user = models.ForeignKey(
         CustomUser,

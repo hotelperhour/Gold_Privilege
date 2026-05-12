@@ -1034,6 +1034,19 @@
                                     <h3 class="venue-name">{{ venue.name|truncatechars:30 }}</h3>
                                     <h5 class="venue-city">{{ venue.city }}{% if venue.state %}, {{ venue.state }}{% endif %}</h5>
                                 </div>
+
+                                <!-- Star tier badge -->
+                                {% if venue.star_tier %}
+                                <div style="position:absolute;top:12px;left:12px;
+                                            background:rgba(0,0,0,0.62);color:#fff;
+                                            font-size:10px;font-weight:600;padding:3px 9px;
+                                            border-radius:6px;backdrop-filter:blur(4px);z-index:2;">
+                                    {% if venue.star_tier == 1 %}⭐ Level 1
+                                    {% elif venue.star_tier == 2 %}⭐⭐ Level 2
+                                    {% elif venue.star_tier == 3 %}⭐⭐⭐ Level 3
+                                    {% endif %}
+                                </div>
+                                {% endif %}
                                 
                                 {% if venue.average_rating > 0 %}
                                 <div class="venue-rating-badge">

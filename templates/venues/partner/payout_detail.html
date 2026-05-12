@@ -1,0 +1,511 @@
+{% extends 'base_partner.html' %}
+{% load humanize %}
+
+{% block title %}Payout {{ payout.reference }} - Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-secondary: #F9B036;
+        --white: #FFFFFF;
+        --black: #000000;
+        --gray-600: #6c757d;
+        --gray-200: #E5E5E5;
+        --success: #29CC97;
+        --info: #0DCAF0;
+        --danger: #DC3545;
+        --warning: #FFC107;
+    }
+
+    * { font-family: 'Poppins', sans-serif; }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--black);
+        margin: 0;
+    }
+
+    .page-header p {
+        margin: 6px 0 0;
+        color: var(--gray-600);
+        font-size: 14px;
+    }
+
+    .btn-outline-gold {
+        background: var(--white);
+        color: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all .25s ease;
+    }
+
+    .btn-outline-gold:hover {
+        background: rgba(229,173,4,.08);
+        color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+    }
+
+    .status-banner {
+        border-radius: 12px;
+        padding: 18px 20px;
+        margin-bottom: 24px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+    }
+
+    .status-banner i {
+        font-size: 20px;
+        margin-top: 2px;
+    }
+
+    .banner-paid { background: rgba(41,204,151,.12); color: #17684f; border: 1px solid rgba(41,204,151,.25); }
+    .banner-approved { background: rgba(13,202,240,.12); color: #0b6e82; border: 1px solid rgba(13,202,240,.25); }
+    .banner-pending { background: rgba(255,193,7,.14); color: #7b5a00; border: 1px solid rgba(255,193,7,.35); }
+    .banner-failed { background: rgba(220,53,69,.1); color: #8e2030; border: 1px solid rgba(220,53,69,.22); }
+    .banner-cancelled { background: rgba(108,117,125,.1); color: #525960; border: 1px solid rgba(108,117,125,.22); }
+
+    .partner-card,
+    .info-card,
+    .table-section,
+    .support-note {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+
+    .partner-card .card-body {
+        padding: 20px;
+        text-align: center;
+    }
+
+    .card-value {
+        font-size: 30px;
+        font-weight: 700;
+        color: var(--black);
+        margin: 0 0 4px;
+    }
+
+    .card-title {
+        color: var(--gray-600);
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .net-highlight {
+        color: var(--gold-primary);
+    }
+
+    .info-card {
+        overflow: hidden;
+        height: 100%;
+    }
+
+    .info-card-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--black);
+    }
+
+    .info-card-body {
+        padding: 18px 22px;
+    }
+
+    .info-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .info-table td {
+        padding: 10px 0;
+        font-size: 14px;
+        vertical-align: top;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+
+    .info-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .info-label {
+        color: var(--gray-600);
+        width: 42%;
+    }
+
+    .info-value {
+        color: var(--black);
+        font-weight: 500;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid transparent;
+    }
+
+    .status-pending {
+        background: rgba(255,193,7,.15);
+        color: #8a6500;
+        border-color: rgba(255,193,7,.45);
+    }
+
+    .status-approved {
+        background: rgba(13,202,240,.15);
+        color: #0b7e95;
+        border-color: rgba(13,202,240,.45);
+    }
+
+    .status-paid {
+        background: rgba(41,204,151,.15);
+        color: #158a63;
+        border-color: rgba(41,204,151,.45);
+    }
+
+    .status-failed {
+        background: rgba(220,53,69,.12);
+        color: var(--danger);
+        border-color: rgba(220,53,69,.35);
+    }
+
+    .status-cancelled {
+        background: rgba(108,117,125,.12);
+        color: #6c757d;
+        border-color: rgba(108,117,125,.35);
+    }
+
+    .table-section {
+        overflow: hidden;
+        margin-top: 24px;
+    }
+
+    .section-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .section-header h5 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--black);
+    }
+
+    .section-subtext {
+        margin: 0;
+        font-size: 13px;
+        color: var(--gray-600);
+    }
+
+    .data-table {
+        width: 100%;
+        margin: 0;
+    }
+
+    .data-table thead th {
+        padding: 18px 22px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--black);
+        border: none;
+        text-align: center;
+    }
+
+    .data-table thead th:first-child,
+    .data-table tbody td:first-child {
+        text-align: left;
+    }
+
+    .data-table tbody td,
+    .data-table tfoot td {
+        padding: 18px 22px;
+        border: none;
+        border-top: 1px solid rgba(0,0,0,.05);
+        font-size: 14px;
+        color: var(--gray-600);
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .data-table tbody tr:hover {
+        background: rgba(229,173,4,.03);
+    }
+
+    .ref-main,
+    .amount-main {
+        color: var(--black);
+        font-weight: 600;
+    }
+
+    .source-pill-store,
+    .source-pill-sub {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .source-pill-store {
+        background: #fff3db;
+        color: #8a5300;
+    }
+
+    .source-pill-sub {
+        background: rgba(0,0,0,.08);
+        color: var(--black);
+    }
+
+    .support-note {
+        margin-top: 20px;
+        padding: 16px 18px;
+        border-left: 4px solid var(--gold-primary);
+    }
+
+    .support-note p {
+        margin: 0;
+        color: var(--gray-600);
+        font-size: 13px;
+    }
+
+    @media (max-width: 991px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .data-table {
+            min-width: 920px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .page-header h1 { font-size: 24px; }
+        .card-value { font-size: 26px; }
+        .btn-outline-gold { width: 100%; justify-content: center; }
+        .status-banner { flex-direction: column; }
+    }
+</style>
+{% endblock %}
+
+{% block partner_content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <h1>{{ payout.reference }}</h1>
+            <p>{{ payout.venue.name }} · {{ payout.period_start|date:"M j, Y g:i A" }} - {{ payout.period_end|date:"M j, Y g:i A" }}</p>
+        </div>
+        <a href="{% url 'venues:partner_payout_history' %}" class="btn-outline-gold">
+            <i class="fas fa-arrow-left"></i>
+            Back to Payout History
+        </a>
+    </div>
+
+    {% if payout.status == 'PAID' %}
+    <div class="status-banner banner-paid">
+        <i class="fas fa-check-circle"></i>
+        <div><strong>Payment Completed</strong><br>₦{{ payout.total_net|floatformat:2|intcomma }} was paid to your account on {{ payout.paid_at|date:"M j, Y g:i A" }}.</div>
+    </div>
+    {% elif payout.status == 'APPROVED' %}
+    <div class="status-banner banner-approved">
+        <i class="fas fa-clock"></i>
+        <div><strong>Approved</strong><br>This payout has been approved and is awaiting transfer.</div>
+    </div>
+    {% elif payout.status == 'PENDING' %}
+    <div class="status-banner banner-pending">
+        <i class="fas fa-hourglass-half"></i>
+        <div><strong>Under Review</strong><br>This payout batch is currently being reviewed.</div>
+    </div>
+    {% elif payout.status == 'FAILED' %}
+    <div class="status-banner banner-failed">
+        <i class="fas fa-exclamation-circle"></i>
+        <div><strong>Payment Failed</strong><br>There was an issue processing this payout. Please contact support quoting <strong>{{ payout.reference }}</strong>.</div>
+    </div>
+    {% elif payout.status == 'CANCELLED' %}
+    <div class="status-banner banner-cancelled">
+        <i class="fas fa-ban"></i>
+        <div><strong>Cancelled</strong><br>This payout batch was cancelled and its sales were returned to your unpaid balance.</div>
+    </div>
+    {% endif %}
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100"><div class="card-body">
+                <h2 class="card-value">₦{{ payout.total_gross|floatformat:2|intcomma }}</h2>
+                <p class="card-title">Gross Revenue</p>
+            </div></div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100"><div class="card-body">
+                <h2 class="card-value">₦{{ payout.total_commission|floatformat:2|intcomma }}</h2>
+                <p class="card-title">GP Commission</p>
+            </div></div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100"><div class="card-body">
+                <h2 class="card-value net-highlight">₦{{ payout.total_net|floatformat:2|intcomma }}</h2>
+                <p class="card-title">Net to You</p>
+            </div></div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100"><div class="card-body">
+                <h2 class="card-value">{{ payout.booking_count }}</h2>
+                <p class="card-title">Bookings ({{ payout.subscription_count }} sub / {{ payout.store_count }} store)</p>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="info-card">
+                <div class="info-card-header">Payout Information</div>
+                <div class="info-card-body">
+                    <table class="info-table">
+                        <tr><td class="info-label">Reference</td><td class="info-value"><code>{{ payout.reference }}</code></td></tr>
+                        <tr>
+                            <td class="info-label">Status</td>
+                            <td class="info-value">
+                                <span class="status-pill {% if payout.status == 'PENDING' %}status-pending{% elif payout.status == 'APPROVED' %}status-approved{% elif payout.status == 'PAID' %}status-paid{% elif payout.status == 'FAILED' %}status-failed{% else %}status-cancelled{% endif %}">
+                                    {{ payout.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr><td class="info-label">Period Start</td><td class="info-value">{{ payout.period_start|date:"M j, Y g:i A" }}</td></tr>
+                        <tr><td class="info-label">Period End</td><td class="info-value">{{ payout.period_end|date:"M j, Y g:i A" }}</td></tr>
+                        <tr><td class="info-label">Batch Created</td><td class="info-value">{{ payout.created_at|date:"M j, Y g:i A" }}</td></tr>
+                        {% if payout.approved_at %}<tr><td class="info-label">Approved</td><td class="info-value">{{ payout.approved_at|date:"M j, Y g:i A" }}</td></tr>{% endif %}
+                        {% if payout.paid_at %}<tr><td class="info-label">Paid At</td><td class="info-value">{{ payout.paid_at|date:"M j, Y g:i A" }}</td></tr>{% endif %}
+                        {% if payout.transfer_reference %}<tr><td class="info-label">Transfer Ref</td><td class="info-value"><code>{{ payout.transfer_reference }}</code></td></tr>{% endif %}
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="info-card">
+                <div class="info-card-header">Paid to Account</div>
+                <div class="info-card-body">
+                    {% if payout.bank_name_snapshot %}
+                    <table class="info-table">
+                        <tr><td class="info-label">Bank</td><td class="info-value">{{ payout.bank_name_snapshot }}</td></tr>
+                        <tr><td class="info-label">Account Number</td><td class="info-value">****{{ payout.account_number_snapshot|slice:"-4:" }}</td></tr>
+                        <tr><td class="info-label">Account Name</td><td class="info-value">{{ payout.account_name_snapshot }}</td></tr>
+                    </table>
+                    {% else %}
+                    <p class="mb-0 text-muted">Bank details were not recorded for this payout.</p>
+                    {% endif %}
+
+                    {% if payout.transfer_notes %}
+                    <div class="mt-3">
+                        <p class="mb-1 fw-semibold text-dark">Transfer Note</p>
+                        <p class="mb-0 text-muted">{{ payout.transfer_notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-section">
+        <div class="section-header">
+            <div>
+                <h5><i class="fas fa-list-alt me-2"></i>Included Sales Records</h5>
+                <p class="section-subtext">Each row is one linked check-in or store purchase.</p>
+            </div>
+        </div>
+
+        {% if sales_records %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Venue</th>
+                        <th>Source</th>
+                        <th>Checked In</th>
+                        <th>Gross</th>
+                        <th>Commission</th>
+                        <th>Net</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in sales_records %}
+                    <tr>
+                        <td><span class="ref-main">{{ row.source_reference|default:row.booking.booking_reference }}</span></td>
+                        <td>{{ row.venue.name }}</td>
+                        <td>
+                            {% if row.booking_source == 'STORE' %}
+                                <span class="source-pill-store"><i class="fas fa-store me-1"></i>Store</span>
+                            {% else %}
+                                <span class="source-pill-sub"><i class="fas fa-id-card me-1"></i>Subscription</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ row.checked_in_at|date:"M j, Y g:i A" }}</td>
+                        <td>₦{{ row.gross_amount|floatformat:2|intcomma }}</td>
+                        <td>₦{{ row.commission_amount|floatformat:2|intcomma }}</td>
+                        <td><span class="amount-main">₦{{ row.net_amount|floatformat:2|intcomma }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end fw-bold">Totals</td>
+                        <td class="fw-bold">₦{{ payout.total_gross|floatformat:2|intcomma }}</td>
+                        <td class="fw-bold">₦{{ payout.total_commission|floatformat:2|intcomma }}</td>
+                        <td class="fw-bold net-highlight">₦{{ payout.total_net|floatformat:2|intcomma }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        {% include 'partials/pagination.html' with page_obj=page_obj %}
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h4>No linked sales records</h4>
+            <p>No sales rows are attached to this payout batch.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="support-note">
+        <p><strong>Questions about this payout?</strong> Contact Gold Privilege support and quote reference <strong>{{ payout.reference }}</strong>.</p>
+    </div>
+</div>
+{% endblock %}

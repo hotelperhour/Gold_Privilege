@@ -14,76 +14,63 @@ logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=Booking)
 def send_booking_confirmation_emails(sender, instance, created, **kwargs):
-    """
-    Send confirmation emails when booking is created
-    - Email to member with booking details and QR code
-    - Email to partner (venue owner) about incoming booking
-    """
     if created and instance.status == BookingStatus.CONFIRMED:
-        # 1. Send to Member
-        try:
-            subject = f'Booking Confirmed - {instance.venue.name}'
-            
-            context = {
-                'booking': instance,
-                'user': instance.user,
-                'venue': instance.venue,
-                'qr_data': instance.get_qr_code_data(),
-            }
-            
-            html_message = render_to_string(
-                'bookings/emails/booking_confirmed_member.html',
-                context
-            )
-            plain_message = strip_tags(html_message)
-            
-            email = EmailMultiAlternatives(
-                subject=subject,
-                body=plain_message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[instance.user.email]
-            )
-            email.attach_alternative(html_message, "text/html")
-            email.send(fail_silently=False)
-            
-            logger.info(f"Booking confirmation sent to member: {instance.booking_reference}")
         
-        except Exception as e:
-            logger.error(f"Failed to send booking confirmation to member: {e}")
-        
-        # 2. Send to Partner
+        # Store bookings: skip member email (discount store sends its own)
+        # but still notify the partner
+        if getattr(instance, 'booking_source', None) != 'STORE':
+            # Member confirmation email
+            try:
+                subject = f'Booking Confirmed - {instance.venue.name}'
+                context = {
+                    'booking': instance,
+                    'user': instance.user,
+                    'venue': instance.venue,
+                    'qr_data': instance.get_qr_code_data(),
+                }
+                html_message = render_to_string(
+                    'bookings/emails/booking_confirmed_member.html', context
+                )
+                plain_message = strip_tags(html_message)
+                email = EmailMultiAlternatives(
+                    subject=subject, body=plain_message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[instance.user.email]
+                )
+                email.attach_alternative(html_message, "text/html")
+                email.send(fail_silently=False)
+                logger.info(f"Booking confirmation sent to member: {instance.booking_reference}")
+            except Exception as e:
+                logger.error(f"Failed to send booking confirmation to member: {e}")
+
+        # Partner notification — always sent for ALL booking sources
         try:
             partner_email = instance.venue.partner.user.email
             subject = f'New Booking - {instance.venue.name}'
-            
+            masked_reference = f"••••••{instance.booking_reference[-4:]}" if instance.booking_reference else ""
             context = {
                 'booking': instance,
                 'venue': instance.venue,
                 'partner': instance.venue.partner,
                 'member_name': instance.user.get_full_name(),
+                'booking_source': getattr(instance, 'booking_source', 'SUBSCRIPTION'),
+                'masked_reference': masked_reference,
             }
-            
             html_message = render_to_string(
-                'bookings/emails/booking_confirmed_partner.html',
-                context
+                'bookings/emails/booking_confirmed_partner.html', context
             )
             plain_message = strip_tags(html_message)
-            
             email = EmailMultiAlternatives(
-                subject=subject,
-                body=plain_message,
+                subject=subject, body=plain_message,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=[partner_email]
             )
             email.attach_alternative(html_message, "text/html")
             email.send(fail_silently=False)
-            
             logger.info(f"Booking notification sent to partner: {instance.booking_reference}")
-        
         except Exception as e:
             logger.error(f"Failed to send booking notification to partner: {e}")
-
-
+            
 @receiver(pre_save, sender=Booking)
 def track_status_changes(sender, instance, **kwargs):
     """

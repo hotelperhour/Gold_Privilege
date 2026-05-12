@@ -58,7 +58,7 @@ class VenueAdmin(admin.ModelAdmin):
     """Admin interface for venues"""
     list_display = [
         'name', 'partner_link', 'category', 'city', 
-        'status_badge', 'rating_display', 'view_count', 'created_at', 'slug'
+        'status_badge', 'star_tier', 'access_mode', 'rating_display', 'view_count', 'created_at', 'slug'
     ]
     list_filter = [
         'status', 'category',  'city', 
@@ -81,6 +81,11 @@ class VenueAdmin(admin.ModelAdmin):
                 'category', 'primary_feature', 'tagline', 'description'
             )
         }),
+        
+        ('Level & Access', {
+            'fields': ('star_tier', 'access_mode', 'store_price')
+        }),
+
         ('Contact Details', {
             'fields': ('phone', 'email', 'website')
         }),

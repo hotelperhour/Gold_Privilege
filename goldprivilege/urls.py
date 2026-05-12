@@ -27,6 +27,8 @@ urlpatterns = [
     path("bookings/", include(("bookings.urls", "bookings"), namespace="bookings")),
     path("services/", include(("services.urls", "services"), namespace="services")),
     path("wallet/", include(("wallet.urls", "wallet"), namespace="wallet")),
+    path('store/', include(('discount_store.urls', 'discount_store'), namespace='discount_store')),
+    path("superadmin/", include(("superadmin.urls", "superadmin"), namespace="superadmin"))
 ]
 
 

@@ -70,7 +70,7 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
     
     list_display = (
         'name', 'price_display', 'billing_period_display',
-        'status_badge', 'subscribers_count', 'display_order'
+        'status_badge', 'subscribers_count', 'display_order', 'venue_tier_access'
     )
     list_filter = (
         'billing_period', 'is_active', 'is_featured', 'created_at'
@@ -86,6 +86,12 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         (_('Basic Information'), {
             'fields': ('name', 'slug', 'description', 'tagline')
         }),
+
+        (_('Access Level'), {
+            'fields': ('venue_tier_access',),
+            'description': 'Which venue star tiers this plan unlocks. Level 2 also includes Level 1.'
+        }),
+        
         (_('Pricing'), {
             'fields': ('price', 'billing_period', 'trial_period_days')
         }),
@@ -272,7 +278,7 @@ class SubscriptionAdmin(admin.ModelAdmin):
     
     fieldsets = (
         (_('Subscription Details'), {
-            'fields': ('subscription_id', 'subscription_reference', 'user', 'plan')
+            'fields': ('subscription_id', 'subscription_reference', 'user', 'plan',)
         }),
         (_('Period'), {
             'fields': (

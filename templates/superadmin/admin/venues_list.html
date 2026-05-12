@@ -1,0 +1,64 @@
+{% extends 'superadmin/base_admin.html' %}
+{% load humanize %}
+{% block title %}Venues - Superadmin{% endblock %}
+{% block page_title %}Venues{% endblock %}
+{% block page_subtitle %}Read-only venue oversight for operations and payout context{% endblock %}
+
+{% block admin_content %}
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-title">Total Venues</div><p class="stat-value">{{ summary.total|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Approved</div><p class="stat-value">{{ summary.approved|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Pending</div><p class="stat-value">{{ summary.pending|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Store Enabled</div><p class="stat-value">{{ summary.store_enabled|intcomma }}</p></div>
+</div>
+
+<form method="get" class="filter-form">
+    <div class="filter-grid">
+        <input type="text" name="q" class="form-control" placeholder="Search venue, partner, city, email" value="{{ q }}">
+        <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for value, label in status_choices %}<option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <select name="category" class="form-select">
+            <option value="">All Categories</option>
+            {% for value, label in category_choices %}<option value="{{ value }}" {% if category_filter == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <select name="access_mode" class="form-select">
+            <option value="">All Access Modes</option>
+            {% for value, label in access_mode_choices %}<option value="{{ value }}" {% if access_mode_filter == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="action-row mt-3">
+        <a href="{% url 'superadmin:venues' %}" class="btn-darkline">Clear</a>
+        <button type="submit" class="btn-gold">Apply Filters</button>
+    </div>
+</form>
+
+<div class="table-panel">
+    <div class="panel-header"><div><h5>Venue Directory</h5><p class="panel-subtext">Operational snapshot only. All edits remain in Django Admin.</p></div></div>
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Venue</th><th>Partner</th><th>Category</th><th>Access</th><th>Status</th><th>Location</th><th>Bookings</th><th>Created</th></tr>
+            </thead>
+            <tbody>
+                {% for venue in venues %}
+                <tr>
+                    <td><strong>{{ venue.name }}</strong><br><small class="text-muted">{{ venue.email|default:"No business email" }}</small></td>
+                    <td>{{ venue.partner.business_name }}<br><small class="text-muted">{{ venue.partner.user.email }}</small></td>
+                    <td>{{ venue.get_category_display }}</td>
+                    <td><span class="badge-soft badge-dark">{{ venue.get_access_mode_display }}</span></td>
+                    <td><span class="badge-soft {% if venue.status == 'APPROVED' %}badge-success{% elif venue.status == 'PENDING' %}badge-gold{% elif venue.status == 'REJECTED' %}badge-danger{% else %}badge-muted{% endif %}">{{ venue.get_status_display }}</span></td>
+                    <td>{{ venue.city }}, {{ venue.state }}</td>
+                    <td>{{ venue.bookings_total|intcomma }}</td>
+                    <td>{{ venue.created_at|date:"M j, Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8"><div class="empty-state"><i class="fas fa-store-slash"></i><div>No venues found.</div></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'partials/pagination.html' %}
+</div>
+{% endblock %}

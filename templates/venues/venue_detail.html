@@ -527,18 +527,30 @@
                 </div>
 
                 {% if user.is_authenticated and user.is_subscriber and can_access %}
-                    <a href="{% url 'bookings:create_for_venue' venue.slug %}" class="btn-book">
-                        <i class="fas fa-calendar-plus"></i> Book This Venue
-                    </a>
-                {% elif user.is_authenticated and not user.is_subscriber %}
-                    <a href="{% url 'subscriptions:plans_list' %}" class="btn-book">
-                        <i class="fas fa-lock"></i> Subscribe to Book
-                    </a>
-                {% else %}
-                    <a href="{% url 'account:login' %}" class="btn-book">
-                        <i class="fas fa-sign-in-alt"></i> Login to Book
-                    </a>
-                {% endif %}
+    <a href="{% url 'bookings:create_for_venue' venue.slug %}" class="btn-book">
+        <i class="fas fa-calendar-plus"></i> Book This Venue
+    </a>
+ 
+{% elif user.is_authenticated and user.is_subscriber and venue_is_store_only %}
+    <a href="{% url 'discount_store:store_home' %}" class="btn-book">
+        🛒 Available in Discount Store
+    </a>
+ 
+{% elif user.is_authenticated and user.is_subscriber and not can_access %}
+    <a href="{% url 'subscriptions:plans_list' %}" class="btn-book">
+        <i class="fas fa-lock"></i> Upgrade to Book
+    </a>
+ 
+{% elif user.is_authenticated and not user.is_subscriber %}
+    <a href="{% url 'subscriptions:plans_list' %}" class="btn-book">
+        <i class="fas fa-lock"></i> Subscribe to Book
+    </a>
+ 
+{% else %}
+    <a href="{% url 'account:login' %}" class="btn-book">
+        <i class="fas fa-sign-in-alt"></i> Login to Book
+    </a>
+{% endif %}
             </div>
 
             <!-- About -->
@@ -618,6 +630,22 @@
                         <div class="info-content">Up to {{ venue.capacity }} guests</div>
                     </div>
                     {% endif %}
+
+                    <!-- Star Tier -->
+{% if venue.star_tier %}
+<div class="info-section">
+    <div class="info-header">Venue Tier</div>
+    <div class="info-content">
+        {% if venue.star_tier == 1 %}
+            ⭐ Level 1 — Available to all plans
+        {% elif venue.star_tier == 2 %}
+            ⭐⭐ Level 2 — Gold & Platinum plans
+        {% elif venue.star_tier == 3 %}
+            ⭐⭐⭐ Level 3 — Platinum plan only
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 
                 </div>
             </div><!-- /venue-info-card -->

@@ -75,6 +75,11 @@ class PriceRange(models.TextChoices):
     LUXURY = 'LUXURY', _('₦₦₦₦ Luxury')
 
 
+class VenueAccessMode(models.TextChoices):
+    SUBSCRIPTION = 'SUBSCRIPTION', 'Subscription Only'
+    STORE        = 'STORE',        'Discount Store Only'
+    BOTH         = 'BOTH',         'Both (Subscription & Store)'
+
 # ==================== CORE MODELS ====================
 
 class VenueAmenity(models.Model):
@@ -152,6 +157,37 @@ class Venue(models.Model):
         max_length=20,
         choices=VenueCategory.choices
     )
+
+    access_mode = models.CharField(
+        max_length=20,
+        choices=VenueAccessMode.choices,
+        default='BOTH',
+        help_text=(
+            'SUBSCRIPTION = only appears in subscriber venue list. '
+            'STORE = only appears in Discount Store. '
+            'BOTH = appears in both places.'
+        ),
+    )
+    star_tier = models.PositiveSmallIntegerField(
+        default=1,
+        choices=[
+            (1, 'Level 1 — All Members'),
+            (2, 'Level 2 — Mid-tier & Above'),
+            (3, 'Level 3 — Top-tier Only'),
+        ],
+        help_text='Minimum subscription level required to access this venue.',
+    )
+
+    store_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0'),
+        help_text=(
+            'Price for this venue in the Discount Store (in naira). '
+            '1 naira = 1 coin. Only used when access_mode is STORE or BOTH.'
+        ),
+    )
+    
     tagline = models.CharField(
         _('tagline'),
         max_length=200,
@@ -400,27 +436,72 @@ class Venue(models.Model):
     
     # In Venue model:
     def is_accessible_by(self, user):
-        """Check if user can access venue - SIMPLE"""
-        # Staff always can
-        if user.is_staff:
-            return True, "Staff access"
-        
-        # Must be subscriber
-        if not user.is_subscriber:
-            return False, "Subscribe to access venues"
-        
-        # Must have active subscription
+        """
+        Check if a user can book this venue through their SUBSCRIPTION.
+ 
+        This is the single server-side gate for subscription booking.
+        Three ordered checks:
+ 
+          Gate 1 — Must have an active subscription.
+          Gate 2 — Venue must be accessible via subscription
+                   (access_mode = SUBSCRIPTION or BOTH).
+                   STORE-only venues cannot be booked via subscription —
+                   they must go through the Discount Store checkout.
+          Gate 3 — User's plan tier must meet or exceed the venue's star_tier.
+ 
+        Returns (can_access: bool, message: str)
+ 
+        Teaching note:
+          We return a tuple (bool, str) instead of raising an exception because
+          the caller needs to know WHY access was denied to show the right message
+          and redirect. Exceptions are for unexpected errors, not expected
+          business-rule denials.
+        """
         from subscriptions.models import Subscription
+ 
+        # Staff bypass — never blocked
+        if user.is_staff:
+            return True, 'Staff access'
+ 
+        # Must be a subscriber type (not a partner account)
+        if not getattr(user, 'is_subscriber', False):
+            return False, 'Subscribe to access venues'
+ 
+        # Gate 1: Must have an active subscription
         active_sub = Subscription.objects.filter(
             user=user,
             status__in=['ACTIVE', 'TRIAL'],
-            end_date__gte=timezone.now()
-        ).first()
-        
+            end_date__gte=timezone.now(),
+        ).select_related('plan').first()
+ 
         if not active_sub:
-            return False, "Active subscription required"
-        
-        return True, "Access granted"
+            return False, 'An active subscription is required to book this venue'
+ 
+        # Gate 2: Venue must be part of the subscription system
+        # STORE-only venues live exclusively in the Discount Store.
+        # A subscriber cannot book them through their plan, regardless of tier.
+        if self.access_mode == 'STORE':
+            return (
+                False,
+                'This venue is only available in the Discount Store. '
+                'Purchase a session there to book a visit.'
+            )
+ 
+        # Gate 3: Plan tier must be high enough for this venue's star tier
+        # venue.star_tier = minimum level needed (1, 2, or 3)
+        # plan.venue_tier_access = maximum level the plan unlocks (1, 2, or 3)
+        user_tier = getattr(active_sub.plan, 'venue_tier_access', 1)
+        if self.star_tier > user_tier:
+            tier_name = {1: 'Level 1', 2: 'Level 2', 3: 'Level 3'}.get(
+                self.star_tier, f'Level {self.star_tier}'
+            )
+            return (
+                False,
+                f'This is a {tier_name} venue. Upgrade your subscription to unlock it.'
+            )
+ 
+        return True, 'Access granted'
+ 
     
     def increment_view_count(self):
         """Increment view counter (atomic operation)"""

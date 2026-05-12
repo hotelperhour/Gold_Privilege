@@ -1,0 +1,61 @@
+{% extends 'superadmin/base_admin.html' %}
+{% load humanize %}
+{% block title %}Partners - Superadmin{% endblock %}
+{% block page_title %}Partners{% endblock %}
+{% block page_subtitle %}Read-only partner profile oversight{% endblock %}
+
+{% block admin_content %}
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-title">Total Partners</div><p class="stat-value">{{ summary.total|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Approved</div><p class="stat-value">{{ summary.approved|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Pending</div><p class="stat-value">{{ summary.pending|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Bank Ready</div><p class="stat-value">{{ summary.with_bank_details|intcomma }}</p></div>
+</div>
+
+<form method="get" class="filter-form">
+    <div class="filter-grid">
+        <input type="text" name="q" class="form-control" placeholder="Search business, email, GP ID" value="{{ q }}">
+        <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for value, label in status_choices %}<option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="action-row mt-3">
+        <a href="{% url 'superadmin:partners' %}" class="btn-darkline">Clear</a>
+        <button type="submit" class="btn-gold">Apply Filters</button>
+    </div>
+</form>
+
+<div class="table-panel">
+    <div class="panel-header"><div><h5>Partner Profiles</h5><p class="panel-subtext">Operational visibility only. CRUD still belongs in Django Admin.</p></div></div>
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Business</th><th>Email</th><th>Status</th><th>Venues</th><th>Bank Details</th><th>Approved At</th><th>Joined</th></tr>
+            </thead>
+            <tbody>
+                {% for partner in partners %}
+                <tr>
+                    <td><strong>{{ partner.business_name }}</strong><br><small class="text-muted">{{ partner.user.gp_id }}</small></td>
+                    <td>{{ partner.user.email }}</td>
+                    <td><span class="badge-soft {% if partner.status == 'APPROVED' %}badge-success{% elif partner.status == 'PENDING' %}badge-gold{% elif partner.status == 'REJECTED' %}badge-danger{% else %}badge-muted{% endif %}">{{ partner.get_status_display }}</span></td>
+                    <td>{{ partner.venue_count|intcomma }}</td>
+                    <td>
+                        {% if partner.bank_ready %}
+                            <span class="badge-soft badge-success">Complete</span>
+                        {% else %}
+                            <span class="badge-soft badge-muted">Incomplete</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ partner.approved_at|date:"M j, Y g:i A"|default:"-" }}</td>
+                    <td>{{ partner.created_at|date:"M j, Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7"><div class="empty-state"><i class="fas fa-handshake-slash"></i><div>No partners found.</div></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'partials/pagination.html' %}
+</div>
+{% endblock %}

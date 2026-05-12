@@ -1,0 +1,327 @@
+{% extends 'base_subscriber.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Checkout — {{ product.name }}{% endblock %}
+
+{% block subscriber_content %}
+<style>
+* { font-family: 'Poppins', sans-serif; box-sizing: border-box; }
+:root {
+    --gold: #E5AD04; --gold-light: #F9B036; --gold-pale: #FFF8E1;
+    --gold-pale-border: #FFE082; --black: #111; --border: #E5E7EB;
+    --text-muted: #6B7280; --radius: 14px; --shadow: 0 2px 16px rgba(0,0,0,0.07);
+}
+.back-link { display:inline-flex;align-items:center;gap:8px;color:var(--text-muted);font-size:14px;font-weight:500;text-decoration:none;margin-bottom:28px; }
+.back-link:hover { color:var(--black); }
+.checkout-layout { display:grid; grid-template-columns:1fr 360px; gap:28px; align-items:start; }
+.form-card { background:#fff;border-radius:var(--radius);padding:32px 28px;box-shadow:var(--shadow);border:1px solid var(--border); }
+.form-card h2 { font-size:21px;font-weight:700;color:var(--black);margin:0 0 6px; }
+.form-card .sub { font-size:14px;color:var(--text-muted);margin-bottom:28px; }
+.form-group { margin-bottom:20px; }
+.form-label { display:block;font-size:13px;font-weight:600;color:var(--black);margin-bottom:8px; }
+.form-control { width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;font-family:'Poppins',sans-serif;color:var(--black);outline:none;transition:border-color 0.2s; }
+.form-control:focus { border-color:var(--gold); }
+.form-control::placeholder { color:#b0b8c4; }
+.form-row { display:grid;grid-template-columns:1fr 1fr;gap:16px; }
+
+/* Quantity stepper */
+.qty-stepper { display:flex;align-items:center;gap:0;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;width:fit-content; }
+.qty-btn { width:40px;height:44px;background:#f5f5f5;border:none;cursor:pointer;font-size:18px;font-weight:600;color:var(--black);transition:background 0.15s; }
+.qty-btn:hover { background:#e5e5e5; }
+.qty-input { width:60px;height:44px;border:none;border-left:1.5px solid var(--border);border-right:1.5px solid var(--border);text-align:center;font-size:16px;font-weight:700;font-family:'Poppins',sans-serif;outline:none; }
+
+/* Summary card */
+.summary-card { background:#fff;border-radius:var(--radius);padding:24px 22px;box-shadow:var(--shadow);border:1px solid var(--border);position:sticky;top:24px; }
+.summary-card h3 { font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:0.6px;color:var(--black);margin:0 0 18px; }
+.summary-row { display:flex;justify-content:space-between;font-size:14px;margin-bottom:12px; }
+.summary-row .lbl { color:var(--text-muted); }
+.summary-row .val { font-weight:600;color:var(--black); }
+.summary-row .val.gold { color:#b07b00; }
+.summary-divider { border:none;border-top:1px solid var(--border);margin:14px 0; }
+.summary-total { font-size:20px;font-weight:800;color:var(--black); }
+.cashback-info { background:var(--gold-pale);border:1px solid var(--gold-pale-border);border-radius:8px;padding:12px 14px;font-size:13px;color:#7a6000;margin:14px 0; }
+.cashback-info strong { color:#4a3800; }
+
+/* Payment buttons */
+.btn-pay {
+    width:100%;padding:15px;border:none;border-radius:10px;
+    font-size:15px;font-weight:700;cursor:pointer;transition:all 0.2s;
+    font-family:'Poppins',sans-serif;margin-top:8px;display:flex;
+    align-items:center;justify-content:center;gap:8px;text-decoration:none;
+}
+.btn-coins { background:var(--gold);color:#000; }
+.btn-coins:hover { background:var(--gold-light);transform:translateY(-2px); }
+.btn-card  { background:#fff;color:var(--black);border:1.5px solid var(--border); }
+.btn-card:hover  { border-color:var(--black); }
+.btn-pay:disabled { background:#e5e7eb;color:var(--text-muted);cursor:not-allowed;transform:none; }
+
+.wallet-balance-note { font-size:12px;color:var(--text-muted);text-align:center;margin-top:6px; }
+.insufficient { color:#dc3545; }
+
+/* Loading overlay */
+.loading-overlay { display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;justify-content:center;align-items:center; }
+.loading-overlay.active { display:flex; }
+.loading-box { background:#fff;border-radius:16px;padding:36px 40px;text-align:center; }
+.spinner { width:40px;height:40px;border:4px solid #f0f0f0;border-top:4px solid var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+@media (max-width:960px) { .checkout-layout { grid-template-columns:1fr; } .summary-card { position:static; } }
+@media (max-width:600px) { .form-card { padding:20px 16px; } .form-row { grid-template-columns:1fr; } }
+</style>
+
+<a href="{% url 'discount_store:store_home' %}" class="back-link">
+    <i class="fas fa-arrow-left"></i> Back to Store
+</a>
+
+<div class="checkout-layout">
+
+    <!-- LEFT: Booking form -->
+    <div class="form-card">
+        <h2>{{ product.name }}</h2>
+        <p class="sub">
+            <i class="fas fa-map-marker-alt" style="color:var(--gold);margin-right:4px;"></i>
+            {{ product.venue.name }}
+            {% if product.description %} — {{ product.description }}{% endif %}
+        </p>
+
+        {% if messages %}
+            {% for msg in messages %}
+            <div style="background:{% if 'success' in msg.tags %}#d1e7dd{% else %}#f8d7da{% endif %};border:1px solid {% if 'success' in msg.tags %}#198754{% else %}#dc3545{% endif %};border-radius:8px;padding:12px 16px;font-size:14px;margin-bottom:20px;">
+                {{ msg }}
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Booking details form — shared by both payment paths via JS -->
+        <div class="form-group">
+            <label class="form-label">Visit Date</label>
+            <input type="date" id="visit_date" class="form-control"
+                   min="{{ today }}" required>
+        </div>
+
+        <div class="form-row">
+            
+            <div class="form-group">
+                <label class="form-label">Number of People</label>
+                <div class="qty-stepper">
+                    <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
+                    <input type="number" id="quantity" class="qty-input" value="1" min="1" max="{{ max_quantity }}" readonly>
+                    <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Special Requests <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
+            <textarea id="special_requests" class="form-control" rows="3"
+                      placeholder="Any special requirements or notes for the venue…"
+                      style="resize:vertical;"></textarea>
+        </div>
+    </div>
+
+    <!-- RIGHT: Summary + payment -->
+    <div class="summary-card">
+        <h3>Order Summary</h3>
+
+        <div class="summary-row">
+            <span class="lbl">Price per person</span>
+            <span class="val">₦{{ product.price|floatformat:0|intcomma }}</span>
+        </div>
+        <div class="summary-row">
+            <span class="lbl">Number of people</span>
+            <span class="val" id="qty-display">1</span>
+        </div>
+        <hr class="summary-divider">
+        <div class="summary-row">
+            <span class="lbl" style="font-weight:600;">Total</span>
+            <span class="val summary-total" id="total-display">₦{{ product.price|floatformat:0|intcomma }}</span>
+        </div>
+
+        <div class="cashback-info">
+            💰 You'll earn <strong id="cashback-display">{{ cashback_per_unit }} coins</strong> cashback on this purchase.
+        </div>
+
+        <hr class="summary-divider">
+
+        <!-- Pay with Coins -->
+        <div id="coin-section">
+            <button type="button" class="btn-pay btn-coins" id="btn-coins" onclick="payWithCoins()">
+                🪙 Pay <span id="coins-btn-amount">{{ product.coin_price|intcomma }}</span> Coins
+            </button>
+            <p class="wallet-balance-note">
+                Your balance: <strong id="wallet-balance">{{ wallet.balance|floatformat:0|intcomma }}</strong> coins
+                {% if wallet.balance < product.coin_price %}
+                — <a href="{% url 'wallet:buy' %}" style="color:#E5AD04;">add more coins</a>
+                {% endif %}
+            </p>
+        </div>
+
+        <!-- Pay with Card -->
+        <button type="button" class="btn-pay btn-card" id="btn-card" onclick="payWithCard()">
+            💳 Pay ₦<span id="card-btn-amount">{{ product.price|floatformat:0|intcomma }}</span> with Card
+        </button>
+
+        <div style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:10px;line-height:1.6;">
+            🔒 Secured by Paystack. By paying you confirm your booking details above.
+        </div>
+    </div>
+
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading-overlay">
+    <div class="loading-box">
+        <div class="spinner"></div>
+        <p style="margin:0;font-weight:600;">Processing your booking…</p>
+        <p style="margin:4px 0 0;font-size:13px;color:#666;">Please do not close this window</p>
+    </div>
+</div>
+
+<!-- Hidden coin payment form (submitted programmatically) -->
+<form id="coin-form" method="post" action="{% url 'discount_store:pay_with_coins' product_id=product.id %}" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="quantity" id="hid-qty">
+    <input type="hidden" name="visit_date" id="hid-date">
+    
+    <input type="hidden" name="special_requests" id="hid-notes">
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<script>
+const UNIT_PRICE    = {{ product.price }};
+const COIN_PRICE    = {{ product.coin_price }};
+const CASHBACK_RATE = {{ config.cashback_percentage }};
+const MAX_QTY       = {{ max_quantity }};
+const WALLET_BAL    = {{ wallet.balance|floatformat:0 }};
+const PRODUCT_ID    = {{ product.id }};
+const CSRF_TOKEN    = '{{ csrf_token }}';
+const PAYSTACK_KEY  = '{{ paystack_public_key }}';
+const USER_EMAIL    = '{{ request.user.email }}';
+const INITIATE_URL  = '{% url "discount_store:initiate_card_payment" product_id=product.id %}';
+const CALLBACK_URL  = '{% url "discount_store:card_payment_callback" %}';
+
+let paymentInProgress = false;
+
+function changeQty(delta) {
+    const input = document.getElementById('quantity');
+    let val = parseInt(input.value) + delta;
+    if (val < 1)   val = 1;
+    if (val > MAX_QTY) val = MAX_QTY;
+    input.value = val;
+    updateSummary(val);
+}
+
+function updateSummary(qty) {
+    const total    = UNIT_PRICE * qty;
+    const cashback = Math.floor(total * CASHBACK_RATE / 100);
+
+    document.getElementById('qty-display').textContent    = qty;
+    document.getElementById('total-display').textContent  = '₦' + total.toLocaleString('en-NG');
+    document.getElementById('cashback-display').textContent = cashback + ' coins';
+    document.getElementById('coins-btn-amount').textContent = (COIN_PRICE * qty).toLocaleString('en-NG');
+    document.getElementById('card-btn-amount').textContent  = total.toLocaleString('en-NG');
+
+    // Disable coins button if insufficient balance
+    const btnCoins = document.getElementById('btn-coins');
+    btnCoins.disabled = WALLET_BAL < COIN_PRICE * qty;
+}
+
+function getFormValues() {
+    return {
+        date:  document.getElementById('visit_date').value,
+        
+        qty:   document.getElementById('quantity').value,
+        notes: document.getElementById('special_requests').value,
+    };
+}
+
+function validateForm() {
+    const { date } = getFormValues();
+    if (!date) { alert('Please select a visit date.'); return false; }
+    return true;
+}
+
+function payWithCoins() {
+    if (paymentInProgress || !validateForm()) return;
+    const { date, qty, notes } = getFormValues();
+    document.getElementById('hid-qty').value   = qty;
+    document.getElementById('hid-date').value  = date;
+    
+    document.getElementById('hid-notes').value = notes;
+    document.getElementById('loading-overlay').classList.add('active');
+    document.getElementById('coin-form').submit();
+}
+
+function payWithCard() {
+    if (paymentInProgress || !validateForm()) return;
+    paymentInProgress = true;
+    const { date, qty, notes } = getFormValues();
+
+    const btnCard = document.getElementById('btn-card');
+    btnCard.disabled = true;
+    btnCard.textContent = 'Opening Paystack…';
+
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', CSRF_TOKEN);
+    formData.append('quantity',      qty);
+    formData.append('visit_date',    date);
+    formData.append('special_requests', notes);
+
+    fetch(INITIATE_URL, { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                alert(data.error || 'Could not initiate payment. Please try again.');
+                paymentInProgress = false;
+                btnCard.disabled = false;
+                btnCard.innerHTML = '💳 Pay ₦<span id="card-btn-amount">' + (UNIT_PRICE * qty).toLocaleString('en-NG') + '</span> with Card';
+                return;
+            }
+
+            const handler = PaystackPop.setup({
+                key:      PAYSTACK_KEY,
+                email:    USER_EMAIL,
+                amount:   data.amount_kobo,
+                currency: 'NGN',
+                ref:      data.reference,
+                callback: function(response) {
+                    document.getElementById('loading-overlay').classList.add('active');
+                    window.location.href = CALLBACK_URL + '?reference=' + response.reference;
+                },
+                onClose: function() {
+                    paymentInProgress = false;
+                    btnCard.disabled = false;
+                    btnCard.innerHTML = '💳 Pay ₦<span id="card-btn-amount">' + (UNIT_PRICE * qty).toLocaleString('en-NG') + '</span> with Card';
+                },
+            });
+            handler.openIframe();
+
+            // Reset spinner text once popup opens
+            setTimeout(() => {
+                if (paymentInProgress) {
+                    btnCard.innerHTML = '💳 Pay ₦<span id="card-btn-amount">' + (UNIT_PRICE * qty).toLocaleString('en-NG') + '</span> with Card';
+                }
+            }, 1500);
+        })
+        .catch(err => {
+            console.error(err);
+            paymentInProgress = false;
+            btnCard.disabled = false;
+            btnCard.innerHTML = '💳 Pay ₦<span id="card-btn-amount">' + (UNIT_PRICE * qty).toLocaleString('en-NG') + '</span> with Card';
+            alert('Network error. Please try again.');
+        });
+}
+
+// Set today's min date
+document.getElementById('visit_date').min = new Date().toISOString().split('T')[0];
+
+// Initial summary update
+document.getElementById('quantity').addEventListener('change', function() {
+    updateSummary(parseInt(this.value));
+});
+updateSummary(1);
+</script>
+{% endblock %}

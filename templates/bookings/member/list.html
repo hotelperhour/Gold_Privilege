@@ -1222,6 +1222,70 @@
 </div>
 {% endif %}
 
+<div class="booking-filters" style="
+    background:#fff;
+    border:1px solid #E5E7EB;
+    border-radius:12px;
+    padding:16px 20px;
+    margin-bottom:20px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:flex-end;
+">
+ 
+    <form method="get" style="display:contents;">
+ 
+        <!-- Source filter -->
+        <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">
+                Booking Type
+            </label>
+            <div style="display:flex;gap:6px;">
+                <a href="?source=ALL{% if category_filter %}&category={{ category_filter }}{% endif %}"
+                   style="padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid {% if source_filter == 'ALL' %}#E5AD04{% else %}#E5E7EB{% endif %};background:{% if source_filter == 'ALL' %}#FFF8E1{% else %}#fafafa{% endif %};color:{% if source_filter == 'ALL' %}#7a6000{% else %}#6B7280{% endif %};text-decoration:none;white-space:nowrap;">
+                    All
+                </a>
+                <a href="?source=SUBSCRIPTION{% if category_filter %}&category={{ category_filter }}{% endif %}"
+                   style="padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid {% if source_filter == 'SUBSCRIPTION' %}#E5AD04{% else %}#E5E7EB{% endif %};background:{% if source_filter == 'SUBSCRIPTION' %}#FFF8E1{% else %}#fafafa{% endif %};color:{% if source_filter == 'SUBSCRIPTION' %}#7a6000{% else %}#6B7280{% endif %};text-decoration:none;white-space:nowrap;">
+                    📋 Subscription
+                </a>
+                <a href="?source=STORE{% if category_filter %}&category={{ category_filter }}{% endif %}"
+                   style="padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid {% if source_filter == 'STORE' %}#E5AD04{% else %}#E5E7EB{% endif %};background:{% if source_filter == 'STORE' %}#FFF8E1{% else %}#fafafa{% endif %};color:{% if source_filter == 'STORE' %}#7a6000{% else %}#6B7280{% endif %};text-decoration:none;white-space:nowrap;">
+                    🛒 Discount Store
+                </a>
+            </div>
+        </div>
+ 
+        <!-- Category filter -->
+        <div style="display:flex;flex-direction:column;gap:5px;">
+            <label style="font-size:11px;font-weight:600;color:#6B7280;text-transform:uppercase;letter-spacing:0.5px;">
+                Category
+            </label>
+            <input type="hidden" name="source" value="{{ source_filter }}">
+            <select name="category" onchange="this.form.submit()"
+                    style="border:1.5px solid #E5E7EB;border-radius:9px;padding:8px 12px;font-size:13px;font-family:'Poppins',sans-serif;outline:none;background:#fafafa;height:36px;color:#111;">
+                <option value="">All Categories</option>
+                {% for code, label in categories %}
+                <option value="{{ code }}" {% if category_filter == code %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+ 
+        <!-- Clear -->
+        {% if source_filter != 'ALL' or category_filter %}
+        <div style="display:flex;align-items:flex-end;">
+            <a href="?" style="font-size:12px;color:#6B7280;text-decoration:none;padding:8px;display:flex;align-items:center;gap:4px;">
+                <i class="fas fa-times" style="font-size:11px;"></i> Clear
+            </a>
+        </div>
+        {% endif %}
+ 
+    </form>
+</div>
+
 <!-- All Bookings Table -->
 <div class="section-title" style="margin-bottom: 16px;">
     <i class="fas fa-list"></i>
@@ -1242,10 +1306,27 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for booking in page_obj %}
+                    {% for item in bookings_with_quota %}
+                    {% with booking=item.booking %}
                     <tr>
                         <td>
-                            <div class="venue-name">{{ booking.venue.name }}</div>
+                            <div class="venue-name">
+                                {{ booking.venue.name }}
+                                {% if item.is_store_booking %}
+                                <span style="
+                                    display:inline-block;
+                                    background:#FFF8E1;
+                                    border:1px solid #FFE082;
+                                    color:#7a6000;
+                                    font-size:10px;
+                                    font-weight:600;
+                                    padding:2px 7px;
+                                    border-radius:4px;
+                                    margin-left:5px;
+                                    vertical-align:middle;
+                                ">🛒 Store</span>
+                                {% endif %}
+                            </div>
                             <div class="venue-location">
                                 <i class="fas fa-map-marker-alt"></i> {{ booking.venue.city }}
                             </div>
@@ -1272,6 +1353,7 @@
                             </button>
                         </td>
                     </tr>
+                    {% endwith %}
                     {% endfor %}
                 </tbody>
             </table>
@@ -1299,7 +1381,8 @@
 <div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
 
 <!-- Booking Details Modals -->
-{% for booking in page_obj %}
+{% for item in bookings_with_quota %}
+{% with booking=item.booking store_order=item.store_order %}
 <div class="booking-modal" id="modal-{{ booking.booking_reference }}">
     <div class="modal-scroll">
         <!-- Header with Image Background -->
@@ -1447,9 +1530,16 @@
             </div>
             <div class="footer-buttons">
                 {% if booking.can_cancel %}
-                <button class="btn-cancel-booking" onclick="openCancelModal('{{ booking.booking_reference }}')">
-                    Cancel Booking
-                </button>
+                    {% if item.is_store_booking and store_order %}
+                    <button class="btn-cancel-booking"
+                            onclick="openStoreCancelModal('{{ store_order.order_id }}', '{{ booking.venue.name }}', {{ store_order.amount_paid|floatformat:0 }})">
+                        Cancel Booking
+                    </button>
+                    {% else %}
+                    <button class="btn-cancel-booking" onclick="openCancelModal('{{ booking.booking_reference }}')">
+                        Cancel Booking
+                    </button>
+                    {% endif %}
                 {% endif %}
                 <a href="{% url 'venues:detail' booking.venue.slug %}" class="btn-view-venue">
                     View Venue Details
@@ -1458,7 +1548,10 @@
         </div>
     </div>
 </div>
+{% endwith %}
+
 {% endfor %}
+
 
 <!-- Cancel Modal for This Booking -->
 {% for booking_data in bookings_with_quota %}
@@ -1548,6 +1641,40 @@
 </div>
 {% endwith %}
 {% endfor %}
+
+<div class="cancel-modal" id="store-cancel-modal">
+    <div class="cancel-modal-header">
+        <h3>Cancel Store Booking</h3>
+        <p id="store-cancel-venue-text">This action cannot be undone.</p>
+        <button class="btn-close-cancel" onclick="closeStoreCancelModal()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <form method="post" id="store-cancel-form" action="">
+        {% csrf_token %}
+        <div class="cancel-modal-body">
+            <div class="info-message success">
+                <i class="fas fa-coins"></i>
+                <div id="store-cancel-refund-msg">Your coins will be refunded immediately.</div>
+            </div>
+            <div class="form-group-cancel">
+                <label class="form-label-cancel">
+                    Reason <span class="optional-badge">Optional</span>
+                </label>
+                <textarea name="reason" class="form-control-cancel" rows="2"
+                          placeholder="Why are you cancelling?"></textarea>
+            </div>
+        </div>
+        <div class="cancel-modal-footer">
+            <button type="button" class="btn-keep-booking" onclick="closeStoreCancelModal()">
+                Keep Booking
+            </button>
+            <button type="submit" class="btn-confirm-cancel">
+                Confirm Cancellation
+            </button>
+        </div>
+    </form>
+</div>
 
 {% endblock %}
 
@@ -1650,5 +1777,22 @@ document.addEventListener('keydown', function(e) {
         closeAllModals();
     }
 });
+</script>
+<script>
+function openStoreCancelModal(orderId, venueName, amount) {
+    document.getElementById('store-cancel-venue-text').textContent =
+        'Cancelling your booking at ' + venueName;
+    document.getElementById('store-cancel-refund-msg').textContent =
+        amount.toLocaleString() + ' coins will be refunded to your wallet immediately.';
+    document.getElementById('store-cancel-form').action =
+        '/store/orders/' + orderId + '/cancel/';
+    document.getElementById('store-cancel-modal').classList.add('active');
+    document.getElementById('modalOverlay').classList.add('active');
+}
+ 
+function closeStoreCancelModal() {
+    document.getElementById('store-cancel-modal').classList.remove('active');
+    document.getElementById('modalOverlay').classList.remove('active');
+}
 </script>
 {% endblock %}

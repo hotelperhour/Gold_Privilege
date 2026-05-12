@@ -1,0 +1,157 @@
+{% extends 'superadmin/base_admin.html' %}
+{% load humanize %}
+{% block title %}Payout {{ payout.reference }} - Superadmin{% endblock %}
+{% block page_title %}Payout Detail{% endblock %}
+{% block page_subtitle %}Review and action a single payout batch{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <div>
+        <h1>{{ payout.reference }}</h1>
+        <p>{{ payout.venue.name }} · {{ payout.period_start|date:"M j, Y g:i A" }} - {{ payout.period_end|date:"M j, Y g:i A" }}</p>
+    </div>
+    <div class="action-row">
+        <a href="{% url 'superadmin:history' %}" class="btn-darkline"><i class="fas fa-arrow-left"></i>Back to History</a>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-title">Gross</div><p class="stat-value">₦{{ payout.total_gross|floatformat:2|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Commission</div><p class="stat-value">₦{{ payout.total_commission|floatformat:2|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Net</div><p class="stat-value">₦{{ payout.total_net|floatformat:2|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Bookings</div><p class="stat-value">{{ payout.booking_count|intcomma }}</p></div>
+</div>
+
+<div class="content-grid">
+    <div class="panel-card">
+        <div class="panel-header"><div><h5>Venue Bank Snapshot</h5><p class="panel-subtext">Stored at the time of payout batching.</p></div></div>
+        <div class="panel-body">
+            <p><strong>Bank:</strong> {{ payout.bank_name_snapshot|default:"-" }}</p>
+            <p><strong>Account Number:</strong> {{ payout.account_number_snapshot|default:"-" }}</p>
+            <p class="mb-0"><strong>Account Name:</strong> {{ payout.account_name_snapshot|default:"-" }}</p>
+        </div>
+    </div>
+
+    <div class="panel-card">
+        <div class="panel-header"><div><h5>Payout Metadata</h5><p class="panel-subtext">Lifecycle timestamps and transfer references.</p></div></div>
+        <div class="panel-body">
+            <p><strong>Status:</strong> <span class="badge-soft {% if payout.status == 'PENDING' %}badge-gold{% elif payout.status == 'APPROVED' %}badge-info{% elif payout.status == 'FAILED' %}badge-danger{% elif payout.status == 'PAID' %}badge-success{% else %}badge-muted{% endif %}">{{ payout.get_status_display }}</span></p>
+            <p><strong>Created:</strong> {{ payout.created_at|date:"M j, Y g:i A" }}</p>
+            <p><strong>Approved At:</strong> {{ payout.approved_at|date:"M j, Y g:i A"|default:"-" }}</p>
+            <p><strong>Paid At:</strong> {{ payout.paid_at|date:"M j, Y g:i A"|default:"-" }}</p>
+            <p><strong>Transfer Ref:</strong> {{ payout.transfer_reference|default:"-" }}</p>
+            {% if payout.admin_notes %}<p><strong>Admin Notes:</strong><br>{{ payout.admin_notes }}</p>{% endif %}
+            {% if payout.transfer_notes %}<p class="mb-0"><strong>Transfer Notes:</strong><br>{{ payout.transfer_notes }}</p>{% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="content-grid">
+    {% if payout.status == 'PENDING' %}
+<div class="panel-card">
+    <div class="panel-header"><h5>Approve Payout</h5></div>
+    <div class="panel-body">
+        <form method="post" action="{% url 'superadmin:approve' payout.payout_id %}">
+            {% csrf_token %}
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label class="form-label" style="display: block; font-size: 13px; font-weight: 600; color: #2c3e50; margin-bottom: 6px;">
+                    Admin Note <span style="color: #95a5a6; font-weight: 400;">(optional)</span>
+                </label>
+                <textarea name="admin_notes" 
+                          class="admin-textarea" 
+                          rows="4"
+                          style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.2s; box-sizing: border-box; background: #fff;"
+                          placeholder="Add any notes about this approval…"></textarea>
+            </div>
+            <button type="submit" class="btn-gold" style="background:#28a745; color:#fff; border:none; padding:10px 24px; border-radius:8px; font-weight:600;">Approve Batch</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% if payout.status == 'APPROVED' or payout.status == 'FAILED' %}
+<div class="panel-card">
+    <div class="panel-header"><h5>Mark as Paid</h5></div>
+    <div class="panel-body">
+        <form method="post" action="{% url 'superadmin:pay' payout.payout_id %}">
+            {% csrf_token %}
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label class="form-label" style="display: block; font-size: 13px; font-weight: 600; color: #2c3e50; margin-bottom: 6px;">
+                    Transfer Reference <span class="required-star" style="color: #e74c3c;">*</span>
+                </label>
+                <input type="text" 
+                       name="transfer_reference" 
+                       class="admin-input" 
+                       style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.2s; box-sizing: border-box;"
+                       placeholder="e.g., PAYSTACK_TRF_12345678"
+                       required>
+            </div>
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label class="form-label" style="display: block; font-size: 13px; font-weight: 600; color: #2c3e50; margin-bottom: 6px;">
+                    Transfer Notes <span style="color: #95a5a6; font-weight: 400;">(optional)</span>
+                </label>
+                <textarea name="transfer_notes" 
+                          class="admin-textarea" 
+                          rows="3"
+                          style="width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; font-family: 'Poppins', sans-serif; transition: all 0.2s; box-sizing: border-box;"
+                          placeholder="Any notes about the transfer…"></textarea>
+            </div>
+           <button type="submit" style="background: #28a745; color: #fff; border: none; padding: 10px 24px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                Mark as Paid
+</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+    {% if payout.status != 'PAID' and payout.status != 'CANCELLED' %}
+    <div class="panel-card">
+        <div class="panel-header"><h5>Batch Controls</h5></div>
+        <div class="panel-body">
+            <form method="post" action="{% url 'superadmin:fail' payout.payout_id %}" class="mb-3">
+                {% csrf_token %}
+                <textarea name="admin_notes" class="form-control mb-2" rows="3" placeholder="Reason for failure"></textarea>
+                <button type="submit" class="btn-soft">Mark Failed</button>
+            </form>
+
+            <form method="post" action="{% url 'superadmin:cancel' payout.payout_id %}">
+                {% csrf_token %}
+                <textarea name="admin_notes" class="form-control mb-2" rows="3" placeholder="Reason for cancellation"></textarea>
+                <button type="submit" class="btn-darkline">Cancel Batch</button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<div class="table-panel mt-4">
+    <div class="panel-header"><div><h5>Linked Sales Records</h5><p class="panel-subtext">Sales included in this payout batch.</p></div></div>
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Booking Ref</th><th>Guest</th><th>Source</th><th>Checked In</th><th>Gross</th><th>Commission</th><th>Net</th></tr>
+            </thead>
+            <tbody>
+                {% for row in sales_records %}
+                <tr>
+                    <td class="text-mono">{{ row.booking.booking_reference }}</td>
+                    <td>{{ row.booking.user.get_full_name|default:row.booking.user.email }}</td>
+                    <td>{{ row.get_booking_source_display }}</td>
+                    <td>{{ row.checked_in_at|date:"M j, Y g:i A" }}</td>
+                    <td>₦{{ row.gross_amount|floatformat:2|intcomma }}</td>
+                    <td>₦{{ row.commission_amount|floatformat:2|intcomma }}</td>
+                    <td>₦{{ row.net_amount|floatformat:2|intcomma }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7"><div class="empty-state"><i class="fas fa-inbox"></i><div>No sales records linked to this payout.</div></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if records_page_obj.has_other_pages %}
+    <div class="px-3 py-2">
+        {% include 'partials/pagination.html' with page_obj=records_page_obj page_param="records_page" %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

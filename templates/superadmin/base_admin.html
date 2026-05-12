@@ -1,0 +1,671 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gold Privilege Superadmin{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --gold-primary: #E5AD04;
+            --gold-secondary: #F9B036;
+            --black: #020202;
+            --white: #FFFFFF;
+            --muted: #6c757d;
+            --line: rgba(0,0,0,.08);
+            --surface: #ffffff;
+            --surface-soft: #f8f9fb;
+            --success: #29CC97;
+            --info: #0DCAF0;
+            --danger: #DC3545;
+            --warning: #FFC107;
+        }
+
+        * { font-family: 'Poppins', sans-serif; }
+
+        body {
+            margin: 0;
+            background: #f5f6f8;
+            color: var(--black);
+        }
+
+        .admin-shell {
+            min-height: 100vh;
+        }
+
+        .admin-sidebar {
+            width: 280px;
+            background: var(--surface);
+            border-right: 1px solid var(--line);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1030;
+        }
+
+        .sidebar-brand {
+            padding: 22px 22px 18px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .brand-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-mark {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: rgba(229,173,4,.12);
+            color: var(--gold-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .brand-copy h1 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .brand-copy p {
+            margin: 2px 0 0;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .sidebar-nav {
+            padding: 14px 12px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .nav-section-label {
+            font-size: 11px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 700;
+            padding: 10px 12px 6px;
+        }
+
+        .nav-link-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 11px 12px;
+            border-radius: 10px;
+            color: var(--black);
+            text-decoration: none;
+            transition: all .25s ease;
+            margin-bottom: 4px;
+        }
+
+        .nav-link-item i {
+            width: 18px;
+            text-align: center;
+            color: var(--muted);
+        }
+
+        .nav-link-item:hover,
+        .nav-link-item.active {
+            background: rgba(229,173,4,.12);
+            color: var(--black);
+        }
+
+        .nav-link-item:hover i,
+        .nav-link-item.active i {
+            color: var(--gold-primary);
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            min-width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            background: rgba(229,173,4,.18);
+            color: var(--black);
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 8px;
+        }
+
+        .sidebar-footer {
+            padding: 18px 22px;
+            border-top: 1px solid var(--line);
+            background: var(--surface);
+        }
+
+        .sidebar-metric {
+            background: var(--surface-soft);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-metric:last-child { margin-bottom: 0; }
+
+        .sidebar-metric small {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .sidebar-metric strong {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .admin-main {
+            margin-left: 280px;
+            min-height: 100vh;
+        }
+
+        .admin-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            background: rgba(255,255,255,.92);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--line);
+            padding: 16px 24px;
+        }
+
+        .topbar-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .topbar-heading h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .topbar-heading p {
+            margin: 4px 0 0;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        .topbar-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .topbar-links a {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--surface-soft);
+            color: var(--black);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            transition: all .25s ease;
+        }
+
+        .topbar-links a:hover {
+            border-color: rgba(229,173,4,.45);
+            color: var(--gold-primary);
+        }
+
+        .admin-content {
+            padding: 24px;
+        }
+
+        .messages-stack {
+            margin-bottom: 18px;
+        }
+
+        .messages-stack .alert {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,.04);
+        }
+
+        .admin-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .admin-page-header h1 {
+            font-size: 30px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .admin-page-header p {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        .action-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-gold,
+        .btn-soft,
+        .btn-darkline {
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid transparent;
+            transition: all .25s ease;
+        }
+
+        .btn-gold {
+            background: var(--gold-primary);
+            color: var(--black);
+        }
+
+        .btn-gold:hover {
+            background: var(--gold-secondary);
+        }
+
+        .btn-soft {
+            background: rgba(229,173,4,.1);
+            color: var(--black);
+            border-color: rgba(229,173,4,.2);
+        }
+
+        .btn-darkline {
+            background: #fff;
+            color: var(--black);
+            border-color: var(--line);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border-radius: 16px;
+            border: 1px solid var(--line);
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.04);
+            min-height: 132px;
+        }
+
+        .stat-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .stat-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin: 0;
+        }
+
+        .stat-note {
+            color: var(--muted);
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(229,173,4,.14);
+            color: var(--gold-primary);
+            font-size: 18px;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .panel-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.04);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-header h5 {
+            margin: 0;
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .panel-subtext {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .panel-body {
+            padding: 18px;
+        }
+
+        .filter-form {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.04);
+            margin-bottom: 20px;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .table-panel {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.04);
+            overflow: hidden;
+        }
+
+        .admin-table {
+            width: 100%;
+            margin: 0;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding: 16px 18px;
+            border-top: 1px solid var(--line);
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .admin-table thead th {
+            border-top: none;
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .admin-table tbody tr:hover {
+            background: rgba(229,173,4,.04);
+        }
+
+        .badge-soft {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            border: 1px solid transparent;
+        }
+
+        .badge-gold { background: rgba(255,193,7,.14); color: #7b5b00; border-color: rgba(255,193,7,.28); }
+        .badge-success { background: rgba(41,204,151,.14); color: #167454; border-color: rgba(41,204,151,.28); }
+        .badge-info { background: rgba(13,202,240,.14); color: #096679; border-color: rgba(13,202,240,.28); }
+        .badge-danger { background: rgba(220,53,69,.12); color: #9f2232; border-color: rgba(220,53,69,.24); }
+        .badge-muted { background: rgba(108,117,125,.12); color: #596068; border-color: rgba(108,117,125,.22); }
+        .badge-dark { background: rgba(2,2,2,.08); color: var(--black); border-color: rgba(2,2,2,.12); }
+
+        .text-mono {
+            font-family: monospace;
+            font-weight: 700;
+        }
+
+        .empty-state {
+            padding: 42px 20px;
+            text-align: center;
+        }
+
+        .empty-state i {
+            font-size: 44px;
+            color: #d4d8dd;
+            margin-bottom: 10px;
+        }
+
+        .mobile-toggle {
+            display: none;
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            color: var(--black);
+        }
+
+        @media (max-width: 1199px) {
+            .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .content-grid { grid-template-columns: 1fr; }
+            .filter-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 991.98px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+                transition: transform .25s ease;
+            }
+
+            .admin-sidebar.is-open {
+                transform: translateX(0);
+            }
+
+            .admin-main {
+                margin-left: 0;
+            }
+
+            .mobile-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .topbar-links {
+                width: 100%;
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 2px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .admin-content { padding: 18px; }
+            .admin-page-header { flex-direction: column; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .filter-grid { grid-template-columns: 1fr; }
+            .action-row { width: 100%; }
+            .action-row .btn-gold,
+            .action-row .btn-soft,
+            .action-row .btn-darkline { width: 100%; justify-content: center; }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-brand">
+            <div class="brand-row">
+                <div class="brand-mark"><i class="fas fa-shield-halved"></i></div>
+                <div class="brand-copy">
+                    <h1>Gold Privilege</h1>
+                    <p>Superadmin Console</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-nav">
+            <div class="nav-section-label">Payout Operations</div>
+            <a href="{% url 'superadmin:dashboard' %}" class="nav-link-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <i class="fas fa-chart-line"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'superadmin:history' %}" class="nav-link-item {% if request.resolver_match.url_name == 'history' or request.resolver_match.url_name == 'detail' %}active{% endif %}">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Payouts</span>
+                <span class="nav-badge">{{ sidebar_counts.open_payouts|default:0 }}</span>
+            </a>
+
+            <div class="nav-section-label">Read Only Oversight</div>
+            <a href="{% url 'superadmin:venues' %}" class="nav-link-item {% if request.resolver_match.url_name == 'venues' %}active{% endif %}">
+                <i class="fas fa-store"></i>
+                <span>Venues</span>
+            </a>
+            <a href="{% url 'superadmin:partners' %}" class="nav-link-item {% if request.resolver_match.url_name == 'partners' %}active{% endif %}">
+                <i class="fas fa-handshake"></i>
+                <span>Partners</span>
+            </a>
+            <a href="{% url 'superadmin:subscribers' %}" class="nav-link-item {% if request.resolver_match.url_name == 'subscribers' %}active{% endif %}">
+                <i class="fas fa-users"></i>
+                <span>Subscribers</span>
+                <span class="nav-badge">{{ sidebar_counts.subscribers|default:0 }}</span>
+            </a>
+            <a href="{% url 'superadmin:coupon_codes' %}" class="nav-link-item {% if request.resolver_match.url_name == 'coupon_codes' %}active{% endif %}">
+                <i class="fas fa-ticket"></i>
+                <span>Coupon Codes</span>
+            </a>
+        </div>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-metric">
+                <small>Active Subscriptions</small>
+                <strong>{{ sidebar_counts.active_subscriptions|default:0 }}</strong>
+            </div>
+            <div class="sidebar-metric">
+                <small>Approved Venues</small>
+                <strong>{{ sidebar_counts.approved_venues|default:0 }}</strong>
+            </div>
+            <div class="sidebar-metric">
+                <small>Partners</small>
+                <strong>{{ sidebar_counts.partners|default:0 }}</strong>
+            </div>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="topbar-row">
+                <div class="topbar-heading">
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="mobile-toggle" id="sidebarToggle" type="button">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div>
+                            <h2>{% block page_title %}Superadmin{% endblock %}</h2>
+                            <p>{% block page_subtitle %}Operations and payout oversight{% endblock %}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="topbar-links">
+                    <a href="{% url 'superadmin:dashboard' %}">Dashboard</a>
+                    <a href="{% url 'superadmin:venues' %}">Venues</a>
+                    <a href="{% url 'superadmin:partners' %}">Partners</a>
+                    <a href="{% url 'superadmin:subscribers' %}">Subscribers</a>
+                    <a href="{% url 'superadmin:history' %}">Payouts</a>
+                    <a href="{% url 'superadmin:coupon_codes' %}">Coupon Codes</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            {% if messages %}
+            <div class="messages-stack">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block admin_content %}{% endblock %}
+        </div>
+    </main>
+</div>
+
+<script>
+    const sidebar = document.getElementById('adminSidebar');
+    const toggle = document.getElementById('sidebarToggle');
+
+    if (toggle) {
+        toggle.addEventListener('click', function () {
+            sidebar.classList.toggle('is-open');
+        });
+    }
+
+    document.addEventListener('click', function (event) {
+        if (window.innerWidth > 991) return;
+        if (!sidebar.classList.contains('is-open')) return;
+        if (sidebar.contains(event.target) || toggle.contains(event.target)) return;
+        sidebar.classList.remove('is-open');
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

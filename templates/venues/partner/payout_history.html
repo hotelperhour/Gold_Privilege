@@ -1,0 +1,508 @@
+{% extends 'base_partner.html' %}
+{% load humanize %}
+
+{% block title %}Payout History - Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --gold-primary: #E5AD04;
+        --gold-secondary: #F9B036;
+        --white: #FFFFFF;
+        --black: #000000;
+        --gray-600: #6c757d;
+        --gray-200: #E5E5E5;
+        --success: #29CC97;
+        --info: #0DCAF0;
+        --danger: #DC3545;
+        --warning: #FFC107;
+    }
+
+    * { font-family: 'Poppins', sans-serif; }
+
+    .page-header, .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .page-header {
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+
+    .page-header h1 {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--black);
+        margin: 0;
+    }
+
+    .page-header p {
+        font-size: 14px;
+        color: var(--gray-600);
+        margin: 6px 0 0;
+    }
+
+    .btn-outline-gold {
+        background: var(--white);
+        color: var(--gold-primary);
+        border: 2px solid var(--gold-primary);
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all .25s ease;
+    }
+
+    .btn-outline-gold:hover {
+        background: rgba(229,173,4,.08);
+        color: var(--gold-secondary);
+        border-color: var(--gold-secondary);
+    }
+
+    .partner-card,
+    .filters-container,
+    .table-section {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.05);
+    }
+
+    .partner-card .card-body {
+        padding: 20px;
+        text-align: center;
+    }
+
+    .icon-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+    }
+
+    .bg-warning-subtle { background: rgba(229,173,4,.15); }
+    .bg-success-subtle { background: rgba(41,204,151,.15); }
+    .bg-info-subtle { background: rgba(13,202,240,.15); }
+    .bg-primary-subtle { background: rgba(13,110,253,.15); }
+
+    .card-value {
+        font-size: 30px;
+        font-weight: 700;
+        color: var(--black);
+        margin: 0 0 4px;
+    }
+
+    .card-title {
+        color: var(--gray-600);
+        font-size: 14px;
+        margin: 0;
+    }
+
+    .filters-container {
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .filters-row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .filter-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--black);
+        margin-bottom: 6px;
+    }
+
+    .filter-input {
+        padding: 10px 14px;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .filter-input:focus {
+        outline: none;
+        border-color: var(--gold-primary);
+        box-shadow: 0 0 0 3px rgba(229,173,4,.1);
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 15px;
+    }
+
+    .btn-apply,
+    .btn-clear {
+        min-width: 140px;
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .btn-apply {
+        background: var(--gold-primary);
+        color: var(--black);
+        border: none;
+    }
+
+    .btn-clear {
+        background: transparent;
+        color: var(--gray-600);
+        border: 1px solid var(--gray-200);
+        text-decoration: none;
+        text-align: center;
+    }
+
+    .table-section {
+        overflow: hidden;
+    }
+
+    .section-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid rgba(0,0,0,.05);
+    }
+
+    .section-header h5 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--black);
+    }
+
+    .data-table {
+        width: 100%;
+        margin: 0;
+    }
+
+    .data-table thead th {
+        padding: 18px 22px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--black);
+        border: none;
+        text-align: center;
+    }
+
+    .data-table thead th:first-child,
+    .data-table tbody td:first-child {
+        text-align: left;
+    }
+
+    .data-table tbody td {
+        padding: 18px 22px;
+        border: none;
+        border-top: 1px solid rgba(0,0,0,.05);
+        font-size: 14px;
+        color: var(--gray-600);
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    .data-table tbody tr:hover {
+        background: rgba(229,173,4,.03);
+    }
+
+    .ref-main,
+    .amount-main {
+        color: var(--black);
+        font-weight: 600;
+    }
+
+    .sub-meta {
+        display: block;
+        font-size: 12px;
+        color: var(--gray-600);
+        margin-top: 4px;
+    }
+
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        border: 1px solid transparent;
+    }
+
+    .status-pending {
+        background: rgba(255,193,7,.15);
+        color: #8a6500;
+        border-color: rgba(255,193,7,.45);
+    }
+
+    .status-approved {
+        background: rgba(13,202,240,.15);
+        color: #0b7e95;
+        border-color: rgba(13,202,240,.45);
+    }
+
+    .status-paid {
+        background: rgba(41,204,151,.15);
+        color: #158a63;
+        border-color: rgba(41,204,151,.45);
+    }
+
+    .status-failed {
+        background: rgba(220,53,69,.12);
+        color: var(--danger);
+        border-color: rgba(220,53,69,.35);
+    }
+
+    .status-cancelled {
+        background: rgba(108,117,125,.12);
+        color: #6c757d;
+        border-color: rgba(108,117,125,.35);
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--gray-200);
+        background: #fff;
+        color: var(--black);
+        text-decoration: none;
+        transition: all .25s ease;
+    }
+
+    .action-btn:hover {
+        border-color: var(--gold-primary);
+        background: rgba(229,173,4,.1);
+        color: var(--gold-primary);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 56px 20px;
+    }
+
+    .empty-state i {
+        font-size: 56px;
+        color: #dee2e6;
+        margin-bottom: 16px;
+    }
+
+    .empty-state h4 {
+        font-size: 20px;
+        font-weight: 600;
+        color: var(--black);
+        margin-bottom: 8px;
+    }
+
+    .empty-state p {
+        margin: 0;
+        color: var(--gray-600);
+    }
+
+    @media (max-width: 991px) {
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .filters-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .data-table { min-width: 1050px; }
+    }
+
+    @media (max-width: 576px) {
+        .page-header h1 { font-size: 24px; }
+        .card-value { font-size: 26px; }
+        .filters-row { grid-template-columns: 1fr; }
+        .filter-actions { flex-direction: column; }
+        .btn-apply, .btn-clear, .btn-outline-gold { width: 100%; min-width: 0; justify-content: center; }
+    }
+</style>
+{% endblock %}
+
+{% block partner_content %}
+<div class="container-fluid px-0">
+    <div class="page-header">
+        <div>
+            <h1>Payout History</h1>
+            <p>Review all payout batches created for your venues.</p>
+        </div>
+        <a href="{% url 'venues:partner_sales_report' %}" class="btn-outline-gold">
+            <i class="fas fa-arrow-left"></i>
+            Back to Sales Report
+        </a>
+    </div>
+
+    <div class="row mb-4 g-3">
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-warning-subtle"><i class="fas fa-layer-group" style="color: var(--gold-primary);"></i></div>
+                    <h2 class="card-value">{{ payout_summary.total_batches|default:0 }}</h2>
+                    <p class="card-title">Total Batches</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-success-subtle"><i class="fas fa-check-circle" style="color: #29CC97;"></i></div>
+                    <h2 class="card-value">₦{{ payout_summary.total_paid|default:0|floatformat:2|intcomma }}</h2>
+                    <p class="card-title">Total Paid</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-info-subtle"><i class="fas fa-clock" style="color: #0DCAF0;"></i></div>
+                    <h2 class="card-value">₦{{ payout_summary.total_pending|default:0|floatformat:2|intcomma }}</h2>
+                    <p class="card-title">Open Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="partner-card h-100">
+                <div class="card-body">
+                    <div class="icon-circle bg-primary-subtle"><i class="fas fa-minus-circle" style="color: #0D6EFD;"></i></div>
+                    <h2 class="card-value">₦{{ payout_summary.total_commission|default:0|floatformat:2|intcomma }}</h2>
+                    <p class="card-title">Total Commission</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="filters-container">
+        <form method="get">
+            <div class="filters-row">
+                <div class="filter-group">
+                    <label class="filter-label">Venue</label>
+                    <select name="venue" class="filter-input">
+                        <option value="">All Venues</option>
+                        {% for venue in venues %}
+                        <option value="{{ venue.id }}" {% if venue_filter == venue.id|stringformat:"s" %}selected{% endif %}>{{ venue.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Status</label>
+                    <select name="status" class="filter-input">
+                        <option value="">All Statuses</option>
+                        {% for value, label in status_choices %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Date From</label>
+                    <input type="date" name="date_from" class="filter-input" value="{{ date_from }}">
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Date To</label>
+                    <input type="date" name="date_to" class="filter-input" value="{{ date_to }}">
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <a href="{% url 'venues:partner_payout_history' %}" class="btn-clear">Clear</a>
+                <button type="submit" class="btn-apply">
+                    <i class="fas fa-filter me-2"></i>Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-section">
+        <div class="section-header">
+            <h5><i class="fas fa-wallet me-2"></i>Payout Batches</h5>
+        </div>
+
+        {% if payouts %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Venue</th>
+                        <th>Status</th>
+                        <th>Bookings</th>
+                        <th>Gross</th>
+                        <th>Commission</th>
+                        <th>Net</th>
+                        <th>Created</th>
+                        <th>Paid At</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for payout in payouts %}
+                    <tr>
+                        <td>
+                            <span class="ref-main">{{ payout.reference }}</span>
+                            <span class="sub-meta">{{ payout.period_start|date:"M j, Y" }} - {{ payout.period_end|date:"M j, Y" }}</span>
+                        </td>
+                        <td>{{ payout.venue.name }}</td>
+                        <td>
+                            <span class="status-pill {% if payout.status == 'PENDING' %}status-pending{% elif payout.status == 'APPROVED' %}status-approved{% elif payout.status == 'PAID' %}status-paid{% elif payout.status == 'FAILED' %}status-failed{% else %}status-cancelled{% endif %}">
+                                {{ payout.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{{ payout.booking_count }}</td>
+                        <td>₦{{ payout.total_gross|floatformat:2|intcomma }}</td>
+                        <td>₦{{ payout.total_commission|floatformat:2|intcomma }}</td>
+                        <td><span class="amount-main">₦{{ payout.total_net|floatformat:2|intcomma }}</span></td>
+                        <td>{{ payout.created_at|date:"M j, Y g:i A" }}</td>
+                        <td>{{ payout.paid_at|date:"M j, Y g:i A"|default:"-" }}</td>
+                        <td>
+                            <a href="{% url 'venues:partner_payout_detail' payout.payout_id %}" class="action-btn" title="View payout detail">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'partials/pagination.html' %}
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h4>No payout history found</h4>
+            <p>Your payout batches will show up here once they are created.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -18,11 +18,12 @@
                 <i class="fas fa-tachometer-alt"></i>
                 <span>Dashboard</span>
             </a>
-           <a href="{% url 'venues:partner_list' %}" 
-                class="nav-item {% if 'venue' in request.path or request.resolver_match.url_name == 'partner_list' %}active{% endif %}">
+            <a href="{% url 'venues:partner_list' %}" 
+            class="nav-item {% if request.resolver_match.url_name == 'partner_list' %}active{% endif %}">
                 <i class="fas fa-building"></i>
                 <span>Venues</span>
             </a>
+           
             <a href="{% url 'bookings:bookings_list' %}" 
             class="nav-item {% if request.resolver_match.url_name == 'bookings_list' %}active{% endif %}">
                 <i class="fas fa-calendar-check"></i>
@@ -32,6 +33,11 @@
             class="nav-item {% if request.resolver_match.url_name == 'partner_check_in' %}active{% endif %}">
                 <i class="fas fa-qrcode"></i>
                 <span>Check-ins</span>
+            </a>
+            <a href="{% url 'venues:partner_sales_report' %}"
+            class="nav-item {% if request.resolver_match.url_name == 'partner_sales_report' %}active{% endif %}">
+                <i class="fas fa-chart-line"></i>
+                <span>Sales Report</span>
             </a>
             <a href="{% url 'account:profile' %}" 
                class="nav-item {% if 'profile' in request.path %}active{% endif %}">
@@ -68,8 +74,9 @@
                 <i class="fas fa-tachometer-alt"></i>
                 <span class="mobile-tooltip">Dashboard</span>
             </a>
+           
             <a href="{% url 'venues:partner_list' %}" 
-               class="mobile-nav-item {% if 'venue' in request.path %}active{% endif %}">
+            class="mobile-nav-item {% if request.resolver_match.url_name == 'partner_list' %}active{% endif %}">
                 <i class="fas fa-building"></i>
                 <span class="mobile-tooltip">Venues</span>
             </a>
@@ -82,6 +89,11 @@
             class="mobile-nav-item {% if request.resolver_match.url_name == 'partner_check_in' %}active{% endif %}">
                 <i class="fas fa-qrcode"></i>
                 <span class="mobile-tooltip">Check-in</span>
+            </a>
+            <a href="{% url 'venues:partner_sales_report' %}"
+            class="mobile-nav-item {% if request.resolver_match.url_name == 'partner_sales_report' %}active{% endif %}">
+                <i class="fas fa-chart-line"></i>
+                <span class="mobile-tooltip">Sales</span>
             </a>
             <a href="{% url 'account:profile' %}" 
                class="mobile-nav-item {% if 'profile' in request.path %}active{% endif %}">

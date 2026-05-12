@@ -61,6 +61,64 @@
                             </p>
                         </div>
                     </div>
+
+                    {% if is_store_booking and store_order %}
+                    <!-- Discount Store Payment Info -->
+                    <div style="margin-top:20px;">
+                        <h6 style="font-weight:700;margin-bottom:12px;">
+                            <i class="fas fa-receipt" style="color:#E5AD04;margin-right:6px;"></i>
+                            Payment Details
+                        </h6>
+                        <div style="background:#FAFAFA;border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;">
+ 
+                            <div style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #F0F0F0;font-size:14px;">
+                                <span style="color:#6B7280;">Amount Paid</span>
+                                <span style="font-weight:700;color:#111;">
+                                    {% if store_order.payment_method == 'COINS' %}
+                                        🪙 {{ store_order.amount_paid|floatformat:0 }} coins
+                                    {% else %}
+                                        💳 ₦{{ store_order.amount_paid|floatformat:0 }}
+                                    {% endif %}
+                                </span>
+                            </div>
+ 
+                            <div style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #F0F0F0;font-size:14px;">
+                                <span style="color:#6B7280;">Payment Method</span>
+                                <span style="font-weight:600;color:#111;">
+                                    {% if store_order.payment_method == 'COINS' %}Gold Coins (Wallet){% else %}Card (Paystack){% endif %}
+                                </span>
+                            </div>
+ 
+                            {% if store_order.cashback_awarded and store_order.cashback_coins > 0 %}
+                            <div style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #F0F0F0;font-size:14px;">
+                                <span style="color:#6B7280;">Cashback Earned</span>
+                                <span style="font-weight:700;color:#7a6000;background:#FFF8E1;padding:3px 10px;border-radius:6px;">
+                                    💰 {{ store_order.cashback_coins }} coins
+                                </span>
+                            </div>
+                            {% endif %}
+ 
+                            <div style="display:flex;justify-content:space-between;padding:12px 16px;font-size:14px;">
+                                <span style="color:#6B7280;">People</span>
+                                <span style="font-weight:600;color:#111;">{{ store_order.quantity }}</span>
+                            </div>
+                        </div>
+ 
+                        {% if booking.can_cancel %}
+                        <form method="post"
+                              action="{% url 'discount_store:cancel_order' store_order.order_id %}"
+                              style="margin-top:12px;"
+                              onsubmit="return confirm('Cancel this booking? Your coins will be refunded.');">
+                            {% csrf_token %}
+                            <input type="hidden" name="reason" value="Cancelled from booking detail page">
+                            <button type="submit" style="width:100%;padding:10px;background:#fff;border:1.5px solid #dc3545;color:#dc3545;border-radius:8px;font-size:13px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;">
+                                <i class="fas fa-times-circle"></i>
+                                Cancel &amp; Refund {{ store_order.amount_paid|floatformat:0 }} Coins
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                     
                     {% if booking.special_requests %}
                     <div class="mt-3 p-3 bg-light rounded">

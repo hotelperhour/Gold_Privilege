@@ -166,6 +166,69 @@ def notify_venue_status_change(sender, instance, created, **kwargs):
 
 
 
+@receiver(post_save, sender='venues.Venue')
+def sync_store_product(sender, instance, **kwargs):
+    """
+    Keep StoreProduct in sync with its parent Venue automatically.
+    Called every time a Venue row is saved.
+    """
+    # Lazy import to avoid circular dependency
+    from discount_store.models import StoreProduct
+ 
+    venue = instance
+    should_be_in_store = (
+        venue.access_mode in ('STORE', 'BOTH') and
+        venue.status == 'APPROVED' and
+        venue.store_price > 0  # Don't create a product with no price set
+    )
+ 
+    if should_be_in_store:
+        # get_or_create: creates on first save, updates on subsequent saves
+        product, created = StoreProduct.objects.get_or_create(
+            venue=venue,
+            defaults={
+                'name':        venue.name,
+                'description': venue.tagline or venue.description[:300] if venue.description else '',
+                'price':       venue.store_price,
+                'is_active':   True,
+            }
+        )
+ 
+        if not created:
+            # Venue already has a product — keep it in sync with venue changes
+            changed = False
+            if product.name != venue.name:
+                product.name = venue.name
+                changed = True
+            if product.price != venue.store_price:
+                product.price = venue.store_price
+                changed = True
+            if not product.is_active:
+                product.is_active = True
+                changed = True
+            # Sync description only if admin hasn't customised it
+            # (we check if it still matches either the tagline or start of description)
+            new_desc = venue.tagline or (venue.description[:300] if venue.description else '')
+            if product.description != new_desc and product.description in (
+                '', venue.tagline, venue.description[:300]
+            ):
+                product.description = new_desc
+                changed = True
+ 
+            if changed:
+                product.save(update_fields=[
+                    f for f in ['name', 'price', 'is_active', 'description']
+                    if changed  # save only changed fields
+                ])
+                # Simpler — just save the fields we might have changed
+                product.save(update_fields=['name', 'price', 'is_active', 'description'])
+ 
+    else:
+        # Venue is no longer eligible for the store — deactivate its product
+        StoreProduct.objects.filter(venue=venue, is_active=True).update(is_active=False)
+
+
+
 @receiver(post_delete, sender=Venue)
 def cleanup_venue_images(sender, instance, **kwargs):
     """

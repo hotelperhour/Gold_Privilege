@@ -1,0 +1,805 @@
+{% extends 'base_subscriber.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Discount Store – Gold Privilege{% endblock %}
+
+{% block subscriber_content %}
+<style>
+
+
+:root {
+    --gold: #E5AD04;
+    --gold-light: #F9B036;
+    --gold-pale: #FFF8E1;
+    --gold-pale-border: #FFE082;
+    --black: #111111;
+    --dark: #1a1a1a;
+    --border: #E5E7EB;
+    --text-muted: #6B7280;
+    --radius: 14px;
+    --shadow: 0 2px 16px rgba(0,0,0,0.07);
+    --shadow-hover: 0 8px 32px rgba(0,0,0,0.13);
+}
+
+/* ── Page header ── */
+.store-page-header { margin-bottom: 10px; }
+.store-page-header h1 {
+    font-size: 30px;
+    font-weight: 300;
+    color: var(--black);
+    margin: 0 0 6px;
+    letter-spacing: -0.5px;
+}
+.store-page-header h1 i { color: var(--gold); margin-right: 8px; }
+.store-page-header p {
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 400;
+    margin: 0 0 28px;
+}
+
+/* ── Wallet card ── */
+.wallet-card {
+    background: var(--black);
+    border-radius: var(--radius);
+    padding: 22px 26px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+}
+.wallet-card::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(229,173,4,0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+.wallet-left { display: flex; flex-direction: column; gap: 4px; }
+.wallet-balance-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+.wallet-balance-amount {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--gold);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.wallet-balance-amount .coin-icon {
+    width: 28px; height: 28px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #000;
+    box-shadow: 0 0 0 3px rgba(229,173,4,0.25);
+    flex-shrink: 0;
+}
+.wallet-naira {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 2px;
+}
+
+/* Status pill */
+.wallet-status-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.wallet-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 100px;
+    padding: 5px 12px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 500;
+}
+.wallet-status-pill .pill-icon {
+    width: 22px; height: 22px;
+    background: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+}
+.wallet-status-pill .pill-icon i { font-size: 11px; color: #000; }
+.status-dot {
+    width: 7px; height: 7px;
+    background: #22c55e;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(34,197,94,0.25);
+    flex-shrink: 0;
+}
+
+/* Add coins btn */
+.wallet-add-btn {
+    background: var(--gold);
+    color: #000;
+    border: none;
+    padding: 11px 22px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s, transform 0.15s;
+    align-self: center;
+}
+.wallet-add-btn:hover { background: var(--gold-light); transform: translateY(-1px); color: #000; text-decoration: none; }
+
+/* ── Filter bar ── */
+.filter-section {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    margin-bottom: 28px;
+}
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: flex-end;
+}
+.filter-group { display: flex; flex-direction: column; gap: 5px; }
+.filter-group label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.filter-input, .filter-select {
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 13px;
+    font-size: 13px;
+    font-family: 'Poppins', sans-serif;
+    outline: none;
+    color: var(--black);
+    background: #fafafa;
+    transition: border-color 0.2s, background 0.2s;
+    height: 40px;
+}
+.filter-input:focus, .filter-select:focus {
+    border-color: var(--gold);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(229,173,4,0.1);
+}
+.filter-search-group { flex: 1; min-width: 200px; }
+.filter-search-group .filter-input { width: 100%; }
+
+/* Tier pills */
+.tier-pills { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.tier-pill {
+    padding: 7px 14px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1.5px solid var(--border);
+    color: var(--text-muted);
+    background: #fafafa;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.tier-pill:hover, .tier-pill.active {
+    border-color: var(--gold);
+    background: var(--gold-pale);
+    color: #7a6000;
+    text-decoration: none;
+}
+
+/* Price slider */
+.price-label {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--black);
+    background: #f3f4f6;
+    padding: 3px 9px;
+    border-radius: 6px;
+}
+.sliders_control { position: relative; height: 26px; margin-top: 6px; }
+.sliders_control input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    position: absolute;
+    width: 100%;
+    height: 4px;
+    border-radius: 5px;
+    background: #e5e7eb;
+    pointer-events: none;
+    outline: none;
+}
+.sliders_control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    background: var(--gold);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.2);
+    cursor: pointer;
+    pointer-events: all;
+}
+.sliders_control input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px;
+    background: var(--gold);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: all;
+}
+#maxSlider {
+    background: linear-gradient(
+        to right,
+        #e5e7eb 0%,
+        #e5e7eb var(--minPercent, 0%),
+        var(--gold) var(--minPercent, 0%),
+        var(--gold) var(--maxPercent, 100%),
+        #e5e7eb var(--maxPercent, 100%),
+        #e5e7eb 100%
+    );
+}
+.price-group { min-width: 220px; }
+.price-range-labels { display: flex; justify-content: space-between; margin-bottom: 4px; }
+
+/* Filter actions */
+.filter-actions { display: flex; gap: 8px; align-items: flex-end; }
+.btn-filter {
+    background: var(--black);
+    color: #fff;
+    border: none;
+    padding: 9px 20px;
+    border-radius: 9px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    height: 40px;
+    white-space: nowrap;
+    transition: background 0.2s;
+}
+.btn-filter:hover { background: #333; }
+.btn-clear {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 9px 8px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    transition: color 0.2s;
+}
+.btn-clear:hover { color: var(--black); text-decoration: none; }
+
+/* ── Products grid ── */
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+
+/* ── Product card ── */
+.product-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--gold);
+}
+
+.card-image {
+    position: relative;
+    height: 160px;
+    overflow: hidden;
+    background: #f5f5f5;
+}
+.card-image img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform 0.35s ease;
+}
+.product-card:hover .card-image img { transform: scale(1.05); }
+.card-image .no-image {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; color: #d1d5db;
+}
+.tier-badge {
+    position: absolute; top: 9px; right: 9px;
+    background: rgba(0,0,0,0.62);
+    color: #fff;
+    font-size: 10px; font-weight: 600;
+    padding: 3px 8px; border-radius: 6px;
+    backdrop-filter: blur(4px);
+    letter-spacing: 0.2px;
+}
+
+.card-body {
+    padding: 14px 15px 15px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+.card-venue {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.card-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--black);
+    margin: 0;
+    line-height: 1.3;
+}
+.card-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin: 0;
+}
+.card-price {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-top: 2px;
+}
+.price-coins { font-size: 18px; font-weight: 800; color: var(--black); }
+.price-naira { font-size: 12px; color: var(--text-muted); }
+.cashback-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--gold-pale);
+    border: 1px solid var(--gold-pale-border);
+    color: #7a6000;
+    border-radius: 6px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    width: fit-content;
+}
+.card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: auto;
+    padding-top: 10px;
+}
+.btn-card {
+    width: 100%;
+    padding: 9px;
+    border: none;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    font-family: 'Poppins', sans-serif;
+    transition: all 0.18s;
+    display: block;
+}
+.btn-pay-coins {
+    background: var(--gold);
+    color: #000;
+}
+.btn-pay-coins:hover { background: var(--gold-light); transform: translateY(-1px); color: #000; text-decoration: none; }
+.btn-pay-card {
+    background: #fff;
+    color: var(--black);
+    border: 1.5px solid var(--border);
+}
+.btn-pay-card:hover { border-color: var(--black); text-decoration: none; color: var(--black); }
+
+/* ── Skeleton loader ── */
+.skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+}
+.skeleton-card {
+    background: #fff;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+}
+.skeleton-img {
+    height: 160px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+}
+.skeleton-body { padding: 14px 15px; display: flex; flex-direction: column; gap: 10px; }
+.skeleton-line {
+    height: 12px; border-radius: 6px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+}
+.skeleton-line.short { width: 55%; }
+.skeleton-line.med   { width: 80%; }
+.skeleton-line.tall  { height: 16px; width: 65%; }
+.skeleton-btn {
+    height: 34px; border-radius: 8px; margin-top: 6px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── Results info ── */
+.results-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.results-count {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+.results-count strong { color: var(--black); }
+
+/* ── Empty state ── */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+}
+.empty-state i { font-size: 48px; color: #d1d5db; margin-bottom: 16px; display: block; }
+.empty-state h3 { font-size: 20px; font-weight: 700; color: var(--black); margin-bottom: 8px; }
+
+/* ── Pagination ── */
+.pagination-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 36px;
+}
+.page-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--black);
+    text-decoration: none;
+    margin: 0 3px;
+    transition: all 0.15s;
+}
+.page-btn:hover, .page-btn.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #000;
+    text-decoration: none;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+    .products-grid, .skeleton-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+    .products-grid, .skeleton-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .card-body { padding: 11px 12px 13px; }
+    .card-desc { display: none; }
+    .filter-row { gap: 10px; }
+    .price-group { min-width: 100%; }
+    .wallet-card { padding: 16px 18px; }
+    .wallet-balance-amount { font-size: 22px; }
+}
+@media (max-width: 480px) {
+    .products-grid, .skeleton-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .cashback-badge { display: none; }
+    .price-coins { font-size: 15px; }
+}
+</style>
+
+<!-- Page header -->
+<div class="store-page-header">
+    <h1>
+        <i class="fas fa-store"></i>
+        Discount Store
+    </h1>
+    <p>Book venue services individually — pay once, visit once. Earn cashback coins on every purchase.</p>
+</div>
+
+<!-- Wallet card -->
+<div class="wallet-card">
+    <div class="wallet-left">
+        <div class="wallet-balance-label">Current Balance</div>
+        <div class="wallet-balance-amount">
+            <i class="fas fa-coins"></i>
+            {{ wallet.balance|floatformat:0|intcomma }} 
+        </div>
+        <div class="wallet-naira">= ₦{{ wallet.balance|floatformat:0|intcomma }} &nbsp;·&nbsp; 1 coin = ₦1</div>
+        <div class="wallet-status-row">
+            <div class="wallet-status-pill">
+                <div class="pill-icon"><i class="fas fa-wallet"></i></div>
+                <div class="status-dot"></div>
+                Active
+            </div>
+        </div>
+    </div>
+    <a href="{% url 'wallet:buy' %}" class="wallet-add-btn">
+        <i class="fas fa-plus"></i> Add Coins
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="filter-section">
+    <form method="get" id="filterForm">
+        <div class="filter-row">
+
+            <!-- Search -->
+            <div class="filter-group filter-search-group">
+                <label>Search</label>
+                <input type="text" name="q" value="{{ request.GET.q }}"
+                       placeholder="Search products or venues…"
+                       class="filter-input">
+            </div>
+
+            <!-- Tier pills -->
+            <div class="filter-group">
+                <label>Venue Tier</label>
+                <div class="tier-pills">
+                    <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}{% if request.GET.min_price %}min_price={{ request.GET.min_price }}&{% endif %}{% if request.GET.max_price %}max_price={{ request.GET.max_price }}{% endif %}"
+                       class="tier-pill {% if not request.GET.tier %}active{% endif %}">All</a>
+                    <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}tier=1{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}"
+                       class="tier-pill {% if request.GET.tier == '1' %}active{% endif %}">⭐ Level 1</a>
+                    <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}tier=2{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}"
+                       class="tier-pill {% if request.GET.tier == '2' %}active{% endif %}">⭐⭐ Level 2</a>
+                    <a href="?{% if request.GET.q %}q={{ request.GET.q }}&{% endif %}tier=3{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}"
+                       class="tier-pill {% if request.GET.tier == '3' %}active{% endif %}">⭐⭐⭐ Level 3</a>
+                </div>
+            </div>
+
+            <!-- Price range slider -->
+            <div class="filter-group price-group">
+                <label>Price Range</label>
+                <div class="price-range-labels">
+                    <span id="minLabel" class="price-label">₦{{ request.GET.min_price|default:"1,000" }}</span>
+                    <span id="maxLabel" class="price-label">₦{{ request.GET.max_price|default:"200,000+" }}</span>
+                </div>
+                <div class="sliders_control">
+                    <input id="minSlider" type="range" min="1000" max="200000" step="1000"
+                           value="{{ request.GET.min_price|default:'1000' }}">
+                    <input id="maxSlider" type="range" min="1000" max="200000" step="1000"
+                           value="{{ request.GET.max_price|default:'200000' }}">
+                </div>
+                <input type="hidden" name="min_price" id="minPriceHidden" value="{{ request.GET.min_price|default:'1000' }}">
+                <input type="hidden" name="max_price" id="maxPriceHidden" value="{{ request.GET.max_price|default:'200000' }}">
+            </div>
+
+            <!-- Apply + Clear -->
+            <div class="filter-actions">
+                <button type="submit" class="btn-filter">
+                    <i class="fas fa-search" style="margin-right:5px;"></i>Apply
+                </button>
+                {% if request.GET %}
+                <a href="{% url 'discount_store:store_home' %}" class="btn-clear">
+                    <i class="fas fa-times" style="margin-right:4px;"></i>Clear
+                </a>
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- Preserve tier when searching -->
+        {% if request.GET.tier %}
+        <input type="hidden" name="tier" value="{{ request.GET.tier }}">
+        {% endif %}
+    </form>
+</div>
+
+<!-- Results info -->
+{% if products %}
+<div class="results-info">
+    <span class="results-count">
+        Showing <strong>{{ products|length }}</strong> product{{ products|length|pluralize }}
+        {% if request.GET.q %} for "<strong>{{ request.GET.q }}</strong>"{% endif %}
+        {% if request.GET.tier %} · Level {{ request.GET.tier }} venues{% endif %}
+    </span>
+</div>
+{% endif %}
+
+<!-- Skeleton (shown while loading, hidden via JS) -->
+<div class="skeleton-grid" id="skeletonGrid">
+    {% for i in "12345678" %}
+    <div class="skeleton-card">
+        <div class="skeleton-img"></div>
+        <div class="skeleton-body">
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line tall"></div>
+            <div class="skeleton-line med"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-btn"></div>
+            <div class="skeleton-btn"></div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Product grid (hidden until loaded) -->
+<div class="products-grid" id="productsGrid" style="display:none;">
+    {% if products %}
+        {% for product in products %}
+        <div class="product-card">
+            <div class="card-image">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" loading="lazy">
+                {% elif product.venue.cover_image %}
+                    <img src="{{ product.venue.cover_image.url }}" alt="{{ product.name }}" loading="lazy">
+                {% else %}
+                    <div class="no-image"><i class="fas fa-store"></i></div>
+                {% endif %}
+                <div class="tier-badge">
+                    {% with tier=product.venue.star_tier %}
+                        {% if tier == 1 %}⭐ Level 1
+                        {% elif tier == 2 %}⭐⭐ Level 2
+                        {% elif tier == 3 %}⭐⭐⭐ Level 3
+                        {% else %}⭐ Level 1{% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="card-venue">{{ product.venue.name }}</div>
+                <p class="card-name">{{ product.name }}</p>
+                {% if product.description %}
+                <p class="card-desc">{{ product.description }}</p>
+                {% endif %}
+
+                <div class="card-price">
+                    <span class="price-coins">{{ product.coin_price|intcomma }} Coins</span>
+                    <span class="price-naira">= ₦{{ product.price|floatformat:0|intcomma }}</span>
+                </div>
+
+                <div class="cashback-badge">
+                    💰 Earn {{ product.cashback_preview }} coins back
+                </div>
+
+                <div class="card-actions">
+                    <a href="{% url 'discount_store:product_detail' product_id=product.id %}"
+                    class="btn-card btn-pay-coins">
+                        View Details →
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+    {% else %}
+        <div class="empty-state" style="grid-column: 1 / -1;">
+            <i class="fas fa-store-slash"></i>
+            <h3>No products found</h3>
+            <p>Try adjusting your filters or check back soon for new additions.</p>
+            {% if request.GET %}
+            <a href="{% url 'discount_store:store_home' %}" class="wallet-add-btn" style="margin-top:16px;display:inline-flex;">
+                Clear Filters
+            </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<div class="pagination-wrap">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tier %}&tier={{ request.GET.tier }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}" class="page-btn">
+        <i class="fas fa-chevron-left" style="font-size:11px;"></i>
+    </a>
+    {% endif %}
+    {% for num in page_obj.paginator.page_range %}
+        {% if num == page_obj.number %}
+        <span class="page-btn active">{{ num }}</span>
+        {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+        <a href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tier %}&tier={{ request.GET.tier }}{% endif %}" class="page-btn">{{ num }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tier %}&tier={{ request.GET.tier }}{% endif %}{% if request.GET.min_price %}&min_price={{ request.GET.min_price }}{% endif %}{% if request.GET.max_price %}&max_price={{ request.GET.max_price }}{% endif %}" class="page-btn">
+        <i class="fas fa-chevron-right" style="font-size:11px;"></i>
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+<script>
+// ── Skeleton → real content transition ──────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function () {
+    const skeleton = document.getElementById('skeletonGrid');
+    const grid     = document.getElementById('productsGrid');
+
+    // Simulate a short load feel then reveal content
+    setTimeout(function () {
+        if (skeleton) skeleton.style.display = 'none';
+        if (grid)     grid.style.display = 'grid';
+    }, 600);
+});
+
+// ── Price range slider ───────────────────────────────────────────────────────
+const minSlider = document.getElementById('minSlider');
+const maxSlider = document.getElementById('maxSlider');
+const minHidden = document.getElementById('minPriceHidden');
+const maxHidden = document.getElementById('maxPriceHidden');
+const minLabel  = document.getElementById('minLabel');
+const maxLabel  = document.getElementById('maxLabel');
+
+function formatMoney(n) {
+    return new Intl.NumberFormat('en-NG').format(n);
+}
+
+function updateSlider() {
+    const min   = parseInt(minSlider.value);
+    const max   = parseInt(maxSlider.value);
+    const range = parseInt(maxSlider.max) - parseInt(maxSlider.min);
+    const minPct = ((min - parseInt(minSlider.min)) / range) * 100;
+    const maxPct = ((max - parseInt(minSlider.min)) / range) * 100;
+
+    maxSlider.style.setProperty('--minPercent', `${minPct}%`);
+    maxSlider.style.setProperty('--maxPercent', `${maxPct}%`);
+
+    minLabel.textContent = `₦${formatMoney(min)}`;
+    maxLabel.textContent = max >= 200000 ? '₦200,000+' : `₦${formatMoney(max)}`;
+    minHidden.value = min;
+    maxHidden.value = max;
+}
+
+if (minSlider && maxSlider) {
+    minSlider.oninput = function () {
+        if (parseInt(minSlider.value) >= parseInt(maxSlider.value)) {
+            minSlider.value = parseInt(maxSlider.value) - 1000;
+        }
+        updateSlider();
+    };
+    maxSlider.oninput = function () {
+        if (parseInt(maxSlider.value) <= parseInt(minSlider.value)) {
+            maxSlider.value = parseInt(minSlider.value) + 1000;
+        }
+        updateSlider();
+    };
+    updateSlider();
+}
+</script>
+
+{% endblock %}

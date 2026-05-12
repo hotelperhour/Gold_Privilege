@@ -61,7 +61,7 @@ class BookingAdmin(admin.ModelAdmin):
     """
     list_display = [
         'booking_reference', 'status_badge', 'member_link', 
-        'venue_link', 'visit_date', 'guests_count', 
+        'venue_link', 'visit_date', 'guests_count', 'booking_source',
         'days_until', 'created_at'
     ]
     list_filter = [
@@ -86,7 +86,7 @@ class BookingAdmin(admin.ModelAdmin):
         ('Booking Information', {
             'fields': (
                 'booking_id', 'booking_reference', 
-                'status', 'status_display'
+                'status', 'status_display', 'booking_source',
             )
         }),
         ('Member & Venue', {

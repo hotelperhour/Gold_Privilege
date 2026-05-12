@@ -19,6 +19,12 @@ urlpatterns = [
     # AJAX endpoints
     path('api/search/', views.venue_search_autocomplete, name='search_autocomplete'),
     path('api/review/<int:review_id>/helpful/', views.mark_review_helpful, name='review_helpful'),
+     # ==================== PARTNER SALES & PAYOUTS ====================
+    path('partner/sales-report/', views.partner_sales_report, name='partner_sales_report'),
+    path('partner/payout-history/', views.partner_payout_history, name='partner_payout_history'),
+    path("my/<uuid:payout_uuid>/", views.partner_payout_detail, name="partner_payout_detail"),
+
+
     
     # ==================== PARTNER URLS ====================
     path('venue_list', views.PartnerVenueListView.as_view(), name='partner_list'),
@@ -28,4 +34,6 @@ urlpatterns = [
     path('create_venue_success/<int:venue_id>/', views.VenueCreateSuccessView.as_view(), name='multistep_success'),
     path('edit_venue/<slug:slug>',views.MultiStepVenueUpdateView.as_view(), name='multistep_update'),
     path('api/venue-image/<int:image_id>/delete/',views.delete_venue_image, name='delete_gallery_image'),
+
+   
 ]

@@ -1,0 +1,77 @@
+{% extends 'superadmin/base_admin.html' %}
+{% load humanize %}
+{% block title %}Subscribers - Superadmin{% endblock %}
+{% block page_title %}Subscribers{% endblock %}
+{% block page_subtitle %}Read-only subscriber and subscription visibility{% endblock %}
+
+{% block admin_content %}
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-title">Total Subscribers</div><p class="stat-value">{{ summary.total|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Active</div><p class="stat-value">{{ summary.active|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Expiring In 7 Days</div><p class="stat-value">{{ summary.expiring_soon|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Pending Payment</div><p class="stat-value">{{ summary.pending_payment|intcomma }}</p></div>
+</div>
+
+<form method="get" class="filter-form">
+    <div class="filter-grid">
+        <input type="text" name="q" class="form-control" placeholder="Search name, email, GP ID" value="{{ q }}">
+        <select name="subscription_status" class="form-select">
+            <option value="">All Subscription States</option>
+            <option value="NONE" {% if subscription_status_filter == 'NONE' %}selected{% endif %}>No Subscription</option>
+            {% for value, label in subscription_status_choices %}<option value="{{ value }}" {% if subscription_status_filter == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="action-row mt-3">
+        <a href="{% url 'superadmin:subscribers' %}" class="btn-darkline">Clear</a>
+        <button type="submit" class="btn-gold">Apply Filters</button>
+    </div>
+</form>
+
+<div class="table-panel">
+    <div class="panel-header"><div><h5>Subscriber Profiles</h5><p class="panel-subtext">Shows status, current subscription, renewal date, and join date.</p></div></div>
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Status</th><th>Subscription</th><th>Active?</th><th>Renewal</th><th>Date Joined</th></tr>
+            </thead>
+            <tbody>
+                {% for subscriber in subscribers %}
+                <tr>
+                    <td><strong>{{ subscriber.display_name }}</strong><br><small class="text-muted">{{ subscriber.gp_id }}</small></td>
+                    <td>{{ subscriber.email }}</td>
+                    <td>
+                        {% if subscriber.is_active %}
+                            <span class="badge-soft badge-success">Active User</span>
+                        {% else %}
+                            <span class="badge-soft badge-muted">Inactive User</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if subscriber.current_subscription %}
+                            <strong>{{ subscriber.current_subscription.plan.name }}</strong><br>
+                            <small class="text-muted">{{ subscriber.current_subscription.get_status_display }}</small>
+                        {% else %}
+                            <span class="badge-soft badge-muted">No subscription</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if subscriber.subscription_active %}
+                            <span class="badge-soft badge-success">Yes</span>
+                        {% elif subscriber.current_subscription %}
+                            <span class="badge-soft badge-gold">No</span>
+                        {% else %}
+                            <span class="badge-soft badge-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>{% if subscriber.renewal_date %}{{ subscriber.renewal_date|date:"M j, Y g:i A" }}{% else %}-{% endif %}</td>
+                    <td>{{ subscriber.date_joined|date:"M j, Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7"><div class="empty-state"><i class="fas fa-user-slash"></i><div>No subscribers found.</div></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'partials/pagination.html' %}
+</div>
+{% endblock %}

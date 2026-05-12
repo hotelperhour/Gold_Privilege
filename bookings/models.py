@@ -20,6 +20,10 @@ class BookingStatus(models.TextChoices):
     CANCELLED = 'CANCELLED', _('Cancelled')
     NO_SHOW = 'NO_SHOW', _('No Show')
 
+class BookingSource(models.TextChoices):
+        SUBSCRIPTION = 'SUBSCRIPTION', 'Subscription'
+        STORE        = 'STORE',        'Discount Store'
+
 
 class Booking(models.Model):
     """
@@ -73,8 +77,15 @@ class Booking(models.Model):
         Subscription,
         on_delete=models.PROTECT,
         related_name='bookings',
+        null=True, blank=True,
         verbose_name=_('subscription used'),
         help_text='Which subscription plan was used for this booking'
+    )
+
+    booking_source = models.CharField(
+        max_length=20,
+        choices=BookingSource.choices,
+        default='SUBSCRIPTION',
     )
     
     # Visit Details

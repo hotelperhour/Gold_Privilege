@@ -1,0 +1,71 @@
+{% extends 'superadmin/base_admin.html' %}
+{% load humanize %}
+{% block title %}Coupon Codes - Superadmin{% endblock %}
+{% block page_title %}Coupon Codes{% endblock %}
+{% block page_subtitle %}Read-only promo code visibility for support and operations{% endblock %}
+
+{% block admin_content %}
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-title">Total Codes</div><p class="stat-value">{{ summary.total|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Active Flags</div><p class="stat-value">{{ summary.active|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Total Uses</div><p class="stat-value">{{ summary.total_uses|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Expiring Soon</div><p class="stat-value">{{ summary.expiring_soon|intcomma }}</p></div>
+</div>
+
+<form method="get" class="filter-form">
+    <div class="filter-grid">
+        <input type="text" name="q" class="form-control" placeholder="Search code or description" value="{{ q }}">
+        <select name="state" class="form-select">
+            <option value="">All States</option>
+            <option value="ACTIVE" {% if state_filter == 'ACTIVE' %}selected{% endif %}>Active</option>
+            <option value="EXPIRED" {% if state_filter == 'EXPIRED' %}selected{% endif %}>Expired / Disabled</option>
+            <option value="SCHEDULED" {% if state_filter == 'SCHEDULED' %}selected{% endif %}>Scheduled</option>
+        </select>
+    </div>
+    <div class="action-row mt-3">
+        <a href="{% url 'superadmin:coupon_codes' %}" class="btn-darkline">Clear</a>
+        <button type="submit" class="btn-gold">Apply Filters</button>
+    </div>
+</form>
+
+<div class="table-panel">
+    <div class="panel-header"><div><h5>Coupon Code Directory</h5><p class="panel-subtext">Visibility into discount setup and usage, without edit controls here.</p></div></div>
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Code</th><th>Discount</th><th>Status</th><th>Plans</th><th>Usage</th><th>Valid From</th><th>Valid Until</th></tr>
+            </thead>
+            <tbody>
+                {% for coupon in coupons %}
+                <tr>
+                    <td><strong>{{ coupon.code }}</strong><br><small class="text-muted">{{ coupon.description|default:"No description" }}</small></td>
+                    <td>{{ coupon.get_discount_display }}</td>
+                    <td>
+                        {% if coupon.is_valid %}
+                            <span class="badge-soft badge-success">Valid</span>
+                        {% elif coupon.is_active %}
+                            <span class="badge-soft badge-gold">Scheduled / Expired</span>
+                        {% else %}
+                            <span class="badge-soft badge-muted">Disabled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if coupon.applicable_plan_count %}
+                            {{ coupon.applicable_plan_count }} selected
+                        {% else %}
+                            All plans
+                        {% endif %}
+                    </td>
+                    <td>{{ coupon.uses_count|intcomma }} / {{ coupon.max_uses|default:"∞" }}</td>
+                    <td>{{ coupon.valid_from|date:"M j, Y g:i A" }}</td>
+                    <td>{{ coupon.valid_until|date:"M j, Y g:i A"|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7"><div class="empty-state"><i class="fas fa-ticket-slash"></i><div>No coupon codes found.</div></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'partials/pagination.html' %}
+</div>
+{% endblock %}

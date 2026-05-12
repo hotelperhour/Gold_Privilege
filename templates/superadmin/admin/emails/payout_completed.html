@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Received — Gold Privilege</title>
+  <style>
+    body {
+      margin: 0; padding: 0;
+      background: #F4F4F4;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      color: #111111;
+    }
+    .wrapper {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    /* Header */
+    .header {
+      background: #111111;
+      padding: 32px 40px;
+      text-align: center;
+    }
+    .header-logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .header-logo .gold { color: #E5AD04; }
+    .header-logo .white { color: #ffffff; }
+    .header-tagline {
+      color: rgba(255,255,255,0.5);
+      font-size: 12px;
+      margin-top: 4px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    /* Hero amount block */
+    .hero {
+      background: linear-gradient(135deg, #E5AD04 0%, #F9B036 100%);
+      padding: 36px 40px;
+      text-align: center;
+    }
+    .hero-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: rgba(0,0,0,0.6);
+      margin-bottom: 8px;
+    }
+    .hero-amount {
+      font-size: 42px;
+      font-weight: 800;
+      color: #111111;
+      line-height: 1;
+    }
+    .hero-ref {
+      margin-top: 10px;
+      font-size: 13px;
+      color: rgba(0,0,0,0.55);
+      font-family: monospace;
+    }
+
+    /* Body */
+    .body {
+      padding: 36px 40px;
+    }
+    .greeting {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .intro {
+      font-size: 14px;
+      color: #444;
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+
+    /* Breakdown table */
+    .breakdown {
+      background: #FAFAFA;
+      border: 1px solid #EBEBEB;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+    .breakdown-title {
+      background: #111111;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 12px 20px;
+    }
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 20px;
+      border-bottom: 1px solid #EBEBEB;
+      font-size: 14px;
+    }
+    .breakdown-row:last-child { border-bottom: none; }
+    .breakdown-row .label { color: #666; }
+    .breakdown-row .value { font-weight: 600; color: #111; }
+    .breakdown-row.total .label { font-weight: 700; color: #111; font-size: 15px; }
+    .breakdown-row.total .value {
+      font-weight: 800; color: #E5AD04; font-size: 16px;
+    }
+    .commission-value { color: #dc3545 !important; }
+
+    /* Bank block */
+    .bank-block {
+      background: #F0F9FF;
+      border: 1px solid #BAE6FD;
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-bottom: 28px;
+    }
+    .bank-block-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #0369A1;
+      margin-bottom: 10px;
+    }
+    .bank-detail {
+      font-size: 13px;
+      color: #444;
+      line-height: 2;
+    }
+    .bank-detail strong { color: #111; }
+
+    /* Period */
+    .period-block {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 28px;
+      line-height: 1.8;
+    }
+    .period-block strong { color: #111; }
+
+    /* CTA */
+    .cta-block {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: #E5AD04;
+      color: #111111 !important;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 14px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      letter-spacing: 0.3px;
+    }
+
+    /* Footer */
+    .footer {
+      background: #F7F7F7;
+      border-top: 1px solid #EBEBEB;
+      padding: 24px 40px;
+      text-align: center;
+    }
+    .footer p {
+      font-size: 12px;
+      color: #888;
+      margin: 4px 0;
+      line-height: 1.6;
+    }
+    .footer a { color: #E5AD04; text-decoration: none; }
+
+    /* Responsive */
+    @media (max-width: 620px) {
+      .wrapper { margin: 0; border-radius: 0; }
+      .header, .hero, .body, .footer { padding-left: 24px; padding-right: 24px; }
+      .hero-amount { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-logo">
+      <span class="gold">Gold</span><span class="white"> Privilege</span>
+    </div>
+    <div class="header-tagline">Partner Payment Notification</div>
+  </div>
+
+  <!-- Hero: amount -->
+  <div class="hero">
+    <div class="hero-label">Payment Sent to Your Account</div>
+    <div class="hero-amount">₦{{ payout.net_payout|floatformat:2 }}</div>
+    <div class="hero-ref">Ref: {{ payout.reference }}</div>
+  </div>
+
+  <!-- Body -->
+  <div class="body">
+
+    <p class="greeting">Hello {{ venue.partner.business_name|default:venue.name }},</p>
+    <p class="intro">
+      Great news — Gold Privilege has processed a payout to your bank account.
+      Please allow 1–3 business days for the funds to reflect, depending on your bank.
+      Below is a full breakdown of this payment.
+    </p>
+
+    <!-- Financial breakdown -->
+    <div class="breakdown">
+      <div class="breakdown-title">Payment Breakdown</div>
+
+      <div class="breakdown-row">
+        <span class="label">Total Gross Revenue</span>
+        <span class="value">₦{{ payout.total_gross|floatformat:2 }}</span>
+      </div>
+
+      <div class="breakdown-row">
+        <span class="label">GP Commission Deducted</span>
+        <span class="value commission-value">− ₦{{ payout.total_commission|floatformat:2 }}</span>
+      </div>
+
+      <div class="breakdown-row">
+        <span class="label">Subscription Bookings</span>
+        <span class="value">{{ payout.subscription_count }}</span>
+      </div>
+
+      <div class="breakdown-row">
+        <span class="label">Discount Store Orders</span>
+        <span class="value">{{ payout.store_count }}</span>
+      </div>
+
+      <div class="breakdown-row">
+        <span class="label">Total Visits / Orders</span>
+        <span class="value">{{ payout.booking_count }}</span>
+      </div>
+
+      <div class="breakdown-row total">
+        <span class="label">Net Payout to You</span>
+        <span class="value">₦{{ payout.net_payout|floatformat:2 }}</span>
+      </div>
+    </div>
+
+    <!-- Period covered -->
+    <div class="period-block">
+      <strong>Period Covered:</strong><br>
+      {{ payout.period_start|date:"M d, Y H:i" }} → {{ payout.period_end|date:"M d, Y H:i" }}
+    </div>
+
+    <!-- Bank details confirmation -->
+    <div class="bank-block">
+      <div class="bank-block-title">Paid to Account</div>
+      <div class="bank-detail">
+        <strong>Bank:</strong> {{ payout.bank_name_snapshot }}<br>
+        <strong>Account Number:</strong> {{ payout.account_number_snapshot }}<br>
+        <strong>Account Name:</strong> {{ payout.account_name_snapshot }}<br>
+        <strong>Transfer Reference:</strong> {{ payout.transfer_reference }}
+      </div>
+    </div>
+
+    <!-- Transfer reference -->
+    <div class="period-block">
+      <strong>Transfer Reference:</strong> {{ payout.transfer_reference }}<br>
+      <strong>Date Processed:</strong> {{ payout.paid_at|date:"M d, Y H:i" }}
+    </div>
+
+    <!-- CTA: view full report -->
+    <div class="cta-block">
+      <a href="{{ venue_dashboard_url }}" class="cta-btn">
+        View Your Sales Report →
+      </a>
+    </div>
+
+    <p style="font-size:13px;color:#666;line-height:1.7;">
+      If you have any questions about this payment, please contact us at
+      <a href="mailto:support@goldprivilege.com" style="color:#E5AD04;">support@goldprivilege.com</a>
+      and quote reference <strong>{{ payout.reference }}</strong>.
+    </p>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>Gold Privilege &nbsp;·&nbsp; Partner Portal</p>
+    <p>
+      You are receiving this email because you are a registered venue partner.<br>
+      <a href="#">Manage Notification Preferences</a>
+    </p>
+    <p style="margin-top:12px;">© {% now "Y" %} Gold Privilege. All rights reserved.</p>
+  </div>
+
+</div>
+</body>
+</html>

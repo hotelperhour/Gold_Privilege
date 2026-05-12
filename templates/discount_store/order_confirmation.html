@@ -1,0 +1,122 @@
+
+
+{% extends 'base_subscriber.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}Booking Confirmed — {{ order.reference }}{% endblock %}
+
+{% block subscriber_content %}
+<style>
+* { font-family:'Poppins',sans-serif; box-sizing:border-box; }
+:root { --gold:#E5AD04; --gold-pale:#FFF8E1; --gold-pale-border:#FFE082; --black:#111; --border:#E5E7EB; --radius:14px; --shadow:0 2px 16px rgba(0,0,0,0.07); }
+.confirm-wrap { max-width:620px; margin:0 auto; }
+.success-banner { text-align:center; padding:32px 20px 20px; }
+.success-icon { width:72px;height:72px;background:#d1e7dd;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:32px; }
+.success-banner h1 { font-size:26px;font-weight:700;color:var(--black);margin:0 0 6px; }
+.success-banner p  { font-size:15px;color:#6B7280;margin:0; }
+.ref-badge { display:inline-block;background:#f0f0f0;border-radius:6px;padding:4px 14px;font-size:13px;font-family:monospace;margin-top:10px;color:#444; }
+
+.detail-card { background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:24px;margin:20px 0; }
+.detail-card h3 { font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9a9a9a;margin:0 0 16px; }
+.detail-row { display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f5f5f5;font-size:14px; }
+.detail-row:last-child { border-bottom:none; }
+.detail-row .lbl { color:#6B7280; }
+.detail-row .val { font-weight:600;color:var(--black);text-align:right;max-width:60%; }
+
+/* Cashback summary */
+.cashback-card { background:var(--gold-pale);border:1px solid var(--gold-pale-border);border-radius:var(--radius);padding:20px;margin:20px 0;display:flex;align-items:center;gap:16px; }
+.cashback-icon { font-size:28px; }
+.cashback-txt h4 { font-size:15px;font-weight:700;color:#4a3800;margin:0 0 4px; }
+.cashback-txt p  { font-size:13px;color:#7a6000;margin:0; }
+
+/* QR placeholder */
+.qr-section { text-align:center;padding:24px; }
+.qr-section img { max-width:180px;border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff; }
+.qr-note { font-size:12px;color:#9a9a9a;margin-top:10px;line-height:1.5; }
+
+/* Actions */
+.action-row { display:flex;gap:12px;margin:24px 0; flex-wrap:wrap; }
+.btn-primary { flex:1;min-width:140px;padding:14px;background:var(--gold);color:#000;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;font-family:'Poppins',sans-serif; }
+.btn-secondary { flex:1;min-width:140px;padding:14px;background:#fff;color:var(--black);border:1.5px solid var(--border);border-radius:10px;font-size:15px;font-weight:600;text-decoration:none;text-align:center;font-family:'Poppins',sans-serif; }
+.btn-primary:hover { background:var(--gold-light); }
+.btn-secondary:hover { border-color:var(--black); }
+</style>
+
+<div class="confirm-wrap">
+    <div class="success-banner">
+        <div class="success-icon">✅</div>
+        <h1>Booking Confirmed!</h1>
+        <p>Your booking at <strong>{{ order.product.venue.name }}</strong> is all set.</p>
+        <span class="ref-badge">{{ order.reference }}</span>
+    </div>
+
+    <!-- Booking details -->
+    <div class="detail-card">
+        <h3>Booking Details</h3>
+        <div class="detail-row"><span class="lbl">Service</span><span class="val">{{ order.product.name }}</span></div>
+        <div class="detail-row"><span class="lbl">Venue</span><span class="val">{{ order.product.venue.name }}</span></div>
+        <div class="detail-row"><span class="lbl">Date</span><span class="val">{{ order.visit_date|date:"l, d M Y" }}</span></div>
+        
+        <div class="detail-row"><span class="lbl">People</span><span class="val">{{ order.quantity }}</span></div>
+        {% if order.special_notes %}
+        <div class="detail-row"><span class="lbl">Notes</span><span class="val">{{ order.special_notes }}</span></div>
+        {% endif %}
+    </div>
+
+    <!-- Payment summary -->
+    <div class="detail-card">
+        <h3>Payment Summary</h3>
+        <div class="detail-row">
+            <span class="lbl">Amount Paid</span>
+            <span class="val">
+                {% if order.is_coin_payment %}
+                    🪙 {{ order.amount_paid|floatformat:0|intcomma }} coins
+                {% else %}
+                    💳 ₦{{ order.amount_paid|floatformat:0|intcomma }}
+                {% endif %}
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="lbl">Payment Method</span>
+            <span class="val">{% if order.is_coin_payment %}Gold Coins{% else %}Card (Paystack){% endif %}</span>
+        </div>
+        <div class="detail-row">
+            <span class="lbl">New Wallet Balance</span>
+            <span class="val" style="color:#E5AD04;">{{ wallet.balance|floatformat:0|intcomma }} coins</span>
+        </div>
+    </div>
+
+    <!-- Cashback earned -->
+    {% if order.cashback_awarded and order.cashback_coins > 0 %}
+    <div class="cashback-card">
+        <div class="cashback-icon">🎉</div>
+        <div class="cashback-txt">
+            <h4>You earned {{ order.cashback_coins|intcomma }} cashback coins!</h4>
+            <p>Added to your wallet. Keep spending to earn more.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- QR Code -->
+    {% if booking and booking.qr_code %}
+    <div class="detail-card">
+        <h3>Your Visit QR Code</h3>
+        <div class="qr-section">
+            <img src="{{ booking.qr_code.url }}" alt="Booking QR Code">
+            <p class="qr-note">
+                Show this QR code to venue staff on arrival.<br>
+                Booking ref: <strong>{{ booking.booking_reference }}</strong>
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Actions -->
+    <div class="action-row">
+        <a href="{% url 'discount_store:store_home' %}" class="btn-secondary">← Back to Store</a>
+        <a href="{% url 'discount_store:my_orders' %}" class="btn-primary">My Bookings</a>
+    </div>
+</div>
+{% endblock %}
+
+

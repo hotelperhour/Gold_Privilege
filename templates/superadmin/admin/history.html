@@ -1,0 +1,61 @@
+{% extends 'superadmin/base_admin.html' %}
+{% load humanize %}
+{% block title %}Payout History - Superadmin{% endblock %}
+{% block page_title %}Payout History{% endblock %}
+{% block page_subtitle %}Audit all payout batches across venues{% endblock %}
+
+{% block admin_content %}
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-title">Total Batches</div><p class="stat-value">{{ history_stats.total_batches|default:0|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Total Paid</div><p class="stat-value">₦{{ history_stats.total_paid|default:0|floatformat:2|intcomma }}</p></div>
+    <div class="stat-card"><div class="stat-title">Open Pending</div><p class="stat-value">₦{{ history_stats.total_pending|default:0|floatformat:2|intcomma }}</p></div>
+</div>
+
+<form method="get" class="filter-form">
+    <div class="filter-grid">
+        <select name="venue" class="form-select">
+            <option value="">All Venues</option>
+            {% for venue in venues %}<option value="{{ venue.venue_id }}" {% if venue_filter == venue.venue_id|stringformat:"s" %}selected{% endif %}>{{ venue.venue__name }}</option>{% endfor %}
+        </select>
+        <select name="status" class="form-select">
+            <option value="">All Statuses</option>
+            {% for value, label in status_choices %}<option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        <input type="date" name="date_from" class="form-control" value="{{ date_from }}">
+        <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+    </div>
+    <div class="action-row mt-3">
+        <a href="{% url 'superadmin:history' %}" class="btn-darkline">Clear</a>
+        <button class="btn-gold">Apply Filters</button>
+    </div>
+</form>
+
+<div class="table-panel">
+    <div class="panel-header"><div><h5>Payout Batches</h5><p class="panel-subtext">All payout records, including completed and failed transfers.</p></div></div>
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Reference</th><th>Venue</th><th>Status</th><th>Bookings</th><th>Gross</th><th>Commission</th><th>Net</th><th>Created</th><th></th></tr>
+            </thead>
+            <tbody>
+                {% for payout in payouts %}
+                <tr>
+                    <td class="text-mono">{{ payout.reference }}</td>
+                    <td>{{ payout.venue.name }}</td>
+                    <td><span class="badge-soft {% if payout.status == 'PENDING' %}badge-gold{% elif payout.status == 'APPROVED' %}badge-info{% elif payout.status == 'FAILED' %}badge-danger{% elif payout.status == 'PAID' %}badge-success{% else %}badge-muted{% endif %}">{{ payout.get_status_display }}</span></td>
+                    <td>{{ payout.booking_count }}</td>
+                    <td>₦{{ payout.total_gross|floatformat:2|intcomma }}</td>
+                    <td>₦{{ payout.total_commission|floatformat:2|intcomma }}</td>
+                    <td>₦{{ payout.total_net|floatformat:2|intcomma }}</td>
+                    <td>{{ payout.created_at|date:"M j, Y g:i A" }}</td>
+                    <td><a href="{% url 'superadmin:detail' payout.payout_id %}" class="btn-soft">Open</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9"><div class="empty-state"><i class="fas fa-inbox"></i><div>No payout records found.</div></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'partials/pagination.html' %}
+</div>
+{% endblock %}

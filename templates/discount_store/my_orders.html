@@ -1,0 +1,149 @@
+{% extends 'base_subscriber.html' %}
+{% load static %}
+{% load humanize %}
+{% block title %}My Store Bookings – Gold Privilege{% endblock %}
+
+{% block subscriber_content %}
+<style>
+* { font-family:'Poppins',sans-serif; box-sizing:border-box; }
+:root { --gold:#E5AD04; --gold-pale:#FFF8E1; --gold-pale-border:#FFE082; --black:#111; --border:#E5E7EB; --text-muted:#6B7280; --radius:14px; --shadow:0 2px 16px rgba(0,0,0,0.07); }
+
+.page-header { margin-bottom:32px; }
+.page-header h1 { font-size:26px;font-weight:700;margin:0 0 6px; }
+.page-header p  { color:var(--text-muted);font-size:14px;margin:0; }
+
+.order-card { background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);padding:20px 22px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:center; }
+.order-thumb { width:70px;height:70px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:24px;color:#ccc; }
+.order-thumb img { width:100%;height:100%;object-fit:cover; }
+.order-meta { flex:1; min-width:180px; }
+.order-product { font-size:16px;font-weight:700;color:var(--black);margin:0 0 2px; }
+.order-venue   { font-size:13px;color:var(--text-muted);margin:0 0 6px; }
+.order-date    { font-size:13px;color:var(--black);font-weight:500; }
+.order-ref     { font-size:11px;color:#aaa;font-family:monospace;margin-top:4px; }
+
+.order-amount { text-align:right;flex-shrink:0; }
+.amount-val   { font-size:17px;font-weight:800;color:var(--black); }
+.payment-type { font-size:12px;color:var(--text-muted);margin-top:2px; }
+
+.status-badge { display:inline-block;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap; }
+.s-PENDING   { background:#fff3cd;color:#856404; }
+.s-PAID      { background:#e7f3ff;color:#0d6efd; }
+.s-USED      { background:#d1e7dd;color:#198754; }
+.s-CANCELLED { background:#f8d7da;color:#dc3545; }
+.s-REFUNDED  { background:#f8f9fa;color:#6c757d; }
+
+.order-actions { display:flex;gap:8px;flex-wrap:wrap;align-items:center; }
+.btn-sm { padding:7px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;text-decoration:none;font-family:'Poppins',sans-serif; }
+.btn-view   { background:#f5f5f5;color:var(--black); }
+.btn-cancel { background:#fff;color:#dc3545;border:1px solid #dc3545; }
+.btn-view:hover   { background:#e5e5e5; }
+.btn-cancel:hover { background:#fff0f0; }
+
+.empty-state { text-align:center;padding:80px 20px;color:var(--text-muted); }
+.empty-state i  { font-size:48px;color:#d1d5db;margin-bottom:16px; }
+.empty-state h3 { font-size:20px;font-weight:700;color:var(--black); }
+</style>
+
+<div class="page-header">
+    <h1>My Store Bookings</h1>
+    <p>All your Discount Store purchases and bookings.</p>
+</div>
+
+<a href="{% url 'discount_store:store_home' %}" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font-size:14px;font-weight:500;text-decoration:none;margin-bottom:24px;">
+    <i class="fas fa-arrow-left"></i> Browse Store
+</a>
+
+{% if orders %}
+    {% for order in orders %}
+    <div class="order-card">
+
+        <!-- Thumbnail -->
+        <div class="order-thumb">
+            {% if order.product.image %}
+                <img src="{{ order.product.image.url }}" alt="{{ order.product.name }}">
+            {% else %}
+                <i class="fas fa-store"></i>
+            {% endif %}
+        </div>
+
+        <!-- Meta -->
+        <div class="order-meta">
+            <p class="order-product">{{ order.product.name }}</p>
+            <p class="order-venue"><i class="fas fa-map-marker-alt" style="color:var(--gold);margin-right:4px;"></i>{{ order.product.venue.name }}</p>
+            <p class="order-date">
+                📅 {{ order.visit_date|date:"d M Y" }} at {{ order.visit_time|time:"g:i A" }}
+                — {{ order.quantity }} person{{ order.quantity|pluralize }}
+            </p>
+            <p class="order-ref">{{ order.reference }}</p>
+        </div>
+
+        <!-- Amount -->
+        <div class="order-amount">
+            {% if order.is_coin_payment %}
+            <div class="amount-val">{{ order.amount_paid|floatformat:0|intcomma }} 🪙</div>
+            {% else %}
+            <div class="amount-val">₦{{ order.amount_paid|floatformat:0|intcomma }}</div>
+            {% endif %}
+            <div class="payment-type">{% if order.is_coin_payment %}Coins{% else %}Card{% endif %}</div>
+        </div>
+
+        <!-- Status + actions -->
+        <div class="order-actions">
+            <span class="status-badge s-{{ order.status }}">{{ order.get_status_display }}</span>
+            <a href="{% url 'discount_store:order_confirmation' order_id=order.order_id %}" class="btn-sm btn-view">View</a>
+            {% if order.can_cancel %}
+            <button type="button" class="btn-sm btn-cancel"
+                    onclick="confirmCancel('{{ order.order_id }}', '{{ order.product.name }}')">
+                Cancel
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+{% else %}
+    <div class="empty-state">
+        <i class="fas fa-store"></i>
+        <h3>No bookings yet</h3>
+        <p>Visit the Discount Store to book venue services.</p>
+        <a href="{% url 'discount_store:store_home' %}"
+           style="display:inline-block;margin-top:16px;background:var(--gold);color:#000;padding:12px 28px;border-radius:10px;font-weight:700;text-decoration:none;">
+            Browse Store →
+        </a>
+    </div>
+{% endif %}
+
+<!-- Cancel confirmation modal -->
+<div id="cancel-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;justify-content:center;align-items:center;">
+    <div style="background:#fff;border-radius:16px;padding:36px;max-width:420px;width:90%;">
+        <h3 style="font-size:18px;font-weight:700;margin:0 0 10px;">Cancel Booking?</h3>
+        <p id="cancel-modal-msg" style="font-size:14px;color:#555;margin-bottom:24px;"></p>
+        <form id="cancel-form" method="post">
+            {% csrf_token %}
+            <textarea name="reason" placeholder="Reason (optional)" style="width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px;font-size:14px;font-family:'Poppins',sans-serif;resize:none;margin-bottom:16px;" rows="2"></textarea>
+            <div style="display:flex;gap:10px;">
+                <button type="button" onclick="closeCancelModal()" style="flex:1;padding:12px;border-radius:8px;border:1.5px solid #e5e7eb;background:#fff;font-weight:600;cursor:pointer;">Keep Booking</button>
+                <button type="submit" style="flex:1;padding:12px;border-radius:8px;background:#dc3545;color:#fff;border:none;font-weight:600;cursor:pointer;">Cancel Booking</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function confirmCancel(orderId, productName) {
+    document.getElementById('cancel-modal-msg').textContent =
+        'Are you sure you want to cancel your booking for "' + productName + '"? ' +
+        'Coin payments will be refunded immediately.';
+    document.getElementById('cancel-form').action =
+        '/store/orders/' + orderId + '/cancel/';
+    document.getElementById('cancel-modal').style.display = 'flex';
+}
+function closeCancelModal() {
+    document.getElementById('cancel-modal').style.display = 'none';
+}
+document.getElementById('cancel-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeCancelModal();
+});
+</script>
+
+{% endblock %}

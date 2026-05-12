@@ -20,7 +20,8 @@ from venues.models import Venue
 from subscriptions.models import Subscription
 from django.core.cache import cache
 from django.http import HttpResponse
-
+import logging
+logger = logging.getLogger(__name__)
 
 
 def check_rate_limit(request, action='checkin', limit=10, period=60):
@@ -65,6 +66,19 @@ def booking_create(request, venue_slug):
     if not subscription:
         messages.error(request, 'You need an active subscription to book venues.')
         return redirect('subscriptions:plans_list')
+    can_access, access_message = venue.is_accessible_by(request.user)
+    if not can_access:
+        if venue.access_mode == 'STORE':
+            # Store-only: send to the Discount Store
+            messages.error(
+                request,
+                'This venue is only bookable through the Discount Store.'
+            )
+            return redirect('discount_store:store_home')
+        else:
+            # Tier too low: send to subscription upgrade page
+            messages.error(request, access_message)
+            return redirect('venues:detail', slug=venue_slug)
     
     # ── CHECK FEATURE QUOTA ──
     feature_name = None
@@ -165,89 +179,132 @@ def booking_create(request, venue_slug):
     return render(request, 'bookings/member/create.html', context)
 
 
+# ════════════════════════════════════════════════════════════════════════════
+# REPLACE your existing booking_list view with this version.
+# Adds two filters:
+#   - source: ALL / SUBSCRIPTION / STORE
+#   - category: any VenueCategory value
+# Everything else is identical to your existing view.
+# ════════════════════════════════════════════════════════════════════════════
+
 @login_required
 @subscriber_required
 def booking_list(request):
     """
-    Display member's bookings with feature-based quota tracking
+    Unified booking list — shows subscription AND store bookings together.
+    Filters: source (ALL/SUBSCRIPTION/STORE) and venue category.
+
+    Teaching note:
+      We annotate each booking with `is_store_booking` in Python rather than
+      adding a template tag, because templates should stay logic-light.
+      The annotation also lets us look up the linked StoreOrder cheaply —
+      we do it once in the view rather than once per row in the template.
     """
-    # Get all bookings
-    all_bookings = Booking.objects.filter(user=request.user)\
-        .select_related('venue', 'subscription')\
+    from venues.models import VenueCategory
+
+    # ── Base queryset ─────────────────────────────────────────────────────
+    all_bookings = (
+        Booking.objects
+        .filter(user=request.user)
+        .select_related('venue', 'subscription', 'venue__primary_feature')
         .order_by('-visit_date', '-created_at')
-    
-    # Get active subscription
-    active_subscription = Subscription.objects.filter(
-        user=request.user,
-        status__in=['ACTIVE', 'TRIAL'],
-        end_date__gte=timezone.now().date()
-    ).first()
-    
-    # ── FEATURE USAGE STATS ──
+    )
+
+    # ── Filters ───────────────────────────────────────────────────────────
+    source_filter   = request.GET.get('source', 'ALL').upper()
+    category_filter = request.GET.get('category', '').strip()
+
+    if source_filter == 'SUBSCRIPTION':
+        all_bookings = all_bookings.filter(booking_source='SUBSCRIPTION')
+    elif source_filter == 'STORE':
+        all_bookings = all_bookings.filter(booking_source='STORE')
+    # 'ALL' — no filter
+
+    if category_filter and category_filter in dict(VenueCategory.choices):
+        all_bookings = all_bookings.filter(venue__category=category_filter)
+
+    # ── Date groupings (before pagination) ────────────────────────────────
+    today = date.today()
+
+    today_bookings = all_bookings.filter(
+        status__in=[BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN],
+        visit_date=today,
+    )
+    upcoming_bookings = all_bookings.filter(
+        status=BookingStatus.CONFIRMED,
+        visit_date__gt=today,
+    )
+
+    # ── Feature usage (subscription plan quota) ───────────────────────────
+    active_subscription = (
+        Subscription.objects
+        .filter(user=request.user, status__in=['ACTIVE', 'TRIAL'], end_date__gte=today)
+        .select_related('plan')
+        .first()
+    )
     feature_usage = {}
     if active_subscription:
         feature_usage = get_all_feature_usage(active_subscription)
-    
-    # Separate bookings by type
-    today = date.today()
-    
-    today_bookings = all_bookings.filter(
-        status__in=[BookingStatus.CONFIRMED, BookingStatus.CHECKED_IN],
-        visit_date=today
-    )
-    
-    upcoming_bookings = all_bookings.filter(
-        status=BookingStatus.CONFIRMED,
-        visit_date__gt=today
-    )
 
-    # ── PAGINATION (10 per page) ──
-    paginator = Paginator(all_bookings, 10)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
+    # ── Pagination ────────────────────────────────────────────────────────
+    paginator   = Paginator(all_bookings, 10)
+    page_obj    = paginator.get_page(request.GET.get('page'))
 
-    bookings_with_details = []
-    for booking in page_obj:
-        bookings_with_details.append({
-            'booking': booking,
-            'qr_data': booking.get_qr_code_data(),
-            'can_cancel': booking.can_cancel(),
-            'map_url': f"https://www.google.com/maps?q={booking.venue.latitude},{booking.venue.longitude}" if booking.venue.latitude else None,
-        })
-    
-    
+    # ── Per-row data: quota remaining + store order link ──────────────────
+    # We batch-fetch store orders for all bookings on this page to avoid
+    # N+1 queries (one extra query total, not one per booking row).
+    page_references = [b.booking_reference for b in page_obj]
+    store_orders_map = {}
 
-    # Add Remaining Quota for each booking's venue feature
+    try:
+        from discount_store.models import StoreOrder
+        store_orders = (
+            StoreOrder.objects
+            .filter(reference__in=page_references)
+            .select_related('product')
+        )
+        store_orders_map = {o.reference: o for o in store_orders}
+    except Exception:
+        pass  # discount_store app not yet fully migrated — graceful degradation
+
     bookings_with_quota = []
     for booking in page_obj:
-        booking_data = {
-            'booking': booking,
-            'remaining_quota': None,
+        store_order = store_orders_map.get(booking.booking_reference)
+        row = {
+            'booking':          booking,
+            'remaining_quota':  None,
+            'is_store_booking': booking.booking_source == 'STORE',
+            'store_order':      store_order,   # None for subscription bookings
         }
-        
-        # Calculate remaining quota if booking has primary feature
-        if booking.venue.primary_feature and booking.subscription:
-            feature_usage_obj, _ = get_or_create_feature_usage(
-                booking.subscription,
-                booking.venue.primary_feature
-            )
-            # Calculate what remaining will be AFTER cancellation (current + 1)
-            booking_data['remaining_quota'] = feature_usage_obj.get_limit() - feature_usage_obj.used_count + 1
-        
-        bookings_with_quota.append(booking_data)
+
+        # Remaining quota only makes sense for subscription bookings
+        if booking.booking_source != 'STORE' and booking.venue.primary_feature and booking.subscription:
+            try:
+                fu, _ = get_or_create_feature_usage(booking.subscription, booking.venue.primary_feature)
+                row['remaining_quota'] = fu.get_limit() - fu.used_count + 1
+            except Exception:
+                pass
+
+        bookings_with_quota.append(row)
 
     context = {
-        'all_bookings': all_bookings,
-        'today_bookings': today_bookings,
-        'upcoming_bookings': upcoming_bookings,
-        'active_subscription': active_subscription,
-        'feature_usage': feature_usage,
-        'page_obj': page_obj,
-        'bookings_with_quota': bookings_with_quota, 
-        'is_paginated': page_obj.has_other_pages(),
-        'today': today,
+        # Bookings
+        'all_bookings':       all_bookings,
+        'today_bookings':     today_bookings,
+        'upcoming_bookings':  upcoming_bookings,
+        'page_obj':           page_obj,
+        'bookings_with_quota':bookings_with_quota,
+        'is_paginated':       page_obj.has_other_pages(),
+        'today':              today,
+        # Subscription
+        'active_subscription':active_subscription,
+        'feature_usage':      feature_usage,
+        # Filters — passed back so the template can pre-select them
+        'source_filter':      source_filter,
+        'category_filter':    category_filter,
+        'categories':         VenueCategory.choices,
     }
-    
+
     return render(request, 'bookings/member/list.html', context)
 
 
@@ -274,6 +331,13 @@ def booking_detail(request, booking_reference):
     
     # Get QR code data
     qr_data = booking.get_qr_code_data()
+    store_order = None
+    try:
+        if booking.booking_source == 'STORE':
+            from discount_store.models import StoreOrder
+            store_order = booking.store_order
+    except Exception:
+        pass
     
     context = {
         'booking': booking,
@@ -281,7 +345,9 @@ def booking_detail(request, booking_reference):
         'can_cancel': can_cancel,
         'map_url': map_url,
         'qr_data': qr_data,
+        'store_order': store_order,
         'today': date.today(),
+        'is_store_booking': booking.booking_source == 'STORE',
     }
     
     return render(request, 'bookings/member/detail.html', context)
@@ -314,14 +380,59 @@ def booking_cancel(request, booking_reference):
             with transaction.atomic():
                 # Cancel booking
                 booking.cancel(reason=reason, cancelled_by=request.user)
-                
-                # ── RESTORE FEATURE QUOTA ──
-                if booking.venue.primary_feature:
+
+                # ── RESTORE FEATURE QUOTA (subscription bookings only) ──
+                if booking.booking_source != 'STORE' and booking.venue.primary_feature and booking.subscription:
                     decrement_feature_usage(
                         booking.subscription,
                         booking.venue.primary_feature
                     )
-                
+
+                # ── STORE ORDER REFUND (store bookings only) ──
+                if booking.booking_source == 'STORE':
+                    try:
+                        store_order = booking.store_order  # reverse OneToOne from StoreOrder.booking
+                    except Exception:
+                        store_order = None
+
+                    if store_order and store_order.status == 'PAID':
+                        from wallet.models import Wallet, WalletTransaction
+                        from wallet.utils import credit_wallet, debit_wallet
+
+                        wallet, _ = Wallet.objects.get_or_create(user=request.user)
+
+                        # Refund to wallet regardless of payment method
+                        credit_wallet(
+                            wallet=wallet,
+                            amount=int(store_order.amount_paid),
+                            txn_type=WalletTransaction.TransactionType.STORE_REFUND,
+                            note=f'Refund for cancelled store order {store_order.reference}',
+                        )
+
+                        # Claw back cashback using CASHBACK_CLAWBACK (shows as debit correctly)
+                        if store_order.cashback_awarded and store_order.cashback_coins > 0:
+                            try:
+                                debit_wallet(
+                                    wallet=wallet,
+                                    amount=store_order.cashback_coins,
+                                    txn_type=WalletTransaction.TransactionType.CASHBACK_CLAWBACK,
+                                    note=f'Cashback removed for cancelled order {store_order.reference}',
+                                )
+                                store_order.cashback_awarded = False
+                                store_order.cashback_coins   = 0
+                            except ValueError:
+                                logger.warning(
+                                    f'Could not claw back cashback for {store_order.reference} — insufficient balance.'
+                                )
+
+                        store_order.status              = 'CANCELLED'
+                        store_order.cancelled_by        = 'USER'
+                        store_order.cancellation_reason = reason
+                        store_order.cancelled_at        = timezone.now()
+                        store_order.save(update_fields=[
+                            'status', 'cancelled_by', 'cancellation_reason',
+                            'cancelled_at', 'cashback_awarded', 'cashback_coins', 'updated_at'
+                        ])
                 # Log activity
                 BookingActivity.objects.create(
                     booking=booking,
@@ -330,8 +441,17 @@ def booking_cancel(request, booking_reference):
                     notes=f'Cancelled: {reason[:100]}'
                 )
             
-            messages.success(request, 'Booking cancelled successfully. Your quota has been restored.')
-            return redirect('bookings:list')
+            if booking.booking_source == 'STORE':
+                try:
+                    store_order = booking.store_order
+                    messages.success(
+                        request,
+                        f'Booking cancelled. {int(store_order.amount_paid):,} coins have been refunded to your wallet.'
+                    )
+                except Exception:
+                    messages.success(request, 'Booking cancelled successfully.')
+            else:
+                messages.success(request, 'Booking cancelled successfully. Your quota has been restored.')
         
         except Exception as e:
             messages.error(request, f'Error cancelling booking: {str(e)}')
@@ -350,7 +470,7 @@ class PartnerBookingsListView(IsApprovedPartnerMixin, ListView):
     model = Booking
     template_name = 'bookings/partner/list.html'
     context_object_name = 'bookings'
-    paginate_by = 4
+    paginate_by = 10
     
     def get_queryset(self):
         # Get partner's venues
