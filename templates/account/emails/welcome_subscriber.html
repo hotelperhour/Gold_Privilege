@@ -1,175 +1,39 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Gold Privilege</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #d4af37 0%, #aa8c2c 100%);
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-        }
-        .content {
-            padding: 30px 20px;
-            color: #333;
-        }
-        .content p {
-            line-height: 1.6;
-            margin: 10px 0;
-        }
-        .button {
-            display: inline-block;
-            background-color: #d4af37;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            margin: 20px 0;
-        }
 
-        /* ── Wallet section (added) ── */
-        .wallet-section {
-            background: linear-gradient(135deg, #020202, #5c3001);
-            border-radius: 8px;
-            padding: 22px 20px;
-            margin: 24px 0;
-            color: #fff;
-        }
-        .wallet-section h3 {
-            margin: 0 0 8px;
-            font-size: 17px;
-            color: #E5AD04;
-        }
-        .wallet-section p {
-            font-size: 13px;
-            color: rgba(255,255,255,0.8);
-            margin: 0 0 14px;
-            line-height: 1.6;
-        }
-        .wallet-features {
-            display: block;
-            margin: 0 0 16px;
-            padding: 0;
-            list-style: none;
-        }
-        .wallet-features li {
-            font-size: 13px;
-            color: rgba(255,255,255,0.85);
-            padding: 4px 0;
-            padding-left: 20px;
-            position: relative;
-            line-height: 1.5;
-        }
-        .wallet-features li::before {
-            content: '✦';
-            color: #E5AD04;
-            position: absolute;
-            left: 0;
-            font-size: 10px;
-            top: 5px;
-        }
-        .gp-id-display {
-            background: rgba(229, 173, 4, 0.15);
-            border: 1px solid rgba(229, 173, 4, 0.4);
-            border-radius: 6px;
-            padding: 10px 14px;
-            font-size: 13px;
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 14px;
-        }
-        .gp-id-display strong {
-            color: #E5AD04;
-            font-size: 15px;
-            letter-spacing: 1px;
-        }
-        .wallet-notice {
-            font-size: 12px;
-            color: rgba(255,255,255,0.5);
-            margin: 0;
-        }
-        .wallet-btn {
-            display: inline-block;
-            background: #E5AD04;
-            color: #000;
-            padding: 10px 22px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        /* ── end wallet section ── */
+{% extends "emails/base_email.html" %}
+{% block title %}Welcome to Gold Privilege{% endblock %}
+{% block preheader %}Your Gold Privilege account and Gold Coins wallet are ready.{% endblock %}
+{% block content %}
+<!-- Suggested hero image:
+Reason: Welcome emails benefit from a premium onboarding impression. Review and convert manually to static asset later.
+Image URL: https://images.unsplash.com/photo-1519671482749-fd09be7ccebf
+-->
+<div style="margin:0 0 24px;">
+  <img
+    src="{{ welcome_hero_url }}"
 
-        .footer {
-            background-color: #f9f9f9;
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #777;
-            border-top: 1px solid #eee;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Welcome to Gold Privilege</h1>
-        </div>
-        <div class="content">
-            <p>Hello {{ user_name }},</p>
-            <p>Thank you for joining the Gold Privilege subscription program. We're excited to have you on board!</p>
-            <p>As a valued subscriber, you'll gain access to exclusive benefits, resources, and support to help grow your business with us.</p>
-            <a href="{{ user_dashboard_url }}" class="button">Access Your Dashboard</a>
+    alt="Welcome to Gold Privilege"
+    style="display:block;width:100%;max-width:600px;height:auto;border-radius:18px;"
+  >
+</div>
+<p class="eyebrow">Welcome</p>
+<h1>Your Gold Privilege access is ready.</h1>
+<p class="lead">Hello {{ user_name }}, welcome to a more seamless way to discover premium venues, benefits, and member-only experiences.</p>
 
-            <!-- ── Wallet section ── -->
-            <div class="wallet-section">
-                <h3>🪙 Your Gold Coins Wallet is Ready</h3>
-                <p>A Gold Coins wallet has been automatically created for you. Start earning and spending coins right away.</p>
+<p style="text-align:center;margin:28px 0;">
+  <a class="button" href="{{ user_dashboard_url }}">Open My Dashboard</a>
+</p>
 
-                <div class="gp-id-display">
-                    Your GP ID: <strong>{{ gp_id }}</strong><br>
-                    <span style="font-size:12px;">Share this ID so other members can send you coins</span>
-                </div>
+<div class="accent-card">
+  <h2>Your Gold Coins wallet is ready</h2>
+  <p>Your wallet has been created automatically, so you can earn, receive, and spend Gold Coins.</p>
+  <div class="ref">{{ gp_id }}</div>
+  <p class="muted">Share your GP ID so other members can send you coins.</p>
+  <p style="text-align:center;margin:20px 0 0;"><a class="button button-dark" href="{{ wallet_url }}">Go to My Wallet</a></p>
+</div>
 
-                <ul class="wallet-features">
-                    <li>Buy Gold Coins with your card or bank transfer</li>
-                    <li>Earn coins through cashback and referrals</li>
-                    <li>Spend coins in the Discount Store</li>
-                    <li>Send coins to other subscribers using their GP ID</li>
-                </ul>
-
-                <p class="wallet-notice">Note: Gold Coins cannot be withdrawn to a bank account. Coins are for spending only.</p>
-                <br>
-                <a href="{{ wallet_url }}" class="wallet-btn">Go to My Wallet</a>
-            </div>
-            <!-- ── end wallet section ── -->
-
-            <p>If you have any questions, feel free to reach out to our subscriber support team.</p>
-            <p>Best regards,<br>The Gold Privilege Team</p>
-        </div>
-        <div class="footer">
-            <p>&copy; 2026 Gold Privilege. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
+<div class="card">
+  <h2>What you can do next</h2>
+  <p>Explore venues, buy Gold Coins, earn cashback, use the Discount Store, and manage your membership from your dashboard.</p>
+  <p class="muted" style="margin-bottom:0;">Gold Coins are for platform spending and cannot be withdrawn to a bank account.</p>
+</div>
+{% endblock %}

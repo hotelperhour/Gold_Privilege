@@ -1,49 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Booking Cancelled</title>
-    <style>
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f4; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; }
-        .header { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); padding: 30px; text-align: center; }
-        .header h1 { color: #fff; margin: 0; font-size: 24px; }
-        .content { padding: 35px 30px; }
-        .cancelled-badge { background: #dc3545; color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; font-weight: 600; margin-bottom: 20px; }
-        .booking-details { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc3545; }
-        .button { display: inline-block; background: #d4af37; color: #1a1a1a; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; margin: 20px 0; }
-        .footer { background: #1a1a1a; color: #fff; padding: 20px; text-align: center; font-size: 13px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Booking Cancelled</h1>
-        </div>
-        <div class="content">
-            <span class="cancelled-badge">✕ CANCELLED</span>
-            <p>Hi {{ user.get_full_name }},</p>
-            <p>Your booking has been cancelled.</p>
-            
-            <div class="booking-details">
-                <p style="margin: 5px 0;"><strong>Reference:</strong> {{ booking.booking_reference }}</p>
-                <p style="margin: 5px 0;"><strong>Venue:</strong> {{ venue.name }}</p>
-                <p style="margin: 5px 0;"><strong>Visit Date:</strong> {{ booking.visit_date|date:"F j, Y" }}</p>
-                {% if booking.cancellation_reason %}
-                <p style="margin: 15px 0 5px 0;"><strong>Reason:</strong></p>
-                <p style="margin: 5px 0; color: #6c757d;">{{ booking.cancellation_reason }}</p>
-                {% endif %}
-            </div>
-            
-            <p>You can book another visit anytime using your Gold Privilege membership.</p>
-            
-            <div style="text-align: center;">
-                <a href="#" class="button">Browse Venues</a>
-            </div>
-        </div>
-        <div class="footer">
-            <p>Gold Privilege | <a href="#" style="color: #d4af37;">Help Center</a></p>
-        </div>
-    </div>
-</body>
-</html>
+{% extends "emails/base_email.html" %}
+{% block title %}Booking Cancelled{% endblock %}
+{% block preheader %}Your booking at {{ venue.name }} has been cancelled.{% endblock %}
+{% block content %}
+<p class="eyebrow">Booking update</p>
+<h1>Your booking was cancelled.</h1>
+<p class="lead">Hi {{ user.get_full_name }}, your booking at <strong>{{ venue.name }}</strong> has been cancelled.</p>
+
+<div class="accent-card danger">
+  <table role="presentation" width="100%">
+    <tr class="row"><td class="label">Reference</td><td class="value">{{ booking.booking_reference }}</td></tr>
+    <tr class="row"><td class="label">Venue</td><td class="value">{{ venue.name }}</td></tr>
+    <tr><td class="label">Visit date</td><td class="value">{{ booking.visit_date|date:"F j, Y" }}</td></tr>
+  </table>
+</div>
+
+{% if booking.cancellation_reason %}
+<div class="card">
+  <h2>Reason</h2>
+  <p style="margin-bottom:0;">{{ booking.cancellation_reason }}</p>
+</div>
+{% endif %}
+
+<p>You can book another visit anytime using your Gold Privilege membership.</p>
+{% endblock %}

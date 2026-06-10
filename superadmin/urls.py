@@ -21,4 +21,5 @@ urlpatterns = [
     path("<uuid:payout_uuid>/fail/",   views.fail_payout,             name="fail"),
     path("<uuid:payout_uuid>/cancel/", views.cancel_payout,           name="cancel"),
     path("auto-create/",              views.run_auto_create_payouts,  name="run_auto_create"),
+    path('send-notification/', views.send_notification, name='send_notification'),
 ]

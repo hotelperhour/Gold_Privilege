@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'wallet.apps.WalletConfig',
     'discount_store.apps.DiscountStoreConfig',
     'superadmin.apps.SuperadminConfig',
+    'notifications.apps.NotificationsConfig',
     'django.contrib.humanize',
     
 ]
@@ -88,6 +89,7 @@ TEMPLATES = [
                 'subscriptions.context_processors.active_subscription',
                 'wallet.context_processors.wallet_context',
                 'venues.context_processors.partner_payout_context',
+                'notifications.context_processors.notification_context',
 
             ],
         },

@@ -585,6 +585,10 @@
                 <span>Subscribers</span>
                 <span class="nav-badge">{{ sidebar_counts.subscribers|default:0 }}</span>
             </a>
+            <a href="{% url 'superadmin:send_notification' %}" class="nav-link-item {% if request.resolver_match.url_name == 'send_notification' %}active{% endif %}">
+                <i class="fas fa-bell"></i>
+                <span>Notifications</span>
+            </a>
             <a href="{% url 'superadmin:coupon_codes' %}" class="nav-link-item {% if request.resolver_match.url_name == 'coupon_codes' %}active{% endif %}">
                 <i class="fas fa-ticket"></i>
                 <span>Coupon Codes</span>
@@ -628,6 +632,7 @@
                     <a href="{% url 'superadmin:partners' %}">Partners</a>
                     <a href="{% url 'superadmin:subscribers' %}">Subscribers</a>
                     <a href="{% url 'superadmin:history' %}">Payouts</a>
+                    <a href="{% url 'superadmin:send_notification' %}">Notifications</a>
                     <a href="{% url 'superadmin:coupon_codes' %}">Coupon Codes</a>
                 </div>
             </div>

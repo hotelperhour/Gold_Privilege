@@ -28,7 +28,8 @@ urlpatterns = [
     path("services/", include(("services.urls", "services"), namespace="services")),
     path("wallet/", include(("wallet.urls", "wallet"), namespace="wallet")),
     path('store/', include(('discount_store.urls', 'discount_store'), namespace='discount_store')),
-    path("superadmin/", include(("superadmin.urls", "superadmin"), namespace="superadmin"))
+    path("superadmin/", include(("superadmin.urls", "superadmin"), namespace="superadmin")),
+    path("notifications/", include(("notifications.urls", "notifications"), namespace="notifications")),
 ]
 
 

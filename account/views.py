@@ -18,6 +18,7 @@ from django.contrib.auth.views import (
     PasswordResetDoneView,
     PasswordResetCompleteView
 )
+from django.templatetags.static import static
 
 from .forms import (
     UserRegistrationForm,
@@ -280,6 +281,7 @@ def activate(request, uidb64, token):
         user.is_verified = True
         user.save()
         send_welcome_email(user, request)
+        _send_welcome_notification(user) 
         messages.success(request, "Your account has been activated successfully! Please log in.")
         return redirect('account:login')
     else:
@@ -294,18 +296,21 @@ def send_welcome_email(user, request=None):
     else:
         template = 'account/emails/welcome_subscriber.html'
  
-    # Build wallet URL safely — use request if available, fall back to settings
+    # Build absolute URLs for email clients. Email images must not be relative.
     if request is not None:
-        wallet_url = request.build_absolute_uri(
-            reverse('wallet:wallet_dashboard')
-        )
-        dashboard_url = request.build_absolute_uri(
-            reverse('account:dashboard')
-        )
+        site_url = request.build_absolute_uri('/').rstrip('/')
+        wallet_url = request.build_absolute_uri(reverse('wallet:wallet_dashboard'))
+        dashboard_url = request.build_absolute_uri(reverse('account:dashboard'))
     else:
-        base = getattr(settings, 'SITE_URL', 'https://goldprivilege.net')
-        wallet_url    = f'{base}/wallet/'
-        dashboard_url = f'{base}/dashboard/'
+        site_url = getattr(settings, 'SITE_URL', 'https://goldprivilege.net').rstrip('/')
+        wallet_url = f'{site_url}/wallet/'
+        dashboard_url = f'{site_url}/dashboard/'
+
+    if user.user_type == 'PARTNER':
+        welcome_hero_url = f"{site_url}{static('images/emails/welcome-partner.jpg')}"
+    else:
+        welcome_hero_url = f"{site_url}{static('images/emails/welcome-subscriber.jpg')}"
+
  
     html_message = render_to_string(template, {
         'user':              user,
@@ -313,6 +318,9 @@ def send_welcome_email(user, request=None):
         'gp_id':             user.gp_id,
         'wallet_url':        wallet_url,
         'user_dashboard_url': dashboard_url,
+        'partner_dashboard_url': dashboard_url,
+    'site_url': site_url,
+    'welcome_hero_url': welcome_hero_url,
     })
     plain_message = strip_tags(html_message)
  
@@ -328,6 +336,31 @@ def send_welcome_email(user, request=None):
         email.send()
     except Exception as e:
         print(f'Failed to send welcome email: {str(e)}')
+
+def _send_welcome_notification(user):
+    """Send an in-app welcome notification on first account activation."""
+    try:
+        from notifications.models import Notification
+        if user.user_type == 'PARTNER':
+            title = 'Welcome to Gold Privilege Partners!'
+            body  = (
+                'Your partner account is now active. '
+                'Submit your venue for approval and start receiving bookings.'
+            )
+        else:
+            title = 'Welcome to Gold Privilege!'
+            body  = (
+                'Your account is active. Explore venues, book visits, '
+                'and earn Gold Coins with every purchase.'
+            )
+        Notification.objects.create(
+            recipient=user,
+            title=title,
+            body=body,
+            
+        )
+    except Exception as e:
+        logger.error(f'Welcome notification failed for {user.email}: {e}', exc_info=True)
 
 
 # ==================== LOGIN/LOGOUT VIEWS ====================

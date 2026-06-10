@@ -1,0 +1,82 @@
+{% extends 'superadmin/base_admin.html' %}
+{% load humanize %}
+
+{% block title %}Send Notification — Superadmin{% endblock %}
+{% block page_title %}Send Notification{% endblock %}
+{% block page_subtitle %}Broadcast a message to a segment of your users{% endblock %}
+
+{% block admin_content %}
+
+<div class="admin-page-header">
+    <div>
+        <h1>New Notification</h1>
+        <p>Create and send a one‑time notification to subscribers, partners, or all users.</p>
+    </div>
+</div>
+
+<!-- SEND FORM CARD -->
+<div class="panel-card mb-4">
+    <div class="panel-header">
+        <div>
+            <h5>Compose message</h5>
+            <p class="panel-subtext">All fields except title are optional. One notification row is created per matching user.</p>
+        </div>
+    </div>
+    <div class="panel-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="row g-3">
+                <!-- Audience -->
+                <div class="col-md-6">
+                    <label for="id_audience" class="form-label fw-semibold">Send to</label>
+                    {{ form.audience }}
+                    {% if form.audience.errors %}
+                        <div class="text-danger small mt-1">{{ form.audience.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Title -->
+                <div class="col-12">
+                    <label for="id_title" class="form-label fw-semibold">Title</label>
+                    {{ form.title }}
+                    <div class="form-text">Keep it short — this is the main line in the notification panel (max ~80 chars).</div>
+                    {% if form.title.errors %}
+                        <div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Body -->
+                <div class="col-12">
+                    <label for="id_body" class="form-label fw-semibold">
+                        Body <span class="text-muted fw-normal">(optional)</span>
+                    </label>
+                    {{ form.body }}
+                    {% if form.body.errors %}
+                        <div class="text-danger small mt-1">{{ form.body.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Link -->
+                <div class="col-md-8">
+                    <label for="id_link" class="form-label fw-semibold">
+                        Link <span class="text-muted fw-normal">(optional)</span>
+                    </label>
+                    {{ form.link }}
+                    <div class="form-text">Relative URL, e.g. <code>/store/</code> or <code>/bookings/</code>. Clicking the notification will navigate here.</div>
+                    {% if form.link.errors %}
+                        <div class="text-danger small mt-1">{{ form.link.errors.0 }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2 flex-wrap">
+                <button type="submit" class="btn-gold">
+                    <i class="fas fa-paper-plane me-1"></i> Send notification
+                </button>
+                <a href="{% url 'superadmin:send_notification' %}" class="btn-darkline">Reset form</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

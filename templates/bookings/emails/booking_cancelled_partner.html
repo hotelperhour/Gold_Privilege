@@ -1,48 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Booking Cancelled</title>
-    <style>
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f4; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; }
-        .header { background: #495057; padding: 30px; text-align: center; }
-        .header h1 { color: #fff; margin: 0; font-size: 22px; }
-        .content { padding: 35px 30px; }
-        .alert { background: #f8d7da; border-left: 4px solid #dc3545; padding: 15px; border-radius: 4px; color: #721c24; }
-        .booking-info { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .footer { background: #1a1a1a; color: #fff; padding: 20px; text-align: center; font-size: 13px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Booking Cancellation Notice</h1>
-        </div>
-        <div class="content">
-            <div class="alert">
-                <strong>⚠️ Booking Cancelled</strong><br>
-                A Gold Privilege booking has been cancelled.
-            </div>
-            
-            <p>Hi {{ partner.business_name }},</p>
-            <p>The following booking for <strong>{{ venue.name }}</strong> has been cancelled:</p>
-            
-            <div class="booking-info">
-                <p style="margin: 5px 0;"><strong>Reference:</strong> {{ booking.booking_reference }}</p>
-                <p style="margin: 5px 0;"><strong>Member:</strong> {{ member_name }}</p>
-                <p style="margin: 5px 0;"><strong>Visit Date:</strong> {{ booking.visit_date|date:"F j, Y" }}</p>
-                <p style="margin: 5px 0;"><strong>Guests:</strong> {{ booking.guests_count }}</p>
-                <p style="margin: 5px 0;"><strong>Cancelled:</strong> {{ booking.cancelled_at|date:"M j, Y g:i A" }}</p>
-            </div>
-            
-            <p style="color: #6c757d; font-size: 14px;">
-                No action required on your part. This is just a notification for your records.
-            </p>
-        </div>
-        <div class="footer">
-            <p>Gold Privilege Partner Portal</p>
-        </div>
-    </div>
-</body>
-</html>
+{% extends "emails/base_email.html" %}
+{% block title %}Booking Cancellation Notice{% endblock %}
+{% block email_tagline %}Partner booking notification{% endblock %}
+{% block preheader %}A booking for {{ venue.name }} has been cancelled.{% endblock %}
+{% block content %}
+<p class="eyebrow">Cancellation notice</p>
+<h1>A booking has been cancelled.</h1>
+<p class="lead">Hi {{ partner.business_name }}, the following booking for <strong>{{ venue.name }}</strong> has been cancelled.</p>
+
+<div class="accent-card danger">
+  <table role="presentation" width="100%">
+    <tr class="row"><td class="label">Reference</td><td class="value">{{ booking.booking_reference }}</td></tr>
+    <tr class="row"><td class="label">Member</td><td class="value">{{ member_name }}</td></tr>
+    <tr class="row"><td class="label">Visit date</td><td class="value">{{ booking.visit_date|date:"F j, Y" }}</td></tr>
+    <tr class="row"><td class="label">Guests</td><td class="value">{{ booking.guests_count }}</td></tr>
+    <tr><td class="label">Cancelled</td><td class="value">{{ booking.cancelled_at|date:"M j, Y g:i A" }}</td></tr>
+  </table>
+</div>
+
+<p class="muted">No action is required. This message is for your records.</p>
+{% endblock %}

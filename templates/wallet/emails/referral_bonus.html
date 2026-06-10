@@ -1,66 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Referral Bonus Earned!</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 0; }
-        .container { max-width: 600px; margin: 20px auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #020202 0%, #5c3001 100%); color: white; padding: 40px 20px; text-align: center; }
-        .header h1 { margin: 0; font-size: 26px; }
-        .header .sub { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 6px; }
-        .coin-badge { background: #E5AD04; color: #000; font-size: 32px; font-weight: bold; padding: 12px 24px; border-radius: 8px; display: inline-block; margin: 16px 0 0; }
-        .content { padding: 30px 28px; color: #333; }
-        .content p { line-height: 1.7; margin: 10px 0; font-size: 15px; }
-        .detail-box { background: #f8f9fa; border-left: 4px solid #E5AD04; border-radius: 4px; padding: 16px 20px; margin: 20px 0; }
-        .detail-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #eee; font-size: 14px; }
-        .detail-row:last-child { border-bottom: none; }
-        .label { color: #777; }
-        .value { font-weight: bold; color: #020202; }
-        .value.gold { color: #c49a04; font-size: 16px; }
-        .notice { background: #fff8e1; border: 1px solid #ffe066; border-radius: 6px; padding: 12px 16px; font-size: 13px; color: #7a6500; margin: 20px 0; }
-        .btn { display: inline-block; background: #E5AD04; color: #000; padding: 12px 30px; border-radius: 6px; text-decoration: none; font-weight: bold; margin: 16px 0; font-size: 15px; }
-        .footer { background: #f9f9f9; padding: 20px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>&#127881; Referral Bonus!</h1>
-            <div class="sub">Your friend just subscribed</div>
-            <div class="coin-badge">+{{ coins_awarded }} coins</div>
-        </div>
+{% extends "emails/base_email.html" %}
+{% block title %}Referral Bonus Earned{% endblock %}
+{% block preheader %}You earned {{ coins_awarded }} Gold Coins from a referral.{% endblock %}
+{% block content %}
+<p class="eyebrow">Referral reward</p>
+<h1>You earned a referral bonus.</h1>
+<p class="lead">Hi {{ referrer_name }}, {{ referred_name }} subscribed using your referral link.</p>
 
-        <div class="content">
-            <p>Hi {{ referrer_name }},</p>
-            <p>Great news! <strong>{{ referred_name }}</strong> just subscribed to Gold Privilege using your referral link. Your referral bonus has been credited to your wallet!</p>
+<div class="ref">+{{ coins_awarded }} coins</div>
 
-            <div class="detail-box">
-                <div class="detail-row">
-                    <span class="label">New Member</span>
-                    <span class="value">{{ referred_name }}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Coins Earned</span>
-                    <span class="value gold">{{ coins_awarded }} coins</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Date</span>
-                    <span class="value">{{ awarded_at }}</span>
-                </div>
-            </div>
+<div class="accent-card success">
+  <table role="presentation" width="100%">
+    <tr class="row"><td class="label">New member</td><td class="value">{{ referred_name }}</td></tr>
+    <tr class="row"><td class="label">Coins earned</td><td class="value">{{ coins_awarded }} coins</td></tr>
+    <tr><td class="label">Date</td><td class="value">{{ awarded_at }}</td></tr>
+  </table>
+</div>
 
-            <div class="notice">
-                Keep sharing your referral link to earn more Gold Coins whenever someone subscribes!
-            </div>
-
-            <p>Best regards,<br><strong>The Gold Privilege Team</strong></p>
-        </div>
-
-        <div class="footer">
-            <p>&copy; 2026 Gold Privilege. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
+<p>Keep sharing your referral link to earn more Gold Coins when new members subscribe.</p>
+{% endblock %}

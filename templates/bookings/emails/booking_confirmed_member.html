@@ -1,288 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Confirmed</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f4f4f4;
-        }
-        .email-container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
-        }
-        .header {
-            background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #d4af37 100%);
-            padding: 40px 20px;
-            text-align: center;
-        }
-        .logo {
-            color: #d4af37;
-            font-size: 28px;
-            font-weight: bold;
-            margin: 0;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-        .content {
-            padding: 40px 30px;
-        }
-        .success-icon {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .success-icon svg {
-            width: 60px;
-            height: 60px;
-            fill: #28a745;
-        }
-        h1 {
-            color: #1a1a1a;
-            font-size: 24px;
-            margin: 0 0 20px 0;
-            text-align: center;
-        }
-        .booking-card {
-            background: #f8f9fa;
-            border-left: 4px solid #d4af37;
-            padding: 25px;
-            margin: 30px 0;
-            border-radius: 8px;
-        }
-        .booking-ref {
-            background: #1a1a1a;
-            color: #d4af37;
-            padding: 15px;
-            text-align: center;
-            border-radius: 8px;
-            font-size: 24px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            margin: 20px 0;
-            font-family: 'Courier New', monospace;
-        }
-        .detail-row {
-            display: flex;
-            padding: 12px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-        .detail-row:last-child {
-            border-bottom: none;
-        }
-        .detail-label {
-            font-weight: 600;
-            color: #495057;
-            width: 140px;
-            flex-shrink: 0;
-        }
-        .detail-value {
-            color: #1a1a1a;
-            flex-grow: 1;
-        }
-        .qr-section {
-            text-align: center;
-            padding: 30px 0;
-            background: #ffffff;
-            border: 2px dashed #d4af37;
-            border-radius: 8px;
-            margin: 30px 0;
-        }
-        .qr-code {
-            width: 200px;
-            height: 200px;
-            margin: 20px auto;
-            background: #fff;
-            padding: 15px;
-            border: 2px solid #d4af37;
-            border-radius: 8px;
-        }
-        .qr-text {
-            color: #6c757d;
-            font-size: 14px;
-            margin-top: 15px;
-        }
-        .instructions {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 20px;
-            margin: 25px 0;
-            border-radius: 4px;
-        }
-        .instructions h3 {
-            margin: 0 0 10px 0;
-            color: #856404;
-            font-size: 16px;
-        }
-        .instructions p {
-            margin: 8px 0;
-            color: #856404;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        .button {
-            display: inline-block;
-            background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%);
-            color: #1a1a1a;
-            padding: 15px 35px;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-            margin: 20px 0;
-            text-align: center;
-        }
-        .footer {
-            background: #1a1a1a;
-            color: #ffffff;
-            padding: 30px;
-            text-align: center;
-            font-size: 14px;
-        }
-        .footer a {
-            color: #d4af37;
-            text-decoration: none;
-        }
-        @media only screen and (max-width: 600px) {
-            .content {
-                padding: 30px 20px;
-            }
-            .booking-ref {
-                font-size: 18px;
-            }
-            .detail-row {
-                flex-direction: column;
-            }
-            .detail-label {
-                width: 100%;
-                margin-bottom: 5px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="email-container">
-        <!-- Header -->
-        <div class="header">
-            <h1 class="logo">Gold Privilege</h1>
-        </div>
-        
-        <!-- Content -->
-        <div class="content">
-            <!-- Success Icon -->
-            <div class="success-icon">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                </svg>
-            </div>
-            
-            <h1>Booking Confirmed!</h1>
-            
-            <p style="text-align: center; color: #6c757d; font-size: 16px; margin-bottom: 30px;">
-                Hi {{ user.get_full_name }}, your visit to <strong>{{ venue.name }}</strong> is confirmed.
-            </p>
-            
-            <!-- Booking Reference -->
-            <div class="booking-ref">
-                {{ booking.booking_reference }}
-            </div>
-            
-            <!-- Booking Details -->
-            <div class="booking-card">
-                <div class="detail-row">
-                    <span class="detail-label">📍 Venue:</span>
-                    <span class="detail-value"><strong>{{ venue.name }}</strong></span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">📅 Visit Date:</span>
-                    <span class="detail-value">{{ booking.visit_date|date:"l, F j, Y" }}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">👥 Guests:</span>
-                    <span class="detail-value">{{ booking.guests_count }} person{{ booking.guests_count|pluralize }}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">📍 Address:</span>
-                    <span class="detail-value">{{ venue.address }}, {{ venue.city }}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">📞 Phone:</span>
-                    <span class="detail-value">{{ venue.phone }}</span>
-                </div>
-                {% if venue.opening_time %}
-                <div class="detail-row">
-                    <span class="detail-label">🕐 Hours:</span>
-                    <span class="detail-value">{{ venue.get_operating_hours_display }}</span>
-                </div>
-                {% endif %}
-            </div>
-            
-            <!-- QR Code Section -->
-            <div class="qr-section">
-                <h3 style="margin: 0 0 10px 0; color: #1a1a1a;">Your Check-In Code</h3>
-                <p class="qr-text">Show this reference at the venue entrance</p>
-                
-                <!-- QR Code Placeholder -->
-                <div class="qr-code">
-                    <!-- In production, generate actual QR code image here -->
-                    <div style="padding: 20px; background: #f8f9fa; border-radius: 4px;">
-                        <p style="margin: 0; font-size: 12px; color: #6c757d;">QR Code</p>
-                        <p style="margin: 10px 0; font-family: 'Courier New', monospace; font-size: 14px; word-break: break-all;">
-                            {{ booking.get_qr_code_data }}
-                        </p>
-                    </div>
-                </div>
-                
-                <p style="margin: 15px 0 0 0; color: #6c757d; font-size: 13px;">
-                    Reference: <strong>{{ booking.booking_reference }}</strong>
-                </p>
-            </div>
-            
-            <!-- Instructions -->
-            <div class="instructions">
-                <h3>📋 What to Do Next:</h3>
-                <p>1. Arrive at the venue on <strong>{{ booking.visit_date|date:"F j, Y" }}</strong></p>
-                <p>2. Show your booking reference or QR code at the entrance</p>
-                <p>3. Enjoy your Gold Privilege experience!</p>
-            </div>
-            
-            {% if booking.special_requests %}
-            <div style="background: #e7f3ff; border-left: 4px solid #0dcaf0; padding: 15px; border-radius: 4px; margin: 20px 0;">
-                <strong style="color: #0c5460;">Your Special Requests:</strong>
-                <p style="margin: 5px 0 0 0; color: #0c5460;">{{ booking.special_requests }}</p>
-            </div>
-            {% endif %}
-            
-            <!-- Action Button -->
-            <div style="text-align: center; margin: 30px 0;">
-                <a href="#" class="button">View Booking Details</a>
-            </div>
-            
-            <p style="text-align: center; color: #6c757d; font-size: 14px; margin-top: 30px;">
-                Need to make changes? <a href="#" style="color: #d4af37;">Manage your booking</a>
-            </p>
-        </div>
-        
-        <!-- Footer -->
-        <div class="footer">
-            <p style="margin: 0 0 10px 0;">
-                <strong style="color: #d4af37;">Gold Privilege</strong>
-            </p>
-            <p style="margin: 5px 0; font-size: 13px; color: #999;">
-                Premium Lifestyle Membership | Lagos, Nigeria
-            </p>
-            <p style="margin: 15px 0 5px 0;">
-                <a href="#">Help Center</a> | 
-                <a href="#">Contact Us</a> | 
-                <a href="#">Terms</a>
-            </p>
-            <p style="margin: 15px 0 0 0; font-size: 12px; color: #666;">
-                © 2025 Gold Privilege. All rights reserved.
-            </p>
-        </div>
-    </div>
-</body>
-</html>
+{% extends "emails/base_email.html" %}
+{% block title %}Booking Confirmed{% endblock %}
+{% block preheader %}Your visit to {{ venue.name }} is confirmed.{% endblock %}
+{% block content %}
+<p class="eyebrow">Booking confirmed</p>
+<h1>Your visit is confirmed.</h1>
+<p class="lead">Hi {{ user.get_full_name }}, your visit to <strong>{{ venue.name }}</strong> is all set.</p>
+
+<div class="ref">{{ booking.booking_reference }}</div>
+
+<div class="accent-card success">
+  <table role="presentation" width="100%">
+    <tr class="row"><td class="label">Venue</td><td class="value">{{ venue.name }}</td></tr>
+    <tr class="row"><td class="label">Visit date</td><td class="value">{{ booking.visit_date|date:"l, F j, Y" }}</td></tr>
+    <tr class="row"><td class="label">Guests</td><td class="value">{{ booking.guests_count }} person{{ booking.guests_count|pluralize }}</td></tr>
+    <tr class="row"><td class="label">Address</td><td class="value">{{ venue.address }}, {{ venue.city }}</td></tr>
+    <tr><td class="label">Phone</td><td class="value">{{ venue.phone }}</td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Check-in instruction</h2>
+  <p>Show this booking reference at the venue entrance. Keep it private until you arrive.</p>
+</div>
+
+{% if booking.special_requests %}
+<div class="accent-card info">
+  <h2>Special request</h2>
+  <p style="margin-bottom:0;">{{ booking.special_requests }}</p>
+</div>
+{% endif %}
+{% endblock %}

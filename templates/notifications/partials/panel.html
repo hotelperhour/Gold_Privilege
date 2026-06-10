@@ -1,0 +1,30 @@
+<div class="gp-notif-panel" id="gp-notif-panel">
+
+  <div class="gp-notif-panel__header">
+    <div class="gp-notif-panel__header-top">
+      <h2 class="gp-notif-panel__title">Notifications</h2>
+      <button class="gp-notif-panel__markall js-mark-all-read" type="button">
+        Mark all as read
+      </button>
+    </div>
+  </div>
+
+  <ul class="gp-notif-panel__list" role="list" id="gp-notif-list">
+    {% include 'notifications/partials/panel_rows.html' %}
+
+    {% if not notifications %}
+    <li class="gp-notif-empty">
+      <i class="fas fa-bell-slash" aria-hidden="true"></i>
+      <p>You have no notifications yet</p>
+    </li>
+    {% endif %}
+  </ul>
+
+  {% if notifications %}
+<div class="gp-notif-panel__footer">
+  <p class="gp-notif-panel__footer-text">
+    {% if has_more %}Scroll to load more{% else %}You're all caught up{% endif %}
+  </p>
+</div>
+{% endif %}
+</div>

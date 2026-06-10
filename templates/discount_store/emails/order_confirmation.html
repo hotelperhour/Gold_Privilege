@@ -1,130 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f4f4f4;font-family:'Helvetica Neue',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 20px;">
-<tr><td align="center">
-<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;max-width:600px;width:100%;">
+{% extends "emails/base_email.html" %}
+{% block title %}Discount Store Booking Confirmed{% endblock %}
+{% block email_tagline %}Discount Store confirmation{% endblock %}
+{% block preheader %}Your Discount Store booking at {{ order.product.venue.name }} is confirmed.{% endblock %}
+{% block content %}
+<p class="eyebrow">Discount Store booking</p>
+<h1>Your booking is confirmed.</h1>
+<p class="lead">Hi {{ user.get_full_name }}, your visit to <strong>{{ order.product.venue.name }}</strong> is all set.</p>
 
-  <!-- Header -->
-  <tr><td style="background:linear-gradient(135deg,#000 0%,#1a1a1a 50%,#d4af37 100%);padding:40px 32px;text-align:center;">
-    <p style="margin:0;font-size:26px;font-weight:700;color:#E5AD04;letter-spacing:2px;text-transform:uppercase;">Gold Privilege</p>
-    <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.6);">Discount Store</p>
-  </td></tr>
+<div class="ref">{{ order.reference }}</div>
 
-  <!-- Success icon + heading -->
-  <tr><td style="padding:36px 32px 0;text-align:center;">
-    <div style="display:inline-block;background:#d1e7dd;width:64px;height:64px;border-radius:50%;line-height:64px;font-size:30px;">✅</div>
-    <h1 style="font-size:24px;font-weight:700;color:#111;margin:16px 0 6px;">Booking Confirmed!</h1>
-    <p style="color:#6B7280;font-size:15px;margin:0;">
-      Hi <strong style="color:#111;">{{ user.get_full_name }}</strong>, your visit to
-      <strong style="color:#111;">{{ order.product.venue.name }}</strong> is all set.
-    </p>
-  </td></tr>
+<div class="accent-card success">
+  <table role="presentation" width="100%">
+    <tr class="row"><td class="label">Service</td><td class="value">{{ order.product.name }}</td></tr>
+    <tr class="row"><td class="label">Venue</td><td class="value">{{ order.product.venue.name }}</td></tr>
+    <tr class="row"><td class="label">Address</td><td class="value">{{ order.product.venue.address }}, {{ order.product.venue.city }}</td></tr>
+    <tr class="row"><td class="label">Visit date</td><td class="value">{{ order.visit_date|date:"l, F j, Y" }}</td></tr>
+    <tr class="row"><td class="label">Guests</td><td class="value">{{ order.quantity }} person{{ order.quantity|pluralize }}</td></tr>
+    <tr class="row"><td class="label">Venue phone</td><td class="value">{{ order.product.venue.phone }}</td></tr>
+    <tr><td class="label">Payment</td><td class="value">{% if order.is_coin_payment %}{{ order.amount_paid|floatformat:0 }} Gold Coins{% else %}&#8358;{{ order.amount_paid|floatformat:0 }} card payment{% endif %}</td></tr>
+  </table>
+</div>
 
-  <!-- Booking reference pill -->
-  <tr><td style="padding:20px 32px 0;text-align:center;">
-    <div style="background:#1a1a1a;color:#E5AD04;padding:16px 24px;border-radius:8px;
-                font-size:22px;font-weight:700;letter-spacing:3px;font-family:'Courier New',monospace;
-                display:inline-block;">
-      {{ order.reference }}
-    </div>
-    <p style="font-size:12px;color:#999;margin:8px 0 0;">Show this reference at the venue entrance</p>
-  </td></tr>
+{% if order.special_notes %}
+<div class="accent-card info">
+  <h2>Your notes</h2>
+  <p style="margin-bottom:0;">{{ order.special_notes }}</p>
+</div>
+{% endif %}
 
-  <!-- Booking details table -->
-  <tr><td style="padding:28px 32px 0;">
-    <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;">
-      <tr><td colspan="2" style="background:#f9f9f9;padding:12px 16px;font-size:11px;font-weight:700;
-                                  text-transform:uppercase;letter-spacing:0.5px;color:#999;">Booking Details</td></tr>
+{% if order.cashback_awarded and order.cashback_coins > 0 %}
+<div class="accent-card">
+  <h2>Cashback earned</h2>
+  <p style="margin-bottom:0;">You earned <strong>{{ order.cashback_coins }}</strong> Gold Coins cashback. It has been added to your wallet.</p>
+</div>
+{% endif %}
 
-      <tr><td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;color:#6B7280;width:40%;">📍 Service</td>
-          <td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;font-weight:600;color:#111;">{{ order.product.name }}</td></tr>
-
-      <tr><td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;color:#6B7280;">🏛️ Venue</td>
-          <td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;font-weight:600;color:#111;">{{ order.product.venue.name }}</td></tr>
-
-      <tr><td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;color:#6B7280;">📍 Address</td>
-          <td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;color:#111;">
-            {{ order.product.venue.address }}, {{ order.product.venue.city }}
-          </td></tr>
-
-      <tr><td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;color:#6B7280;">📅 Visit Date</td>
-          <td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;font-weight:600;color:#111;">
-            {{ order.visit_date|date:"l, F j, Y" }}
-          </td></tr>
-
-      <tr><td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;color:#6B7280;">👥 Guests</td>
-          <td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;font-weight:600;color:#111;">
-            {{ order.quantity }} person{{ order.quantity|pluralize }}
-          </td></tr>
-
-      <tr><td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;color:#6B7280;">📞 Venue Phone</td>
-          <td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;color:#111;">
-            {{ order.product.venue.phone }}
-          </td></tr>
-
-      <tr><td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;color:#6B7280;">💳 Payment</td>
-          <td style="padding:13px 16px;border-top:1px solid #f0f0f0;font-size:14px;font-weight:600;color:#111;">
-            {% if order.is_coin_payment %}{{ order.amount_paid|floatformat:0 }} Gold Coins{% else %}₦{{ order.amount_paid|floatformat:0 }} (Card){% endif %}
-          </td></tr>
-
-    </table>
-  </td></tr>
-
-  {% if order.special_notes %}
-  <!-- Special notes -->
-  <tr><td style="padding:20px 32px 0;">
-    <div style="background:#e7f3ff;border-left:4px solid #0dcaf0;padding:14px 16px;border-radius:6px;">
-      <strong style="font-size:13px;color:#0c5460;">Your Notes:</strong>
-      <p style="margin:4px 0 0;font-size:13px;color:#0c5460;">{{ order.special_notes }}</p>
-    </div>
-  </td></tr>
-  {% endif %}
-
-  {% if order.cashback_awarded and order.cashback_coins > 0 %}
-  <!-- Cashback earned -->
-  <tr><td style="padding:20px 32px 0;">
-    <div style="background:#FFF8E1;border:1px solid #FFE082;border-radius:10px;padding:16px 20px;">
-      <p style="margin:0;font-size:16px;font-weight:700;color:#4a3800;">💰 You earned {{ order.cashback_coins }} Gold Coins cashback!</p>
-      <p style="margin:6px 0 0;font-size:13px;color:#7a6000;">Already added to your Gold Coins wallet.</p>
-    </div>
-  </td></tr>
-  {% endif %}
-
-  <!-- What to do next -->
-  <tr><td style="padding:20px 32px 0;">
-    <div style="background:#fff3cd;border-left:4px solid #ffc107;padding:18px 20px;border-radius:6px;">
-      <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#856404;">📋 What to Do Next</p>
-      <p style="margin:6px 0;font-size:13px;color:#856404;line-height:1.7;">
-        1. Arrive at <strong>{{ order.product.venue.name }}</strong> on <strong>{{ order.visit_date|date:"F j, Y" }}</strong><br>
-        2. Show reference <strong>{{ order.reference }}</strong> at the entrance<br>
-        3. Enjoy your Gold Privilege experience! 🎉
-      </p>
-    </div>
-  </td></tr>
-
-  <!-- Cancellation policy note -->
-  <tr><td style="padding:20px 32px 0;">
-    <p style="font-size:12px;color:#9CA3AF;line-height:1.6;margin:0;">
-      ℹ️ Need to cancel? You can cancel this booking from your
-      <a href="#" style="color:#E5AD04;text-decoration:none;">My Orders</a> page,
-      subject to our cancellation policy. Refunds are returned to your Gold Coins wallet.
-    </p>
-  </td></tr>
-
-  <!-- Footer -->
-  <tr><td style="padding:32px;text-align:center;border-top:1px solid #f0f0f0;margin-top:28px;">
-    <p style="margin:0;font-size:13px;font-weight:700;color:#111;">Gold Privilege</p>
-    <p style="margin:4px 0;font-size:12px;color:#aaa;">Premium Lifestyle Membership · Lagos, Nigeria</p>
-    <p style="margin:12px 0 0;font-size:12px;color:#aaa;">
-      Questions? <a href="mailto:support@goldprivilege.net" style="color:#E5AD04;text-decoration:none;">support@goldprivilege.net</a>
-    </p>
-    <p style="margin:8px 0 0;font-size:11px;color:#ccc;">© 2026 Gold Privilege. All rights reserved.</p>
-  </td></tr>
-
-</table>
-</td></tr>
-</table>
-</body>
-</html>
+<div class="card">
+  <h2>What to do next</h2>
+  <p>Arrive at <strong>{{ order.product.venue.name }}</strong> on <strong>{{ order.visit_date|date:"F j, Y" }}</strong> and show reference <strong>{{ order.reference }}</strong> at the entrance.</p>
+</div>
+{% endblock %}

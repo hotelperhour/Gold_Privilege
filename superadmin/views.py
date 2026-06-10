@@ -5,7 +5,9 @@ from django.db.models import Count, Prefetch, Q, Sum
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
-
+from notifications.models import Notification
+from notifications.forms import SendNotificationForm
+from django.contrib.auth import get_user_model
 from account.models import CustomUser, PartnerProfile
 from account.permissions import admin_required
 from subscriptions.models import PromoCode, Subscription
@@ -593,3 +595,72 @@ def cancel_payout(request, payout_uuid):
         messages.error(request, str(exc))
 
     return redirect("superadmin:detail", payout_uuid=payout_uuid)
+
+
+@login_required
+@admin_required
+def send_notification(request):
+    """
+    Admin types a message, picks an audience, hits send.
+    We fan-out and create one Notification row per matching user.
+
+    Teaching note:
+      bulk_create sends ONE INSERT statement for all users instead of
+      one per user. With 100 users that's 100x faster. With 10,000 users
+      it becomes critical. Good habit to build now.
+    """
+    User = get_user_model()
+
+    if request.method == 'POST':
+        form = SendNotificationForm(request.POST)
+        if form.is_valid():
+            audience = form.cleaned_data['audience']
+            title    = form.cleaned_data['title']
+            body     = form.cleaned_data['body']
+            link     = form.cleaned_data['link']
+
+            # Build the right queryset based on audience
+            if audience == 'ALL':
+                users = User.objects.filter(is_active=True)
+            elif audience == 'SUBSCRIBERS':
+                users = User.objects.filter(is_active=True, user_type='SUBSCRIBER')
+            elif audience == 'PARTNERS':
+                users = User.objects.filter(is_active=True, user_type='PARTNER')
+            else:
+                users = User.objects.none()
+
+            # Fan-out: one row per user, one SQL call total
+            notifications = [
+                Notification(
+                    recipient = user,
+                    title     = title,
+                    body      = body,
+                    link      = link,
+                )
+                for user in users
+            ]
+            Notification.objects.bulk_create(notifications)
+
+            messages.success(
+                request,
+                f'Notification sent to {len(notifications)} user(s).'
+            )
+            return redirect('superadmin:send_notification')
+
+        messages.error(request, 'Please fix the form errors.')
+
+    else:
+        form = SendNotificationForm()
+
+    # Recent notifications sent (last 20) — so admin can see history
+  
+    recent = (
+        Notification.objects
+        .select_related('recipient')
+        .order_by('-created_at')[:20]
+    )
+
+    return render(request, 'superadmin/admin/send_notification.html', {
+        'form':   form,
+        'recent': recent,
+    })

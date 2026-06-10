@@ -4,6 +4,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Gold Privilege{% endblock %}</title>
@@ -17,6 +18,7 @@
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{% static 'css/notifications.css' %}">
 
     <style>
         :root {
@@ -336,9 +338,10 @@
         padding: 16px;
         display: flex;
         flex-direction: column;
-        gap: 24px;
+        gap: 20px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        height: 100%;
         
     }
  
@@ -493,7 +496,7 @@
         display: flex;
         flex-direction: column;
         gap: 18px;
-        flex: 1;
+        
     }
  
     .nav-section {
@@ -654,6 +657,9 @@
         gap: 10px;
         padding-top: 12px;
         border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 16px;    /* breathing room at bottom */
+        flex-shrink: 0;           /* never let this compress */
+        width: 100%;
     }
  
     .action-btn {
@@ -670,6 +676,8 @@
         cursor: pointer;
         transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         width: 100%;
+        box-sizing: border-box;
+        min-height: 48px;         /* ensures tap target is always full height */
     }
  
     .action-btn i {
@@ -923,6 +931,38 @@
             font-weight: 700;
             color: var(--gold-primary);
         }
+
+        /* Groups bell + hamburger flush to the right on mobile */
+.mobile-right-group {
+    display: none; /* hidden on desktop — desktop uses navbar-right-elements */
+}
+
+@media (max-width: 991px) {
+    .mobile-right-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;           /* 4px gap between bell and hamburger */
+        margin-left: auto;  /* pushes the group to the far right */
+    }
+
+    /* Show the mobile toggle inside the group */
+    .mobile-right-group .mobile-menu-toggle {
+        display: block;
+    }
+}
+
+/* Hidden by default on desktop */
+.mobile-bell-only {
+    display: none;
+}
+
+@media (max-width: 991px) {
+    .mobile-bell-only {
+        display: flex;
+        align-items: center;
+    }
+}
+
        
     </style>
     {% block extra_css %}{% endblock %}
@@ -949,10 +989,12 @@
                 <div class="notification-container">
                     <div class="notification-icon">
                         <i class="fas fa-bell"></i>
-                        <span class="notification-badge">3</span>
+                        {% if unread_notification_count > 0 %}
+                        <span class="notification-badge">{{ unread_notification_count }}</span>
+                        {% endif %}
                     </div>
+                    
                 </div>
-
                 <!-- Discount Store link (subscribers only) -->
                 {% if user.is_authenticated and user.is_subscriber %}
                 <a href="{% url 'discount_store:store_home' %}" 
@@ -1015,10 +1057,22 @@
                 {% endif %}
             </div>
 
-            <!-- Mobile Menu Toggle -->
-            <button class="mobile-menu-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
-                <i class="fas fa-bars"></i>
-            </button>
+            <!-- Mobile right group: bell + hamburger stay together on the right -->
+            <div class="mobile-right-group">
+                {% if user.is_authenticated %}
+                <div class="notification-container mobile-bell-only">
+                    <div class="notification-icon mobile-bell-btn">
+                        <i class="fas fa-bell"></i>
+                        {% if unread_notification_count > 0 %}
+                        <span class="notification-badge">{{ unread_notification_count }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                <button class="mobile-menu-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
         </nav>
     </div>
 
@@ -1220,6 +1274,7 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div id="gp-notif-panel-wrap" class="gp-notif-panel-wrap"></div>
     
     <!-- Custom JS -->
     <script>
@@ -1281,6 +1336,197 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+</script>
+<script>
+(function () {
+  'use strict';
+  {% if user.is_authenticated %}
+
+  var PANEL_URL     = "{% url 'notifications:panel' %}";
+  var LOAD_MORE_URL = "{% url 'notifications:load_more' %}";
+  var MARK_ALL_URL  = "{% url 'notifications:mark_all_read' %}";
+  var COUNT_URL     = "{% url 'notifications:unread_count' %}";
+  var CSRF_TOKEN    = "{{ csrf_token }}";
+
+  var panelWrap = document.getElementById('gp-notif-panel-wrap');
+  if (!panelWrap) return;
+
+  function openPanel() {
+    panelWrap.classList.add('is-open');
+    loadPanel();
+    document.addEventListener('click', outsideClick);
+    document.addEventListener('keydown', escKey);
+  }
+
+  function closePanel() {
+    panelWrap.classList.remove('is-open');
+    document.removeEventListener('click', outsideClick);
+    document.removeEventListener('keydown', escKey);
+  }
+
+  function outsideClick(e) {
+    if (!panelWrap.contains(e.target) && !e.target.closest('.notification-icon')) {
+      closePanel();
+    }
+  }
+
+  function escKey(e) { if (e.key === 'Escape') closePanel(); }
+
+  // Attach to ALL bell buttons — desktop + mobile
+  document.querySelectorAll('.notification-icon').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      panelWrap.classList.contains('is-open') ? closePanel() : openPanel();
+    });
+  });
+
+  function loadPanel() {
+    panelWrap.innerHTML =
+      '<div style="padding:44px 20px;text-align:center;color:#aaa;font-size:13px;">' +
+      '<i class="fas fa-spinner fa-spin" style="font-size:20px;display:block;margin-bottom:8px;"></i>Loading…</div>';
+    fetch(PANEL_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(r){ return r.text(); })
+      .then(function(html){
+        panelWrap.innerHTML = html;
+        attachPanelEvents();
+      })
+      .catch(function(){
+        panelWrap.innerHTML =
+          '<div style="padding:44px 20px;text-align:center;color:#aaa;font-size:13px;">Could not load notifications.</div>';
+      });
+  }
+
+  function attachPanelEvents() {
+    var markAllBtn = panelWrap.querySelector('.js-mark-all-read');
+    if (markAllBtn) {
+      markAllBtn.addEventListener('click', function () {
+        fetch(MARK_ALL_URL, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': CSRF_TOKEN, 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if (data.success) {
+            updateBadge(0);
+            panelWrap.querySelectorAll('.gp-notif-item--unread').forEach(function(el){
+              el.classList.replace('gp-notif-item--unread', 'gp-notif-item--read');
+              var dot = el.querySelector('.gp-notif-item__dot');
+              if (dot) dot.classList.add('gp-notif-item__dot--hidden');
+            });
+          }
+        });
+      });
+    }
+
+    attachLoadMore();
+
+    var list = panelWrap.querySelector('#gp-notif-list');
+    if (list) {
+      list.addEventListener('click', function(e) {
+        var toggleBtn = e.target.closest('.gp-notif-toggle');
+        if (toggleBtn) {
+          e.stopPropagation();
+          var bodyText = toggleBtn.previousElementSibling;
+          var expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+          if (expanded) {
+            bodyText.textContent = bodyText.dataset.short;
+            toggleBtn.textContent = 'See more';
+            toggleBtn.setAttribute('aria-expanded', 'false');
+          } else {
+            bodyText.textContent = bodyText.dataset.full;
+            toggleBtn.textContent = 'See less';
+            toggleBtn.setAttribute('aria-expanded', 'true');
+          }
+          return;
+        }
+
+        var item = e.target.closest('.gp-notif-item');
+        if (item) {
+          var notifId = item.dataset.notifId;
+          var link    = item.dataset.link;
+
+          if (notifId && item.classList.contains('gp-notif-item--unread')) {
+            fetch('/notifications/mark-read/' + notifId + '/', {
+              method: 'POST',
+              headers: { 'X-CSRFToken': CSRF_TOKEN, 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function(r){ return r.json(); })
+            .then(function(data){
+              if (data.unread_count !== undefined) updateBadge(data.unread_count);
+            });
+            item.classList.replace('gp-notif-item--unread', 'gp-notif-item--read');
+            var dot = item.querySelector('.gp-notif-item__dot');
+            if (dot) dot.classList.add('gp-notif-item__dot--hidden');
+          }
+
+          if (link) { closePanel(); window.location.href = link; }
+        }
+      });
+    }
+
+    panelWrap.addEventListener('click', function(e){
+      if (e.target === panelWrap) closePanel();
+    });
+  }
+
+  function attachLoadMore() {
+    var loadMoreBtn = panelWrap.querySelector('.js-load-more');
+    if (!loadMoreBtn) return;
+    loadMoreBtn.addEventListener('click', function () {
+      var offset = parseInt(this.dataset.offset, 10);
+      var btn = this;
+      btn.textContent = 'Loading…';
+      btn.disabled = true;
+      fetch(LOAD_MORE_URL + '?offset=' + offset, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var list = panelWrap.querySelector('#gp-notif-list');
+        if (list && data.html) {
+          var temp = document.createElement('ul');
+          temp.innerHTML = data.html;
+          while (temp.firstChild) list.appendChild(temp.firstChild);
+        }
+        if (data.has_more) {
+          btn.textContent = 'Load more';
+          btn.disabled = false;
+          btn.dataset.offset = data.next_offset;
+        } else {
+          var footer = panelWrap.querySelector('.gp-notif-panel__footer');
+          if (footer) footer.remove();
+        }
+      })
+      .catch(function(){
+        btn.textContent = 'Load more';
+        btn.disabled = false;
+      });
+    });
+  }
+
+  function updateBadge(count) {
+    document.querySelectorAll('.notification-badge').forEach(function(b){
+      if (count > 0) {
+        b.textContent = count > 99 ? '99+' : String(count);
+        b.style.display = 'flex';
+      } else {
+        b.style.display = 'none';
+      }
+    });
+  }
+
+  function pollCount() {
+    if (document.hidden) return;
+    fetch(COUNT_URL, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function(r){ return r.json(); })
+      .then(function(data){ updateBadge(data.unread_count || 0); })
+      .catch(function(){});
+  }
+
+  setInterval(pollCount, 45000);
+
+  {% endif %}
+})();
 </script>
     
     {% block extra_js %}{% endblock %}

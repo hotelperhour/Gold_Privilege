@@ -1,51 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Your Subscription Has Expired</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
-        .header { background: linear-gradient(135deg, #8B0000 0%, #A52A2A 100%); color: #d4af37; padding: 40px 20px; text-align: center; }
-        .header h1 { margin: 0; font-size: 32px; }
-        .content { padding: 40px 30px; color: #333; }
-        .button { display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%); color: #000; text-decoration: none; padding: 18px 45px; border-radius: 10px; font-weight: bold; font-size: 18px; margin: 25px 0; }
-        .alert-box { background: #f8d7da; border-left: 5px solid #dc3545; padding: 20px; border-radius: 8px; margin: 25px 0; }
-        .footer { background: #1a1a1a; color: #fff; padding: 30px; text-align: center; font-size: 14px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>⏰ Subscription Expired</h1>
-            <p>Time to renew your Gold Privilege access</p>
-        </div>
-        <div class="content">
-            <h2>Hello {{ user.get_full_name|default:user.email }},</h2>
-            <p>Your Gold Privilege subscription has now expired.</p>
+{% extends "emails/base_email.html" %}
+{% block title %}Subscription Expired{% endblock %}
+{% block preheader %}Your Gold Privilege subscription has expired.{% endblock %}
+{% block content %}
+<p class="eyebrow">Membership expired</p>
+<h1>Your subscription has expired.</h1>
+<p class="lead">Hello {{ user.get_full_name|default:user.email }}, your Gold Privilege membership is no longer active.</p>
 
-            <div class="alert-box">
-                <p><strong>Plan:</strong> {{ plan.name }}<br>
-                <strong>Expired On:</strong> {{ subscription.end_date|date:"F j, Y" }}</p>
-            </div>
+<div class="accent-card danger">
+  <table role="presentation" width="100%">
+    <tr class="row"><td class="label">Plan</td><td class="value">{{ plan.name }}</td></tr>
+    <tr><td class="label">Expired on</td><td class="value">{{ subscription.end_date|date:"F j, Y" }}</td></tr>
+  </table>
+</div>
 
-            <p>You no longer have access to member-exclusive venues and discounts.</p>
-            <p>But don’t worry — you can renew anytime and get right back to enjoying premium experiences!</p>
-
-            <div style="text-align: center;">
-                <a href="{{ protocol }}://{{ domain }}{% url 'subscriptions:plans_list' %}" class="button">
-                    Renew My Membership Now
-                </a>
-            </div>
-
-            <p>We miss you already! Come back and continue living the privileged life.</p>
-            <p>— The Gold Privilege Team</p>
-        </div>
-        <div class="footer">
-            <p><strong>Gold Privilege Team</strong></p>
-            <p>Exclusive Access • Unbeatable Value</p>
-            <p>© 2025 Gold Privilege. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
+<p>You can renew anytime to regain access to member-exclusive venues, discounts, and experiences.</p>
+<p style="text-align:center;margin:28px 0;">
+  <a class="button" href="{{ protocol }}://{{ domain }}{% url 'subscriptions:plans_list' %}">Renew Membership</a>
+</p>
+{% endblock %}

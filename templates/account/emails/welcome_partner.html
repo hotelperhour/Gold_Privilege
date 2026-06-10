@@ -1,78 +1,32 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Gold Privilege</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        .header {
-            background: linear-gradient(135deg, #d4af37 0%, #aa8c2c 100%);
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
-        }
-        .header h1 {
-            margin: 0;
-            font-size: 28px;
-        }
-        .content {
-            padding: 30px 20px;
-            color: #333;
-        }
-        .content p {
-            line-height: 1.6;
-            margin: 10px 0;
-        }
-        .button {
-            display: inline-block;
-            background-color: #d4af37;
-            color: white;
-            padding: 12px 30px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            margin: 20px 0;
-        }
-        .footer {
-            background-color: #f9f9f9;
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #777;
-            border-top: 1px solid #eee;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Welcome to Gold Privilege</h1>
-        </div>
-        <div class="content">
-            <p>Hello Partner,</p>
-            <p>Thank you for joining the Gold Privilege partnership program. We're excited to have you on board!</p>
-            <p>As a valued partner, you'll gain access to exclusive benefits, resources, and support to help grow your business with us.</p>
-            <a href="{{ partner_dashboard_url }}" class="button">Access Your Dashboard</a>
-            <p>If you have any questions, feel free to reach out to our partner support team.</p>
-            <p>Best regards,<br>The Gold Privilege Team</p>
-        </div>
-        <div class="footer">
-            <p>&copy; 2024 Gold Privilege. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
+{% extends "emails/base_email.html" %}
+{% block title %}Welcome to Gold Privilege Partners{% endblock %}
+{% block email_tagline %}Partner growth, visibility, and payouts.{% endblock %}
+{% block preheader %}Your Gold Privilege partner account is ready.{% endblock %}
+{% block content %}
+<!-- Suggested hero image:
+Reason: Partner welcome can benefit from a polished hospitality/business visual to create confidence.
+Image URL: https://images.unsplash.com/photo-1556740758-90de374c12ad
+-->
+<div style="margin:0 0 24px;">
+  <img
+    src="{{ welcome_hero_url }}"
+
+    alt="Welcome to Gold Privilege"
+    style="display:block;width:100%;max-width:600px;height:auto;border-radius:18px;"
+  >
+</div>
+<p class="eyebrow">Partner welcome</p>
+<h1>Welcome to Gold Privilege Partners.</h1>
+<p class="lead">Thank you for joining our partner program. Your dashboard gives you the tools to manage your business presence and track venue activity.</p>
+
+<p style="text-align:center;margin:28px 0;">
+  <a class="button" href="{{ partner_dashboard_url }}">Access Partner Dashboard</a>
+</p>
+
+<div class="card">
+  <h2>What to expect</h2>
+  <p>Manage your venues, monitor bookings, track sales reports, and follow payout progress from one partner workspace.</p>
+</div>
+
+<p>If you have questions, our partner support team is ready to help.</p>
+{% endblock %}

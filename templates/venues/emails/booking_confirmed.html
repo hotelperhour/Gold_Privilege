@@ -1,11 +1,19 @@
-<!DOCTYPE html>
-<html>
-<body>
-    <h2>Booking Confirmed!</h2>
-    <p>Hi {{ user.get_full_name }},</p>
-    <p><strong>Venue:</strong> {{ booking.venue.name }}</p>
-    <p><strong>Date:</strong> {{ booking.visit_date }}</p>
-    <p><strong>Reference:</strong> {{ booking.booking_reference }}</p>
-    <p>Show this reference at the venue entrance.</p>
-</body>
-</html>
+{% extends "emails/base_email.html" %}
+{% block title %}Booking Confirmed{% endblock %}
+{% block preheader %}Your booking at {{ booking.venue.name }} is confirmed.{% endblock %}
+{% block content %}
+<p class="eyebrow">Booking confirmed</p>
+<h1>Your visit is confirmed.</h1>
+<p class="lead">Hi {{ user.get_full_name }}, your booking is ready.</p>
+
+<div class="ref">{{ booking.booking_reference }}</div>
+
+<div class="accent-card success">
+  <table role="presentation" width="100%">
+    <tr class="row"><td class="label">Venue</td><td class="value">{{ booking.venue.name }}</td></tr>
+    <tr><td class="label">Date</td><td class="value">{{ booking.visit_date }}</td></tr>
+  </table>
+</div>
+
+<p>Show this reference at the venue entrance when you arrive.</p>
+{% endblock %}

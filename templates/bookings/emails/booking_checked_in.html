@@ -1,39 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Checked In</title>
-    <style>
-        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f4f4f4; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; }
-        .header { background: linear-gradient(135deg, #d4af37 0%, #f4d03f 100%); padding: 30px; text-align: center; }
-        .header h1 { color: #1a1a1a; margin: 0; font-size: 24px; }
-        .content { padding: 35px 30px; }
-        .check-in-badge { background: #28a745; color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; font-weight: 600; margin-bottom: 20px; }
-        .venue-name { color: #d4af37; font-size: 20px; font-weight: bold; margin: 15px 0; }
-        .footer { background: #1a1a1a; color: #fff; padding: 20px; text-align: center; font-size: 13px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>✓ Checked In Successfully!</h1>
-        </div>
-        <div class="content">
-            <span class="check-in-badge">✓ CHECKED IN</span>
-            <p>Hi {{ user.get_full_name }},</p>
-            <p>You've successfully checked in at:</p>
-            <p class="venue-name">{{ venue.name }}</p>
-            <p style="color: #6c757d;">
-                <strong>Reference:</strong> {{ booking.booking_reference }}<br>
-                <strong>Date:</strong> {{ booking.visit_date|date:"F j, Y" }}<br>
-                <strong>Checked in:</strong> {{ booking.checked_in_at|date:"g:i A" }}
-            </p>
-            <p style="margin-top: 25px;">Enjoy your Gold Privilege experience! 🎉</p>
-        </div>
-        <div class="footer">
-            <p>Gold Privilege | Premium Lifestyle Membership</p>
-        </div>
-    </div>
-</body>
-</html>
+{% extends "emails/base_email.html" %}
+{% block title %}Checked In Successfully{% endblock %}
+{% block preheader %}You have checked in at {{ venue.name }}.{% endblock %}
+{% block content %}
+<p class="eyebrow">Checked in</p>
+<h1>Enjoy your visit.</h1>
+<p class="lead">Hi {{ user.get_full_name }}, you have successfully checked in at <strong>{{ venue.name }}</strong>.</p>
+
+<div class="accent-card success">
+  <table role="presentation" width="100%">
+    <tr class="row"><td class="label">Reference</td><td class="value">{{ booking.booking_reference }}</td></tr>
+    <tr class="row"><td class="label">Visit date</td><td class="value">{{ booking.visit_date|date:"F j, Y" }}</td></tr>
+    <tr><td class="label">Checked in</td><td class="value">{{ booking.checked_in_at|date:"g:i A" }}</td></tr>
+  </table>
+</div>
+
+<p>Thank you for using Gold Privilege. We hope you have a great experience.</p>
+{% endblock %}

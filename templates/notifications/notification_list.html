@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Notifications — Gold Privilege{% endblock %}
+
+{% block content %}
+
+
+<div class="gp-notif-page">
+  <div class="gp-notif-page__container">
+
+    {# ── Header ──────────────────────────────────────────────────── #}
+    <div class="gp-notif-page__header">
+      <div>
+        <h1 class="gp-notif-page__heading">Notifications</h1>
+        {% if unread_count %}
+          <p class="gp-notif-page__subheading">
+            You have {{ unread_count }} unread notification{{ unread_count|pluralize }}
+          </p>
+        {% else %}
+          <p class="gp-notif-page__subheading">All caught up</p>
+        {% endif %}
+      </div>
+      {% if unread_count %}
+        <button class="gp-notif-page__markall js-mark-all-read-page" type="button">
+          Mark all as read
+        </button>
+      {% endif %}
+    </div>
+
+    {# ── Notification list ───────────────────────────────────────── #}
+    <div class="gp-notif-page__list-wrap">
+      {% if notifications %}
+        <ul class="gp-notif-page__list" role="list">
+          {% for notif in notifications %}
+          <li class="gp-notif-item gp-notif-item--page {% if not notif.is_read %}gp-notif-item--unread{% else %}gp-notif-item--read{% endif %}"
+              data-notif-id="{{ notif.notification_id }}"
+              data-link="{{ notif.link }}">
+
+            <div class="gp-notif-item__icon" aria-hidden="true">
+              <i class="ti ti-bell"></i>
+            </div>
+
+            <div class="gp-notif-item__body">
+              <p class="gp-notif-item__title">{{ notif.title }}</p>
+              {% if notif.body %}
+                <p class="gp-notif-item__body-text">{{ notif.body }}</p>
+              {% endif %}
+              <div class="gp-notif-item__meta">
+                <i class="ti ti-clock" aria-hidden="true"></i>
+                {{ notif.created_at|timesince }} ago
+                {% if notif.is_read %}
+                  &nbsp;·&nbsp;
+                  <span class="gp-notif-item__read-label">Read</span>
+                {% endif %}
+              </div>
+            </div>
+
+            {% if not notif.is_read %}
+              <span class="gp-notif-item__dot" aria-label="Unread"></span>
+            {% else %}
+              <span class="gp-notif-item__dot gp-notif-item__dot--hidden" aria-hidden="true"></span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+
+        {# ── Pagination ──────────────────────────────────────────── #}
+        {% if is_paginated %}
+        <div class="gp-notif-page__pagination">
+          {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}"
+               class="gp-notif-page__page-btn">
+              <i class="ti ti-arrow-left" aria-hidden="true"></i> Previous
+            </a>
+          {% endif %}
+          <span class="gp-notif-page__page-info">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+          </span>
+          {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}"
+               class="gp-notif-page__page-btn">
+              Next <i class="ti ti-arrow-right" aria-hidden="true"></i>
+            </a>
+          {% endif %}
+        </div>
+        {% endif %}
+
+      {% else %}
+        <div class="gp-notif-page__empty">
+          <i class="ti ti-bell-off" aria-hidden="true"></i>
+          <p>No notifications yet</p>
+          <p style="font-size:13px;margin-top:6px;">
+            Check back later — Gold Privilege will notify you here.
+          </p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+
+<script>
+(function () {
+  const MARK_ALL_URL = "{% url 'notifications:mark_all_read' %}";
+  const CSRF_TOKEN   = "{{ csrf_token }}";
+
+  // Mark all read on the full page
+  const btn = document.querySelector('.js-mark-all-read-page');
+  if (btn) {
+    btn.addEventListener('click', function () {
+      fetch(MARK_ALL_URL, {
+        method:  'POST',
+        headers: {
+          'X-CSRFToken':      CSRF_TOKEN,
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      })
+      .then(r => r.json())
+      .then(function (data) {
+        if (data.success) {
+          // Visually update all items to read without reload
+          document.querySelectorAll('.gp-notif-item--unread').forEach(function (el) {
+            el.classList.remove('gp-notif-item--unread');
+            el.classList.add('gp-notif-item--read');
+            const dot = el.querySelector('.gp-notif-item__dot');
+            if (dot) dot.classList.add('gp-notif-item__dot--hidden');
+          });
+          btn.remove();
+
+          const sub = document.querySelector('.gp-notif-page__subheading');
+          if (sub) sub.textContent = 'All caught up';
+        }
+      });
+    });
+  }
+
+  // Click item → mark read and navigate if link present
+  document.querySelectorAll('.gp-notif-item--page').forEach(function (item) {
+    item.addEventListener('click', function () {
+      const notifId = this.dataset.notifId;
+      const link    = this.dataset.link;
+
+      if (notifId && this.classList.contains('gp-notif-item--unread')) {
+        fetch('/notifications/mark-read/' + notifId + '/', {
+          method:  'POST',
+          headers: {
+            'X-CSRFToken':      CSRF_TOKEN,
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+        });
+        this.classList.remove('gp-notif-item--unread');
+        this.classList.add('gp-notif-item--read');
+        const dot = this.querySelector('.gp-notif-item__dot');
+        if (dot) dot.classList.add('gp-notif-item__dot--hidden');
+      }
+
+      if (link) {
+        window.location.href = link;
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

@@ -10,28 +10,79 @@
     .page-header p  { color: #6c757d; margin: 4px 0 0; font-size: 14px; }
 
     /* ── Balance hero card ── */
-    .balance-card {
-        background: linear-gradient(135deg, #020202 0%, #5c3001 100%);
-        border-radius: 20px; padding: 36px 32px;
-        color: #fff; position: relative; overflow: hidden; margin-bottom: 24px;
-    }
-    .balance-card::before {
-        content: ''; position: absolute; top: -60px; right: -60px;
-        width: 220px; height: 220px; background: rgba(229,173,4,0.12); border-radius: 50%;
-    }
-    .balance-card::after {
-        content: ''; position: absolute; bottom: -40px; left: 40px;
-        width: 140px; height: 140px; background: rgba(229,173,4,0.07); border-radius: 50%;
-    }
-    .gp-id-badge {
-        position: absolute; top: 28px; right: 32px;
-        background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-        border-radius: 8px; padding: 6px 14px;
-        font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.85); letter-spacing: 1px;
-    }
-    .balance-label { font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.65; margin-bottom: 8px; }
-    .balance-amount { font-size: 52px; font-weight: 800; color: #E5AD04; line-height: 1; margin-bottom: 4px; }
-    .balance-naira  { font-size: 15px; opacity: 0.7; margin-bottom: 24px; }
+    /* ── Balance hero card ── */
+.balance-card {
+    background: linear-gradient(135deg, #020202 0%, #5c3001 100%);
+    border-radius: 20px;
+    padding: 40px 36px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;            /* keeps circles inside */
+    margin-bottom: 24px;
+}
+.balance-card::before {
+    content: ''; position: absolute; top: -60px; right: -60px;
+    width: 220px; height: 220px; background: rgba(229,173,4,0.12); border-radius: 50%;
+}
+.balance-card::after {
+    content: ''; position: absolute; bottom: -40px; left: 40px;
+    width: 140px; height: 140px; background: rgba(229,173,4,0.07); border-radius: 50%;
+}
+
+/* ── GP ID badge (top‑right, always absolute) ── */
+.gp-id-badge {
+    position: absolute;
+    top: 28px;
+    right: 32px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: 1px;
+    z-index: 1;  /* keep it above circles */
+}
+
+/* ── Balance content container (vertical on desktop, horizontal row on mobile) ── */
+.balance-content {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;          /* space between info block and naira line */
+}
+
+/* ── Balance info block (label + amount) ── */
+.balance-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;           /* space between label and amount */
+}
+
+.balance-label {
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    opacity: 0.65;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.balance-amount {
+    color: #E5AD04;
+    font-size: clamp(34px, 7vw, 56px);
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0;
+    word-break: break-word;    /* allows number to break if too long */
+    white-space: normal;
+}
+
+.balance-naira {
+    font-size: 15px;
+    opacity: 0.7;
+    line-height: 1.4;
+}
     .balance-actions { display: flex; gap: 12px; flex-wrap: wrap; }
     .bal-btn {
         display: inline-flex; align-items: center; gap: 8px;
@@ -43,9 +94,43 @@
     .bal-btn-outline { background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.25); }
     .bal-btn-outline:hover { background: rgba(255,255,255,0.22); color: #fff; transform: translateY(-2px); }
 
-    @media (max-width: 576px) {
-        .gp-id-badge { position: relative; top: auto; right: auto; display: inline-block; margin-bottom: 16px; }
-        .balance-amount { font-size: 36px; }
+    @media(max-width:576px){
+
+         .balance-card {
+        padding: 30px 18px;
+    }
+
+    /* Move badge a little to avoid overlap with smaller padding */
+    .gp-id-badge {
+        top: 18px;
+        right: 18px;
+        font-size: 12px;
+        padding: 4px 10px;
+        z-index: 1;
+    }
+
+    /* Switch to a horizontal row for label + amount */
+    .balance-info {
+        flex-direction: column;
+        
+        gap: 6px;
+    }
+
+    .balance-label {
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    .balance-amount {
+        font-size: clamp(28px, 10vw, 38px);
+        text-align: left;
+    }
+
+    .balance-naira {
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
     }
 
     /* ── Stats row ── */
@@ -165,24 +250,16 @@
 
     <!-- Balance hero -->
     <div class="balance-card">
+        <!-- GP ID badge – always top‑right (absolute) -->
         <span class="gp-id-badge"><i class="fas fa-id-badge me-1"></i>{{ request.user.gp_id }}</span>
-        <div class="balance-label">Gold Coins Balance</div>
-        <div class="balance-amount">{{ wallet.balance|floatformat:0|intcomma }}</div>
-        <div class="balance-naira">≈ ₦{{ wallet.balance|floatformat:0|intcomma }} &nbsp;(1 coin = ₦1)</div>
-        <div class="balance-actions">
 
-            <a href="{% url 'wallet:buy' %}" class="bal-btn bal-btn-gold">
-                <i class="fas fa-plus-circle"></i> Buy Coins
-            </a>
-
-            {% if wallet.pin_set %}
-            <a href="{% url 'wallet:transfer' %}" class="bal-btn bal-btn-outline">
-                <i class="fas fa-paper-plane"></i> Send Coins
-            </a>
-            {% endif %}
-            <a href="{% url 'wallet:history' %}" class="bal-btn bal-btn-outline">
-                <i class="fas fa-history"></i> History
-            </a>
+        <!-- Wrapper for the balance content – vertical on desktop, horizontal on mobile -->
+        <div class="balance-content">
+            <div class="balance-info">
+                <div class="balance-label">Gold Coins Balance</div>
+                <div class="balance-amount">{{ wallet.balance|floatformat:0|intcomma }}</div>
+            </div>
+            <div class="balance-naira">≈ ₦{{ wallet.balance|floatformat:0|intcomma }} &nbsp;(1 coin = ₦1)</div>
         </div>
     </div>
 

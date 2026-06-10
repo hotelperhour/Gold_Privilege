@@ -1,0 +1,32 @@
+{% for notif in notifications %}
+<li class="gp-notif-item {% if not notif.is_read %}gp-notif-item--unread{% else %}gp-notif-item--read{% endif %}"
+    data-notif-id="{{ notif.notification_id }}"
+    data-link="{{ notif.link|default:'' }}">
+
+  <div class="gp-notif-item__icon" aria-hidden="true">
+    <i class="fas fa-bell"></i>
+  </div>
+
+  <div class="gp-notif-item__body">
+    <p class="gp-notif-item__title">{{ notif.title }}</p>
+
+    {% if notif.body %}
+  <p class="gp-notif-item__body-text"
+     data-short="{{ notif.body|truncatewords:15 }}"
+     data-full="{{ notif.body }}"
+     style="display:inline;">{{ notif.body|truncatewords:15 }}</p>{% if notif.body|wordcount > 15 %}<button class="gp-notif-toggle" type="button" aria-expanded="false"> See more</button>{% endif %}
+{% endif %}
+
+    <div class="gp-notif-item__meta">
+      <i class="fas fa-clock" aria-hidden="true"></i>
+      {{ notif.created_at|timesince }} ago
+    </div>
+  </div>
+
+  {% if not notif.is_read %}
+    <span class="gp-notif-item__dot" aria-label="Unread"></span>
+  {% else %}
+    <span class="gp-notif-item__dot gp-notif-item__dot--hidden" aria-hidden="true"></span>
+  {% endif %}
+</li>
+{% endfor %}

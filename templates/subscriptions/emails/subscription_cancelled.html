@@ -1,55 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Subscription Cancelled</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.15); }
-        .header { background: linear-gradient(135deg, #1a1a1a 0%, #333 100%); color: #d4af37; padding: 40px 20px; text-align: center; }
-        .header h1 { margin: 0; font-size: 32px; }
-        .content { padding: 40px 30px; color: #333; }
-        .button { display: inline-block; background: linear-gradient(135deg, #d4af37 0%, #f4c430 100%); color: #000; text-decoration: none; padding: 18px 45px; border-radius: 10px; font-weight: bold; font-size: 18px; margin: 25px 0; }
-        .info-box { background: #fff3cd; border-left: 5px solid #ffc107; padding: 20px; border-radius: 8px; margin: 20px 0; }
-        .footer { background: #1a1a1a; color: #fff; padding: 30px; text-align: center; font-size: 14px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🏆 Gold Privilege</h1>
-            <p>Subscription Update</p>
-        </div>
-        <div class="content">
-            <h2>Hello {{ user.get_full_name|default:user.email }},</h2>
-            <p>Your Gold Privilege subscription has been cancelled as requested.</p>
+{% extends "emails/base_email.html" %}
+{% block title %}Subscription Cancelled{% endblock %}
+{% block preheader %}Your subscription has been cancelled, but access remains until {{ subscription.end_date|date:"F j, Y" }}.{% endblock %}
+{% block content %}
+<p class="eyebrow">Subscription update</p>
+<h1>Your subscription was cancelled.</h1>
+<p class="lead">Hello {{ user.get_full_name|default:user.email }}, your Gold Privilege subscription has been cancelled as requested.</p>
 
-            <div class="info-box">
-                <p><strong>Important:</strong> You can continue enjoying all benefits until your current billing period ends.</p>
-                <p><strong>Access Until:</strong> {{ subscription.end_date|date:"F j, Y" }}</p>
-            </div>
+<div class="accent-card warning">
+  <p><strong>Access remains active until:</strong> {{ subscription.end_date|date:"F j, Y" }}</p>
+  <p style="margin-bottom:0;">You can continue using your current benefits until the billing period ends.</p>
+</div>
 
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 25px 0;">
-                <p><strong>Plan:</strong> {{ plan.name }}<br>
-                <strong>Cancelled On:</strong> {{ subscription.cancelled_at|date:"F j, Y" }}</p>
-            </div>
+<div class="card">
+  <table role="presentation" width="100%">
+    <tr class="row"><td class="label">Plan</td><td class="value">{{ plan.name }}</td></tr>
+    <tr><td class="label">Cancelled on</td><td class="value">{{ subscription.cancelled_at|date:"F j, Y" }}</td></tr>
+  </table>
+</div>
 
-            <p>We’re sad to see you go! If your plans change, you can resubscribe anytime.</p>
-
-            <div style="text-align: center;">
-                <a href="{{ protocol }}://{{ domain }}{% url 'subscriptions:plans_list' %}" class="button">
-                    Explore Plans Again
-                </a>
-            </div>
-
-            <p>If this cancellation was made by mistake, simply reply to this email and we'll help restore your access.</p>
-            <p>Thank you for being part of the Gold Privilege family.</p>
-        </div>
-        <div class="footer">
-            <p><strong>Gold Privilege Team</strong></p>
-            <p>We hope to welcome you back soon!</p>
-            <p>© 2025 Gold Privilege. All rights reserved.</p>
-        </div>
-    </div>
-</body>
-</html>
+<p>If your plans change, you can resubscribe anytime.</p>
+<p style="text-align:center;margin:28px 0;">
+  <a class="button" href="{{ protocol }}://{{ domain }}{% url 'subscriptions:plans_list' %}">Explore Plans Again</a>
+</p>
+{% endblock %}
