@@ -47,6 +47,12 @@
                 
                 {% endif %}
             </a>
+
+            <a href="{% url 'games:spin' %}"
+            class="nav-item {% if 'spin' in request.path %}active{% endif %}">
+                <i class="fas fa-dice"></i>
+                <span>Spin & Win</span>
+            </a>
  
             <a href="{% url 'account:profile' %}"
                class="nav-item {% if 'profile' in request.path %}active{% endif %}">

@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'discount_store.apps.DiscountStoreConfig',
     'superadmin.apps.SuperadminConfig',
     'notifications.apps.NotificationsConfig',
+    'games.apps.GamesConfig',
     'django.contrib.humanize',
     
 ]

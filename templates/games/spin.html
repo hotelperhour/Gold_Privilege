@@ -1,0 +1,1176 @@
+{% extends 'base_subscriber.html' %}
+{% load static humanize %}
+
+{% block title %}Spin & Win — Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+  --gp-gold:    #E5AD04;
+  --gp-gold-lt: #F9B036;
+  --gp-gold-dk: #C8860A;
+  --gp-choc:    #5c3001;
+  --gp-black:   #020202;
+  --gp-dark:    #0a0a0a;
+  --gp-panel:   rgba(255,255,255,0.04);
+  --gp-border:  rgba(229,173,4,0.15);
+  --radius:     16px;
+}
+
+/* ── Page shell ────────────────────────────────────────────────── */
+.spin-page {
+  min-height: 100vh;
+  background: #f8f9fa;           /* light background matching dashboard */
+  padding: 32px 16px 64px;
+}
+
+.spin-page__inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ── Page heading ──────────────────────────────────────────────── */
+.spin-heading {
+  text-align: center;
+  margin-bottom: 36px;
+}
+.spin-heading__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+  margin-bottom: 10px;
+}
+.spin-heading__title {
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 800;
+  color: #020202;               /* dark text like dashboard */
+  margin: 0 0 8px;
+  line-height: 1.1;
+}
+.spin-heading__title span { color: var(--gp-gold); }
+.spin-heading__sub {
+  font-size: 15px;
+  color: #6c757d;               /* subtle grey text */
+  margin: 0;
+}
+
+/* ── Two-column layout ─────────────────────────────────────────── */
+.spin-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 32px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .spin-layout { grid-template-columns: 1fr; }
+}
+
+/* ── WHEEL ARENA ───────────────────────────────────────────────── */
+.wheel-arena {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Outer glow ring – keep dark to preserve wheel effect */
+.wheel-outer {
+  position: relative;
+  width: min(420px, 90vw);
+  height: min(420px, 90vw);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Gold pulsing ring behind the wheel */
+.wheel-outer::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    var(--gp-gold) 0deg 60deg,
+    var(--gp-choc) 60deg 120deg,
+    var(--gp-gold) 120deg 180deg,
+    var(--gp-choc) 180deg 240deg,
+    var(--gp-gold) 240deg 300deg,
+    var(--gp-choc) 300deg 360deg
+  );
+  opacity: 0.35;
+  animation: ring-spin 12s linear infinite;
+}
+
+@keyframes ring-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Canvas */
+#spin-canvas {
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 4px var(--gp-choc),
+    0 0 0 6px rgba(229,173,4,0.4),
+    0 24px 60px rgba(0,0,0,0.8);
+  display: block;
+  max-width: 100%;
+}
+
+/* Pointer */
+.wheel-pointer {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left:  16px solid transparent;
+  border-right: 16px solid transparent;
+  border-top:   32px solid #020202;
+  filter: drop-shadow(0 4px 8px rgba(229,173,4,0.5));
+  z-index: 10;
+}
+.wheel-pointer::after {
+  content: '';
+  position: absolute;
+  top: -38px;
+  left: -8px;
+  width: 16px;
+  height: 16px;
+  background: #020202;
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(0,0,0,0.4);
+}
+
+/* Centre hub */
+.wheel-hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 56px;
+  background: radial-gradient(circle, #fff 0%, var(--gp-gold) 60%, var(--gp-gold-dk) 100%);
+  border-radius: 50%;
+  border: 4px solid var(--gp-black);
+  box-shadow: 0 0 0 2px var(--gp-gold), 0 0 20px rgba(229,173,4,0.5);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: var(--gp-black);
+  font-weight: 800;
+}
+
+/* ── SPIN BUTTON ───────────────────────────────────────────────── */
+.spin-btn-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.spin-btn {
+  background: linear-gradient(135deg, var(--gp-gold) 0%, var(--gp-gold-lt) 50%, var(--gp-gold-dk) 100%);
+  color: #000;
+  border: none;
+  border-radius: 60px;
+  padding: 16px 56px;
+  font-size: 18px;
+  font-weight: 800;
+  font-family: 'Poppins', sans-serif;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 8px 24px rgba(229,173,4,0.35), 0 2px 0 rgba(0,0,0,0.3) inset;
+  text-transform: uppercase;
+  overflow: hidden;
+}
+.spin-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s ease;
+}
+.spin-btn:hover::before { left: 140%; }
+.spin-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 32px rgba(229,173,4,0.5), 0 2px 0 rgba(0,0,0,0.3) inset;
+}
+.spin-btn:active:not(:disabled) { transform: translateY(0); }
+.spin-btn:disabled {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+.spin-btn:disabled::before { display: none; }
+
+/* Spinning state */
+.spin-btn.is-spinning {
+  pointer-events: none;
+  animation: btn-pulse 0.8s ease infinite;
+}
+@keyframes btn-pulse {
+  0%, 100% { box-shadow: 0 8px 24px rgba(229,173,4,0.35); }
+  50%       { box-shadow: 0 8px 40px rgba(229,173,4,0.7); }
+}
+
+/* Spin counter pill */
+.spin-counter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 30px;
+  padding: 8px 20px;
+  font-size: 13px;
+  color: #6c757d;
+}
+.spin-counter__pips { display: flex; gap: 5px; }
+.spin-counter__pip {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--gp-gold);
+  transition: background 0.3s;
+}
+.spin-counter__pip.used { background: var(--gp-gold); }
+
+/* Cant-spin reason */
+.cant-spin-msg {
+  text-align: center;
+  font-size: 13px;
+  color: #6c757d;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+/* Cooldown timer */
+.cooldown-timer {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--gp-gold);
+  font-weight: 500;
+}
+.cooldown-timer.visible { display: flex; }
+.cooldown-timer i { animation: spin-icon 1s linear infinite; }
+@keyframes spin-icon { to { transform: rotate(360deg); } }
+
+/* ── RESULT OVERLAY ─────────────────────────────────────────────── */
+.result-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 9000;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.result-overlay.visible { display: flex; }
+
+.result-card {
+  background: #fff;
+  border: 1px solid var(--gp-border);
+  border-radius: 24px;
+  padding: 48px 40px;
+  text-align: center;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.2), 0 0 0 1px rgba(229,173,4,0.1);
+  animation: result-pop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes result-pop {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.result-icon { font-size: 64px; display: block; margin-bottom: 16px; }
+.result-title { font-size: 28px; font-weight: 800; color: #020202; margin: 0 0 8px; }
+.result-title.win { color: var(--gp-gold); }
+.result-subtitle { font-size: 15px; color: #6c757d; margin: 0 0 24px; line-height: 1.5; }
+.result-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(229,173,4,0.1);
+  border: 1px solid var(--gp-border);
+  border-radius: 60px;
+  padding: 12px 28px;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--gp-gold);
+  margin-bottom: 28px;
+}
+.result-close-btn {
+  background: var(--gp-gold);
+  color: #000;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 40px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+}
+.result-close-btn:hover {
+  background: var(--gp-gold-lt);
+  transform: translateY(-2px);
+}
+
+/* ── RIGHT PANEL ────────────────────────────────────────────────── */
+.spin-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Generic card (matches dashboard cards) */
+.gp-card {
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+.gp-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--gp-gold);
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Stats row */
+.spin-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.spin-stat {
+  text-align: center;
+  padding: 14px 8px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.04);
+}
+.spin-stat__val {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--gp-gold);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.spin-stat__label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #6c757d;
+}
+
+/* Prize table */
+.prize-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.prize-row:last-child { border-bottom: none; }
+.prize-swatch {
+  width: 14px;
+  height: 32px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.prize-label { flex: 1; font-size: 13px; color: #020202; font-weight: 500; }
+.prize-coins {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gp-gold);
+  white-space: nowrap;
+}
+.prize-weight {
+  font-size: 11px;
+  color: #6c757d;
+  min-width: 36px;
+  text-align: right;
+}
+
+/* Recent spins */
+.recent-spin-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.recent-spin-row:last-child { border-bottom: none; }
+.recent-spin-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.recent-spin-badge.win  { background: rgba(229,173,4,0.15); color: var(--gp-gold); }
+.recent-spin-badge.loss { background: rgba(0,0,0,0.05); color: #6c757d; }
+.recent-spin-info { flex: 1; min-width: 0; }
+.recent-spin-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #020202;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.recent-spin-time { font-size: 11px; color: #6c757d; margin-top: 2px; }
+.recent-spin-coins { font-size: 13px; font-weight: 700; color: var(--gp-gold); white-space: nowrap; }
+.recent-spin-coins.zero { color: #6c757d; }
+
+/* No-sub banner */
+.nosub-banner {
+  background: #fff8e1;
+  border: 1px solid #ffe066;
+  border-radius: 14px;
+  padding: 28px 24px;
+  text-align: center;
+}
+.nosub-banner i { font-size: 36px; color: var(--gp-gold); margin-bottom: 12px; display: block; }
+.nosub-banner h3 { color: #020202; font-size: 17px; font-weight: 700; margin: 0 0 8px; }
+.nosub-banner p  { color: #6c757d; font-size: 13px; margin: 0 0 20px; line-height: 1.5; }
+.nosub-banner a  {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--gp-gold); color: #000;
+  padding: 12px 28px; border-radius: 10px;
+  font-weight: 700; font-size: 14px; text-decoration: none;
+  transition: all 0.2s;
+}
+.nosub-banner a:hover { background: var(--gp-gold-lt); transform: translateY(-2px); }
+
+/* View history link */
+.history-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--gp-gold);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 12px;
+  border: 1px solid rgba(0,0,0,0.05);
+  border-radius: 10px;
+  transition: all 0.2s;
+  background: #fff;
+}
+.history-link:hover { background: rgba(229,173,4,0.08); color: var(--gp-gold-lt); }
+
+/* ── CONFETTI CANVAS ─────────────────────────────────────────────── */
+#confetti-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ── Responsive (mobile & tablet) ────────────────────────────────── */
+@media (max-width: 900px) {
+  .spin-layout { grid-template-columns: 1fr; }
+  .wheel-outer {
+    width: min(380px, 80vw);
+    height: min(380px, 80vw);
+  }
+}
+
+@media (max-width: 600px) {
+  .spin-page { padding: 20px 12px 48px; }
+  .spin-heading { margin-bottom: 24px; }
+  .spin-stats { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .spin-stat__val { font-size: 18px; }
+  .result-card { padding: 36px 24px; }
+  .wheel-outer {
+    width: min(340px, 85vw);
+    height: min(340px, 85vw);
+  }
+  .spin-btn {
+    padding: 14px 40px;
+    font-size: 16px;
+  }
+}
+
+
+</style>
+{% endblock %}
+
+{% block subscriber_content %}
+<div class="spin-page">
+  <div class="spin-page__inner">
+
+    {# ── Page heading ───────────────────────────────────────────── #}
+    <div class="spin-heading">
+      <div class="spin-heading__eyebrow">
+        <i class="fas fa-star"></i>
+        Daily Rewards
+        <i class="fas fa-star"></i>
+      </div>
+      <h1 class="spin-heading__title">Spin & <span>Win Coins</span></h1>
+      <p class="spin-heading__sub">
+        {{ config.daily_spin_limit }} free spin{{ config.daily_spin_limit|pluralize }} every day —
+        resets at midnight Lagos time.
+      </p>
+    </div>
+
+    {# ── Main layout ────────────────────────────────────────────── #}
+    <div class="spin-layout">
+
+      {# ─── LEFT: Wheel ──────────────────────────────────────────── #}
+      <div class="wheel-arena">
+
+        {# Outer glow ring + canvas #}
+        <div class="wheel-outer">
+          <div class="wheel-pointer"></div>
+          <canvas id="spin-canvas"></canvas>
+          <div class="wheel-hub">★</div>
+        </div>
+
+        {# Button + counter #}
+        <div class="spin-btn-wrap">
+          {% if can_spin %}
+            <button
+              id="spin-btn"
+              class="spin-btn"
+              data-action="{% url 'games:spin_action' %}"
+              data-csrf="{{ csrf_token }}"
+            >
+              <i class="fas fa-play me-2"></i> SPIN NOW
+            </button>
+          {% else %}
+            <button class="spin-btn" disabled>
+              <i class="fas fa-lock me-2"></i> SPIN NOW
+            </button>
+            <p class="cant-spin-msg">{{ cant_spin_reason }}</p>
+          {% endif %}
+
+          {# Pip counter #}
+          <div class="spin-counter">
+            <div class="spin-counter__pips" id="spin-pips">
+              
+              {# Rendered by JS using spins_used / spins_total from data attrs #}
+            </div>
+            <span id="spin-counter-text">
+              <span id="spins-left-num">{{ spins_left }}</span> of {{ spins_total }} spin{{ spins_total|pluralize }} left today
+            </span>
+          </div>
+
+          {# Cooldown timer — shown by JS if needed #}
+          <div class="cooldown-timer" id="cooldown-timer">
+            <i class="fas fa-hourglass-half"></i>
+            <span id="cooldown-text">Next spin available in…</span>
+          </div>
+        </div>
+
+        {% if not can_spin and spins_left == 0 %}
+        {# Out of spins today — show a teaser for tomorrow #}
+        <p style="text-align:center;font-size:13px;color:rgba(255,255,255,0.3);margin-top:4px;">
+          <i class="fas fa-moon me-1"></i> Your spins reset at midnight Lagos time
+        </p>
+        {% endif %}
+
+      </div>{# end .wheel-arena #}
+
+      {# ─── RIGHT: Info panel ───────────────────────────────────── #}
+      <div class="spin-panel">
+
+        {# No active subscription prompt #}
+        {% if not can_spin and 'subscription' in cant_spin_reason|lower %}
+        <div class="nosub-banner">
+          <i class="fas fa-crown"></i>
+          <h3>Subscribers Only</h3>
+          <p>
+            An active Gold Privilege subscription is required to spin the wheel
+            and win coins every day.
+          </p>
+          <a href="{% url 'subscriptions:plans_list' %}">
+            <i class="fas fa-bolt"></i> Get a Subscription
+          </a>
+        </div>
+        {% endif %}
+
+        {# ── Today's stats ──────────────────────────────────────── #}
+        <div class="gp-card">
+          <p class="gp-card__title">
+            <i class="fas fa-chart-bar"></i> Your Stats
+          </p>
+          <div class="spin-stats">
+            <div class="spin-stat">
+              <span class="spin-stat__val">{{ lifetime_spins|intcomma }}</span>
+              <span class="spin-stat__label">Total Spins</span>
+            </div>
+            <div class="spin-stat">
+              <span class="spin-stat__val">{{ lifetime_wins|intcomma }}</span>
+              <span class="spin-stat__label">Total Wins</span>
+            </div>
+            <div class="spin-stat">
+              <span class="spin-stat__val">{{ lifetime_coins|intcomma }}</span>
+              <span class="spin-stat__label">Coins Won</span>
+            </div>
+          </div>
+        </div>
+
+        
+
+        {# ── Recent spins ───────────────────────────────────────── #}
+        {% if recent_spins %}
+        <div class="gp-card">
+          <p class="gp-card__title">
+            <i class="fas fa-history"></i> Recent Spins
+          </p>
+          {% for record in recent_spins %}
+          <div class="recent-spin-row">
+            <div class="recent-spin-badge {% if record.is_win %}win{% else %}loss{% endif %}">
+              {% if record.is_win %}<i class="fas fa-star"></i>
+              {% else %}<i class="fas fa-times"></i>{% endif %}
+            </div>
+            <div class="recent-spin-info">
+              <div class="recent-spin-label">{{ record.prize.label }}</div>
+              <div class="recent-spin-time">{{ record.spun_at|timesince }} ago</div>
+            </div>
+            {% if record.is_win %}
+            <span class="recent-spin-coins">
+              +{{ record.coins_awarded|intcomma }}
+            </span>
+            {% else %}
+            <span class="recent-spin-coins zero">—</span>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {# ── History link ───────────────────────────────────────── #}
+        
+
+      </div>{# end .spin-panel #}
+    </div>{# end .spin-layout #}
+
+  </div>
+</div>
+
+{# ── Result overlay ──────────────────────────────────────────────── #}
+<div class="result-overlay" id="result-overlay" role="dialog" aria-modal="true" aria-label="Spin result">
+  <div class="result-card" id="result-card">
+    <span class="result-icon" id="result-icon">🎰</span>
+    <h2 class="result-title" id="result-title">Spinning…</h2>
+    <p class="result-subtitle" id="result-subtitle"></p>
+    <div class="result-coins" id="result-coins" style="display:none;">
+      <i class="fas fa-coins"></i>
+      <span id="result-coins-num">0</span> coins added!
+    </div>
+    <button class="result-close-btn" id="result-close-btn" type="button">
+  Spin Again
+</button>
+  </div>
+</div>
+
+{# ── Confetti canvas ──────────────────────────────────────────────── #}
+<canvas id="confetti-canvas"></canvas>
+{% endblock %}
+
+
+{% block extra_js %}
+{# canvas-confetti — tiny, MIT licensed, no build step #}
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+<script>
+(function () {
+'use strict';
+
+/* ═══════════════════════════════════════════════════════════════════
+   PRIZE DATA  (injected from Django context — read-only in browser)
+
+   Teaching note:
+     We pass the visual prize list (labels, colors, order) to JS so the
+     wheel can be drawn. But notice what is NOT passed: weights. The browser
+     never sees probability data. Even if someone reads this JS they cannot
+     predict or influence which prize the server picks.
+   ═══════════════════════════════════════════════════════════════════ */
+var PRIZES = [];
+try {
+  PRIZES = JSON.parse('{{ prizes_json|escapejs }}');
+} catch (e) {
+  console.error('Spin wheel: failed to parse prize data —', e);
+}
+
+/* Expose server-side reason and guard against empty prize lists. If the
+   prize array is missing the wheel math (division by zero) will throw and
+   clear the canvas; bail out early and show a helpful placeholder. */
+var CANT_SPIN_REASON = "{{ cant_spin_reason|escapejs }}" || '';
+if (!Array.isArray(PRIZES) || PRIZES.length === 0) {
+  console.error('Spin wheel: PRIZES is empty. Check that prizes are active in admin.');
+  try {
+    var canvasEl = document.getElementById('spin-canvas');
+    if (canvasEl) canvasEl.style.display = 'none';
+    var outer = document.querySelector('.wheel-outer');
+    if (outer && !outer.querySelector('.spin-placeholder')) {
+      var ph = document.createElement('div');
+      ph.className = 'spin-placeholder';
+      ph.style.padding = '28px 12px';
+      ph.style.color = 'rgba(255,255,255,0.65)';
+      ph.style.textAlign = 'center';
+      ph.style.fontSize = '15px';
+      ph.textContent = CANT_SPIN_REASON || 'Spin wheel unavailable — no prizes configured.';
+      outer.appendChild(ph);
+    }
+    var btn = document.getElementById('spin-btn');
+    if (btn) { btn.disabled = true; btn.classList.remove('is-spinning'); btn.innerHTML = '<i class="fas fa-lock me-2"></i> Unavailable'; }
+  } catch (err) { console.warn('Spin placeholder setup failed', err); }
+  // Stop further wheel script execution
+  return;
+}
+
+var SPINS_USED  = {{ spins_used }};
+var SPINS_TOTAL = {{ spins_total }};
+var CAN_SPIN    = {{ can_spin|yesno:"true,false" }};
+var SPIN_URL    = "{% url 'games:spin_action' %}";
+var CSRF_TOKEN  = "{{ csrf_token }}";
+
+{% if next_spin_at %}
+var NEXT_SPIN_AT = new Date("{{ next_spin_at|date:'c' }}");
+{% else %}
+var NEXT_SPIN_AT = null;
+{% endif %}
+
+/* ═══════════════════════════════════════════════════════════════════
+   WHEEL DRAWING  (canvas)
+   ═══════════════════════════════════════════════════════════════════ */
+
+var canvas     = document.getElementById('spin-canvas');
+var ctx        = canvas.getContext('2d');
+var numPrizes  = PRIZES.length;
+var segAngle   = (2 * Math.PI) / numPrizes;
+var currentRot = 0;   // current rotation in radians
+var isSpinning = false;
+
+
+
+function drawWheel(rotation) {
+  var W = canvas.width;
+  var H = canvas.height;
+  var cx = W / 2;
+  var cy = H / 2;
+  var r  = W / 2 - 4;
+
+  ctx.clearRect(0, 0, W, H);
+
+  for (var i = 0; i < numPrizes; i++) {
+    var prize     = PRIZES[i];
+    var startAngle = rotation + i * segAngle;
+    var endAngle   = startAngle + segAngle;
+
+    /* Segment fill */
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle   = prize.color;
+    ctx.fill();
+
+    /* Subtle segment border */
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    /* Label — rotated to sit in the middle of the segment */
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(startAngle + segAngle / 2);
+
+    /* Text styling */
+    var fontSize = Math.min(14, W / 28);
+    ctx.font      = 'bold ' + fontSize + 'px Poppins, sans-serif';
+    ctx.fillStyle = prize.text_color || '#000000';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+
+    /* Draw text, keeping it inside the segment */
+    var textR = r * 0.78;
+    ctx.fillText(prize.label, textR, 0);
+    ctx.restore();
+  }
+
+  /* Thin gold ring at edge */
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(229,173,4,0.6)';
+  ctx.lineWidth   = 3;
+  ctx.stroke();
+}
+
+function setCanvasSize() {
+  var outer = canvas.parentElement;
+  var w = outer.offsetWidth || outer.getBoundingClientRect().width || 0;
+  var size = Math.min(w, 420);
+  /* Never allow a zero or tiny canvas — fall back to a sane default
+     so the wheel is always visible even if layout hasn't settled yet. */
+  if (!size || size < 100) size = 300;
+  canvas.width  = size;
+  canvas.height = size;
+}
+
+/* Double requestAnimationFrame ensures we draw AFTER the browser has
+   fully completed layout and painted once — eliminates the race
+   condition where offsetWidth reads 0 on the very first script tick. */
+requestAnimationFrame(function () {
+  requestAnimationFrame(function () {
+    setCanvasSize();
+    drawWheel(0);
+  });
+});
+
+window.addEventListener('resize', function () {
+  setCanvasSize();
+  drawWheel(currentRot);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   PIP COUNTER  (gold dots showing spins left)
+   ═══════════════════════════════════════════════════════════════════ */
+
+function renderPips(used, total) {
+  var container = document.getElementById('spin-pips');
+  container.innerHTML = '';
+  for (var i = 0; i < total; i++) {
+    var pip = document.createElement('div');
+    pip.className = 'spin-counter__pip' + (i < used ? ' used' : '');
+    container.appendChild(pip);
+  }
+  var leftNum = document.getElementById('spins-left-num');
+  if (leftNum) leftNum.textContent = Math.max(0, total - used);
+}
+
+renderPips(SPINS_USED, SPINS_TOTAL);
+
+/* ═══════════════════════════════════════════════════════════════════
+   COOLDOWN TIMER
+   ═══════════════════════════════════════════════════════════════════ */
+
+function startCooldownTimer(targetDate) {
+  var timer = document.getElementById('cooldown-timer');
+  var text  = document.getElementById('cooldown-text');
+  if (!timer || !targetDate) return;
+
+  function tick() {
+    var diff = Math.floor((targetDate - Date.now()) / 1000);
+    if (diff <= 0) {
+      timer.classList.remove('visible');
+      return;
+    }
+    var m = Math.floor(diff / 60);
+    var s = diff % 60;
+    text.textContent = 'Next spin in ' + m + 'm ' + s + 's';
+    timer.classList.add('visible');
+    setTimeout(tick, 1000);
+  }
+  tick();
+}
+
+/* The pointer sits at the TOP of the wheel (12 o'clock).
+   Canvas angle 0 points EAST (3 o'clock), increasing clockwise.
+   So "top" in canvas terms is angle -π/2 — a 90° gap that the
+   rotation math MUST account for, or the wheel lands on the
+   wrong segment relative to what was actually awarded. */
+var POINTER_ANGLE = -Math.PI / 2;
+
+function animateToSegment(prizeIndex, callback) {
+  var segmentCenter = prizeIndex * segAngle + segAngle / 2;
+  var targetAngle = POINTER_ANGLE - segmentCenter;
+  targetAngle = ((targetAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+  /* Teaching note — the bug that was here:
+     targetAngle is an ABSOLUTE position (0 to 2π). currentRot is wherever
+     the wheel already sits from the last spin. Adding them together
+     (currentRot + targetAngle) is wrong — it double-counts the wheel's
+     existing position. We need the DELTA between where the wheel is now
+     and where it needs to end up, not the raw sum.
+     This is why only the very first spin after page load looked correct
+     (currentRot was 0, so the bug had no effect) — every spin after that
+     accumulated more and more error. */
+  var normalizedCurrent = ((currentRot % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  var delta = targetAngle - normalizedCurrent;
+  delta = ((delta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+  var fullSpins   = 6 * 2 * Math.PI;
+  var endRotation = currentRot + fullSpins + delta;
+
+  var startTime  = null;
+  var duration   = 4500;
+  var startRot   = currentRot;
+
+  function ease(t) {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  function frame(timestamp) {
+    if (!startTime) startTime = timestamp;
+    var elapsed  = timestamp - startTime;
+    var progress = Math.min(elapsed / duration, 1);
+    var eased    = ease(progress);
+
+    currentRot = startRot + (endRotation - startRot) * eased;
+    drawWheel(currentRot);
+
+    if (progress < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      currentRot = endRotation % (2 * Math.PI);
+      isSpinning = false;
+      if (callback) callback();
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   RESULT OVERLAY
+   ═══════════════════════════════════════════════════════════════════ */
+
+function showResult(data) {
+  var overlay   = document.getElementById('result-overlay');
+  var icon      = document.getElementById('result-icon');
+  var title     = document.getElementById('result-title');
+  var subtitle  = document.getElementById('result-subtitle');
+  var coinsWrap = document.getElementById('result-coins');
+  var coinsNum  = document.getElementById('result-coins-num');
+  var closeBtn  = document.getElementById('result-close-btn');
+
+  if (data.is_win) {
+    icon.textContent      = '🎉';
+    title.textContent     = 'You Won!';
+    title.className       = 'result-title win';
+    subtitle.textContent  = data.prize_label;
+    coinsWrap.style.display = 'inline-flex';
+    coinsNum.textContent  = data.coins_awarded.toLocaleString();
+    closeBtn.textContent  = 'Spin Again';
+  } else {
+    icon.textContent      = '😔';
+    title.textContent     = 'Try Again!';
+    title.className       = 'result-title';
+    subtitle.textContent  = 'Better luck next time — you have ' + data.spins_left + ' spin' + (data.spins_left !== 1 ? 's' : '') + ' left today.';
+    coinsWrap.style.display = 'none';
+    closeBtn.textContent  = data.spins_left > 0 ? 'Spin Again' : 'Come Back Tomorrow';
+  }
+
+  overlay.classList.add('visible');
+}
+
+function closeResult() {
+  document.getElementById('result-overlay').classList.remove('visible');
+}
+function closeResultAndMaybeSpin() {
+  closeResult();
+  /* If button text says "Spin Again" and spins remain, trigger next spin */
+  var btnText = document.getElementById('result-close-btn').textContent.trim();
+  if (btnText === 'Spin Again' && CAN_SPIN && spinBtn && !spinBtn.disabled) {
+    spinBtn.click();
+  }
+}
+document.getElementById('result-close-btn').addEventListener('click', closeResultAndMaybeSpin);
+
+/* Close on backdrop click */
+document.getElementById('result-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeResult();
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   CONFETTI
+   ═══════════════════════════════════════════════════════════════════ */
+
+var confettiCanvas = document.getElementById('confetti-canvas');
+var myConfetti = null;
+if (typeof confetti !== 'undefined') {
+  myConfetti = confetti.create(confettiCanvas, { resize: true, useWorker: true });
+} else {
+  console.warn('canvas-confetti did not load — wins will still credit coins, just without the animation.');
+}
+
+function fireConfetti() {
+  if (!myConfetti) return;
+  myConfetti({
+    particleCount: 120,
+    spread: 100,
+    origin: { y: 0.5, x: 0.5 },
+    colors: ['#E5AD04', '#F9B036', '#FFD700', '#fff', '#5c3001', '#C8860A'],
+    startVelocity: 40,
+    gravity: 0.9,
+    ticks: 200,
+  });
+  /* Dual side bursts for a shower effect */
+  setTimeout(function () {
+    myConfetti({ particleCount: 60, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#E5AD04','#F9B036','#fff'] });
+    myConfetti({ particleCount: 60, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#E5AD04','#F9B036','#fff'] });
+  }, 200);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   SPIN BUTTON CLICK HANDLER
+   ═══════════════════════════════════════════════════════════════════ */
+
+var spinBtn = document.getElementById('spin-btn');
+
+if (spinBtn) {
+  spinBtn.addEventListener('click', function () {
+    if (isSpinning) return;
+    if (!CAN_SPIN) {
+      // Provide feedback when the user clicks but the server says they cannot spin
+      try {
+        var overlay  = document.getElementById('result-overlay');
+        var icon     = document.getElementById('result-icon');
+        var title    = document.getElementById('result-title');
+        var subtitle = document.getElementById('result-subtitle');
+        var coinsWrap = document.getElementById('result-coins');
+        var closeBtn = document.getElementById('result-close-btn');
+        icon.textContent     = 'ℹ️';
+        title.textContent    = 'Not Available';
+        title.className      = 'result-title';
+        subtitle.textContent = CANT_SPIN_REASON || 'You cannot spin right now.';
+        coinsWrap.style.display = 'none';
+        closeBtn.textContent = 'OK';
+        overlay.classList.add('visible');
+      } catch (err) { console.warn('Failed to show not-available overlay', err); }
+      return;
+    }
+    isSpinning = true;
+
+    /* Visual feedback immediately */
+    spinBtn.disabled = true;
+    spinBtn.classList.add('is-spinning');
+    spinBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin me-2"></i> Spinning…';
+
+    /* POST to server — server decides outcome */
+    fetch(SPIN_URL, {
+      method:  'POST',
+      headers: {
+        'X-CSRFToken':      CSRF_TOKEN,
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type':     'application/json',
+      },
+      credentials: 'same-origin',
+    })
+    .then(function (response) { return response.json(); })
+    .then(function (data) {
+
+      if (!data.success) {
+        /* Server rejected (daily limit hit, cooldown, etc.) */
+        isSpinning = false;
+        spinBtn.disabled  = false;
+        spinBtn.classList.remove('is-spinning');
+        spinBtn.innerHTML = '<i class="fas fa-lock me-2"></i> SPIN NOW';
+        CAN_SPIN = false;
+
+        /* Show the reason in the overlay */
+        var overlay  = document.getElementById('result-overlay');
+        var icon     = document.getElementById('result-icon');
+        var title    = document.getElementById('result-title');
+        var subtitle = document.getElementById('result-subtitle');
+        var coinsWrap = document.getElementById('result-coins');
+        var closeBtn = document.getElementById('result-close-btn');
+        icon.textContent     = 'ℹ️';
+        title.textContent    = 'Not Available';
+        title.className      = 'result-title';
+        subtitle.textContent = data.reason || 'Please try again later.';
+        coinsWrap.style.display = 'none';
+        closeBtn.textContent = 'OK';
+        overlay.classList.add('visible');
+        return;
+      }
+
+      /*
+        Teaching note:
+          data.prize_index tells us WHICH segment to land on.
+          This was decided by the server using secrets.choice().
+          The wallet was already credited BEFORE this response arrived.
+          The animation here is purely cosmetic — the money is already done.
+      */
+
+      /* Update pip counter optimistically */
+      SPINS_USED = data.spins_used;
+      renderPips(SPINS_USED, SPINS_TOTAL);
+
+      /* Animate wheel to the server-decided segment */
+      animateToSegment(data.prize_index, function () {
+
+        /* Show result after wheel stops */
+        showResult(data);
+
+        /* Fire confetti if it's a win */
+        if (data.is_win) {
+          fireConfetti();
+        }
+
+        /* Update button state */
+        if (data.spins_left > 0) {
+          spinBtn.disabled = false;
+          spinBtn.classList.remove('is-spinning');
+          spinBtn.innerHTML = '<i class="fas fa-play me-2"></i> SPIN NOW';
+          CAN_SPIN = true;
+        } else {
+          spinBtn.disabled = true;
+          spinBtn.classList.remove('is-spinning');
+          spinBtn.innerHTML = '<i class="fas fa-lock me-2"></i> No Spins Left';
+          CAN_SPIN = false;
+
+          /* Start cooldown timer if server returned one */
+          if (data.next_spin_at) {
+            startCooldownTimer(new Date(data.next_spin_at));
+          }
+        }
+      });
+    })
+    .catch(function (err) {
+      console.error('Spin error:', err);
+      isSpinning = false;
+      spinBtn.disabled = false;
+      spinBtn.classList.remove('is-spinning');
+      spinBtn.innerHTML = '<i class="fas fa-play me-2"></i> SPIN NOW';
+      alert('Something went wrong. Please refresh the page and try again.');
+    });
+  });
+}
+
+/* ── Keyboard close for result overlay ───────────────────────────── */
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') closeResult();
+});
+
+})();
+</script>
+{% endblock %}

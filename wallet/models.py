@@ -161,10 +161,11 @@ class WalletTransaction(models.Model):
         ADMIN_DEBIT   = 'ADMIN_DEBIT',   'Admin Manual Debit'
         STORE_PURCHASE = 'STORE_PURCHASE', 'Discount Store Purchase'
         STORE_REFUND   = 'STORE_REFUND',   'Discount Store Refund'
+        SPIN_WIN         = 'SPIN_WIN',         'Spin & Win Prize'
 
     CREDIT_TYPES = {
         'PURCHASE', 'CASHBACK', 'REFERRAL',
-        'TRANSFER_IN', 'MONTHLY_BONUS', 'REFUND', 'ADMIN_CREDIT', 'STORE_REFUND'
+        'TRANSFER_IN', 'MONTHLY_BONUS', 'REFUND', 'ADMIN_CREDIT', 'STORE_REFUND', 'SPIN_WIN'
     }
 
     transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)

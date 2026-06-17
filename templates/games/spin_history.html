@@ -1,0 +1,304 @@
+{% extends 'base_subscriber.html' %}
+{% load static humanize %}
+
+{% block title %}Spin History — Gold Privilege{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Page shell ────────────────────────────────────────────────── */
+.history-page {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 50% 0%, #1a0f00 0%, #020202 60%);
+  padding: 32px 16px 64px;
+}
+.history-inner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.history-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.history-header__left h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff;
+  margin: 0 0 4px;
+}
+.history-header__left p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.4);
+  margin: 0;
+}
+.spin-again-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #E5AD04;
+  color: #000;
+  border-radius: 10px;
+  padding: 11px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.spin-again-btn:hover {
+  background: #F9B036;
+  transform: translateY(-2px);
+  color: #000;
+}
+
+/* ── Lifetime stats ──────────────────────────────────────────────── */
+.lifetime-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+@media (max-width: 480px) {
+  .lifetime-stats { grid-template-columns: 1fr; gap: 10px; }
+}
+.ls-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(229,173,4,0.12);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+}
+.ls-card__val {
+  display: block;
+  font-size: 28px;
+  font-weight: 800;
+  color: #E5AD04;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.ls-card__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.35);
+}
+
+/* ── Records list ────────────────────────────────────────────────── */
+.records-wrap {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(229,173,4,0.1);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.record-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 22px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+.record-row:last-child { border-bottom: none; }
+.record-row:hover { background: rgba(255,255,255,0.02); }
+
+/* Badge */
+.record-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.record-badge.win  { background: rgba(229,173,4,0.15); color: #E5AD04; }
+.record-badge.loss { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); }
+
+/* Body */
+.record-body { flex: 1; min-width: 0; }
+.record-prize {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0 0 2px;
+}
+.record-time {
+  font-size: 12px;
+  color: rgba(255,255,255,0.3);
+}
+
+/* Result */
+.record-result { text-align: right; flex-shrink: 0; }
+.record-coins {
+  display: block;
+  font-size: 16px;
+  font-weight: 800;
+  color: #E5AD04;
+}
+.record-coins.zero { color: rgba(255,255,255,0.15); font-size: 14px; }
+.record-win-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-top: 3px;
+}
+.record-win-badge.win  { background: rgba(229,173,4,0.15); color: #E5AD04; }
+.record-win-badge.loss { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.2); }
+
+/* Empty state */
+.history-empty {
+  padding: 60px 24px;
+  text-align: center;
+}
+.history-empty i {
+  font-size: 48px;
+  color: rgba(229,173,4,0.2);
+  display: block;
+  margin-bottom: 16px;
+}
+.history-empty h3 { color: rgba(255,255,255,0.5); font-size: 18px; margin: 0 0 8px; }
+.history-empty p  { color: rgba(255,255,255,0.25); font-size: 14px; margin: 0 0 24px; }
+
+/* Pagination */
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+.history-page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #E5AD04;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  padding: 9px 18px;
+  border: 1px solid rgba(229,173,4,0.2);
+  border-radius: 8px;
+  background: rgba(229,173,4,0.05);
+  transition: all 0.2s;
+}
+.history-page-btn:hover {
+  background: rgba(229,173,4,0.1);
+  color: #F9B036;
+}
+.history-page-info {
+  font-size: 13px;
+  color: rgba(255,255,255,0.3);
+}
+
+@media (max-width: 600px) {
+  .history-page { padding: 20px 12px 48px; }
+  .record-row { padding: 14px 16px; }
+}
+</style>
+{% endblock %}
+
+{% block subscriber_content %}
+<div class="history-page">
+  <div class="history-inner">
+
+    {# ── Header ─────────────────────────────────────────────────── #}
+    <div class="history-header">
+      <div class="history-header__left">
+        <h1><i class="fas fa-history" style="color:#E5AD04;margin-right:10px;"></i>Spin History</h1>
+        <p>Every spin you have ever taken on Gold Privilege</p>
+      </div>
+      <a href="{% url 'games:spin' %}" class="spin-again-btn">
+        <i class="fas fa-redo"></i> Spin Again
+      </a>
+    </div>
+
+    {# ── Lifetime stats ──────────────────────────────────────────── #}
+    <div class="lifetime-stats">
+      <div class="ls-card">
+        <span class="ls-card__val">{{ lifetime_spins|intcomma }}</span>
+        <span class="ls-card__label">Total Spins</span>
+      </div>
+      <div class="ls-card">
+        <span class="ls-card__val">{{ lifetime_wins|intcomma }}</span>
+        <span class="ls-card__label">Wins</span>
+      </div>
+      <div class="ls-card">
+        <span class="ls-card__val">{{ lifetime_coins|intcomma }}</span>
+        <span class="ls-card__label">Coins Earned</span>
+      </div>
+    </div>
+
+    {# ── Records ─────────────────────────────────────────────────── #}
+    <div class="records-wrap">
+      {% if records %}
+        {% for record in records %}
+        <div class="record-row">
+          <div class="record-badge {% if record.is_win %}win{% else %}loss{% endif %}">
+            {% if record.is_win %}
+              <i class="fas fa-star"></i>
+            {% else %}
+              <i class="fas fa-times"></i>
+            {% endif %}
+          </div>
+          <div class="record-body">
+            <p class="record-prize">{{ record.prize.label }}</p>
+            <span class="record-time">
+              <i class="fas fa-clock" style="font-size:10px;margin-right:4px;"></i>
+              {{ record.spun_at|date:"M j, Y · g:i A" }} UTC
+            </span>
+          </div>
+          <div class="record-result">
+            {% if record.is_win %}
+              <span class="record-coins">+{{ record.coins_awarded|intcomma }}</span>
+              <span class="record-win-badge win">WIN</span>
+            {% else %}
+              <span class="record-coins zero">—</span>
+              <span class="record-win-badge loss">no win</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="history-empty">
+          <i class="fas fa-dice"></i>
+          <h3>No spins yet</h3>
+          <p>Your spin history will appear here after your first spin.</p>
+          <a href="{% url 'games:spin' %}" class="spin-again-btn">
+            <i class="fas fa-play"></i> Take Your First Spin
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+    {# ── Pagination ───────────────────────────────────────────────── #}
+    {% if is_paginated %}
+    <div class="history-pagination">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="history-page-btn">
+          <i class="fas fa-arrow-left"></i> Newer
+        </a>
+      {% endif %}
+      <span class="history-page-info">
+        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+      </span>
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="history-page-btn">
+          Older <i class="fas fa-arrow-right"></i>
+        </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
