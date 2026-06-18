@@ -235,22 +235,32 @@ def subscribe_to_plan(request, slug):
         messages.error(request, 'This plan is currently not available.')
         return redirect('subscriptions:plans_list')
     
-    # ── CLEAN UP EXPIRED PENDING SUBSCRIPTIONS (15+ minutes old) ──
-    expired_pending = Subscription.objects.filter(
-        user=request.user,
-        status='PENDING',
-        created_at__lt=timezone.now() - timedelta(minutes=15)
-    )
-    
-    if expired_pending.exists():
-        count = expired_pending.update(status='EXPIRED')
-        logger.info(f"Auto-expired {count} pending subscription(s) for user {request.user.id}")
     
     # ── CHECK SUBSCRIPTION STATE ──
     state = get_subscription_state(request.user)
     can_sub, reason, action = can_subscribe_to_plan(request.user, plan)
     
     if not can_sub:
+        # ── NEW: resume-or-cancel instead of a dead end ──
+        if action == 'pending' and state.get('subscription'):
+            pending_payment = Payment.objects.filter(
+                subscription=state['subscription'],
+                status=Payment.PaymentStatus.PENDING,
+            ).first()
+
+            if pending_payment:
+                messages.info(
+                    request,
+                    'You have a pending payment. Complete it below, or '
+                    'cancel it from "My Subscription" to choose a different plan.'
+                )
+                return redirect('subscriptions:payment', payment_id=pending_payment.payment_id)
+
+            # Pending subscription exists with no payment row (edge case) —
+            # send them to My Subscription where the cancel button lives.
+            messages.warning(request, reason)
+            return redirect('subscriptions:my_subscription')
+
         messages.warning(request, reason)
         return redirect('subscriptions:plans_list')
     
@@ -358,6 +368,47 @@ def subscribe_to_plan(request, slug):
     })
 
 
+@login_required
+@subscriber_required
+@require_POST
+def cancel_pending_subscription(request, subscription_id):
+    """
+    Lets a user immediately cancel their own PENDING subscription instead
+    of waiting up to 15 minutes for the automatic stale-pending cleanup.
+
+    Security: ownership AND status are both checked in the lookup —
+    a user can only cancel their own subscription, and only while it's
+    still PENDING (can't use this to cancel an active paid subscription).
+    """
+    subscription = get_object_or_404(
+        Subscription,
+        subscription_id=subscription_id,
+        user=request.user,
+        status=Subscription.Status.PENDING,
+    )
+
+    with transaction.atomic():
+        Payment.objects.filter(
+            subscription=subscription,
+            status=Payment.PaymentStatus.PENDING,
+        ).update(status=Payment.PaymentStatus.FAILED)
+
+        subscription.status = Subscription.Status.CANCELLED
+        subscription.cancelled_at = timezone.now()
+        subscription.cancellation_reason = 'Cancelled by user before completing payment'
+        subscription.auto_renew = False
+        subscription.save(update_fields=[
+            'status', 'cancelled_at', 'cancellation_reason', 'auto_renew', 'updated_at'
+        ])
+
+    logger.info(f"Pending subscription cancelled by user: {subscription.subscription_id}")
+    messages.success(
+        request,
+        'Your pending subscription was cancelled. You can now choose any plan.'
+    )
+    return redirect('subscriptions:plans_list')
+
+
 
 def _validate_promo_code_internal(code, plan, user):
     """
@@ -413,6 +464,11 @@ def my_subscription(request):
         user=request.user,
         status__in=['ACTIVE', 'TRIAL']
     ).select_related('plan').first()
+    # NEW: separately fetch a pending subscription if one exists
+    pending_subscription = Subscription.objects.filter(
+        user=request.user,
+        status=Subscription.Status.PENDING,
+    ).select_related('plan').first()
  
     past_subscriptions = Subscription.objects.filter(
         user=request.user,
@@ -438,9 +494,10 @@ def my_subscription(request):
  
     return render(request, 'subscriptions/my_subscription.html', {
         'subscription':      subscription,
+        'pending_subscription': pending_subscription,
         'past_subscriptions': past_subscriptions,
         'pending_payment':   pending_payment,
-        'service_quotas':    service_quotas,   # ← NEW
+        'service_quotas':    service_quotas,   
     })
 
 
@@ -665,14 +722,30 @@ def payment_callback(request):
         payment.save()
  
         subscription = payment.subscription
-        if subscription.status == Subscription.Status.PENDING:
+
+        # Same race-condition fix as the webhook handler — see handle_charge_success
+        # in webhooks.py for the full explanation.
+        if subscription.status in (Subscription.Status.PENDING, Subscription.Status.EXPIRED):
+            if subscription.status == Subscription.Status.EXPIRED:
+                logger.warning(
+                    f"Callback: subscription {subscription.subscription_id} had expired "
+                    f"locally but payment succeeded — reactivating."
+                )
+
             subscription.status = Subscription.Status.ACTIVE
             subscription.save()
- 
+
             if subscription.promo_code_used:
                 PromoCode.objects.filter(
                     pk=subscription.promo_code_used.pk
                 ).update(uses_count=F('uses_count') + 1)
+
+        elif subscription.status == Subscription.Status.CANCELLED:
+            logger.error(
+                f"Callback: payment succeeded for CANCELLED subscription "
+                f"{subscription.subscription_id} (user {subscription.user.email}). "
+                f"Needs manual review."
+            )
  
         logger.info(
             f"Payment {payment.payment_reference} completed via callback, "

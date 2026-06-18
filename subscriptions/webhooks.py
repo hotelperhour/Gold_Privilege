@@ -175,17 +175,55 @@ def handle_charge_success(data):
             payment.gateway_response = data
             payment.save()
             logger.info(f"Webhook: payment successful: {payment.payment_id}")
- 
+
             subscription = payment.subscription
-            if subscription.status == Subscription.Status.PENDING:
+
+            # ── RACE CONDITION FIX ──────────────────────────────────────────────
+            # A successful charge is the source of truth. If our local row drifted
+            # to EXPIRED because the 15-minute stale-pending cleanup ran moments
+            # before this webhook arrived, we must still activate — the user paid.
+            #
+            # We only refuse to activate CANCELLED subscriptions, because that
+            # status means the USER explicitly chose to back out — reactivating
+            # a subscription someone deliberately cancelled would be wrong, and
+            # in that specific edge case the payment should be flagged for a
+            # manual refund instead.
+            if subscription.status in (Subscription.Status.PENDING, Subscription.Status.EXPIRED):
+                if subscription.status == Subscription.Status.EXPIRED:
+                    logger.warning(
+                        f"Webhook: subscription {subscription.subscription_id} had expired "
+                        f"locally but payment succeeded — reactivating. This is the "
+                        f"stale-pending-cleanup race condition; activation is correct "
+                        f"because the charge genuinely succeeded."
+                    )
+
                 subscription.status = Subscription.Status.ACTIVE
                 subscription.save()
-                subscription_user = subscription.user  # capture for referral call
+                subscription_user = subscription.user
                 logger.info(
                     f"Webhook: subscription activated: {subscription.subscription_id} "
                     f"for user {subscription.user.email}"
                 )
                 send_payment_confirmation_email(payment)
+
+            elif subscription.status == Subscription.Status.CANCELLED:
+                logger.error(
+                    f"Webhook: payment succeeded for CANCELLED subscription "
+                    f"{subscription.subscription_id} (user {subscription.user.email}). "
+                    f"This needs manual review — possible refund required."
+                )
+                send_admin_alert(
+                    subject='Payment succeeded for a cancelled subscription — needs review',
+                    message=(
+                        f'Subscription {subscription.subscription_id} for '
+                        f'{subscription.user.email} was CANCELLED by the user, but a '
+                        f'payment of ₦{gateway_amount} just succeeded on Paystack '
+                        f'(reference: {reference}). The subscription was NOT reactivated '
+                        f'automatically. Please review and either refund the user or '
+                        f'manually reactivate if appropriate.'
+                    ),
+                )
+
             else:
                 logger.warning(
                     f"Webhook: subscription already active: {subscription.subscription_id}"

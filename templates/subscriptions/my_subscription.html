@@ -636,6 +636,55 @@
             </div>
         </div>
     </div>
+{% elif pending_subscription %}
+    {# ── NEW BRANCH: pending payment, resume-or-cancel ── #}
+    <h1 class="page-header">My Subscription</h1>
+
+    <div class="current-plan-badge" style="background:#fff3cd; color:#856404; border-color:#ffe69c;">
+        Payment Pending
+    </div>
+
+    <div class="subscription-card">
+        <div class="subscription-grid">
+            <div class="plan-details">
+                <h2 class="plan-name">{{ pending_subscription.plan.name }} Membership</h2>
+
+                <p class="plan-price">
+                    {{ pending_subscription.plan.get_billing_period_display }}
+                    <span class="period">/ ₦{{ pending_subscription.price_paid|floatformat:0 }}</span>
+                </p>
+
+                <div>
+                    <span class="status-badge" style="background:#fff3cd; border-color:#fff3cd; color:#856404;">
+                        <i class="fas fa-hourglass-half"></i> Awaiting Payment
+                    </span>
+                </div>
+
+                <p style="font-size:14px; color:var(--light-dark); margin-top:8px;">
+                    You started subscribing to this plan but haven't completed payment yet.
+                    Complete it now, or cancel to choose a different plan.
+                </p>
+            </div>
+
+            <div class="action-buttons">
+                {% if pending_payment %}
+                <a href="{% url 'subscriptions:payment' payment_id=pending_payment.payment_id %}"
+                   class="btn-upgrade">
+                    <i class="fas fa-credit-card"></i> Complete Payment
+                </a>
+                {% endif %}
+
+                <form method="post"
+                      action="{% url 'subscriptions:cancel_pending' subscription_id=pending_subscription.subscription_id %}"
+                      onsubmit="return confirm('Cancel this pending subscription? You can choose a different plan right after.');">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-cancel" style="width:100%;">
+                        <i class="fas fa-times-circle"></i> Cancel & Choose Different Plan
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 
 {% else %}
     <div class="no-subscription">

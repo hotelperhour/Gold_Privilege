@@ -22,4 +22,10 @@ urlpatterns = [
     
     # AJAX endpoints
     path('api/validate-promo/', views.validate_promo_code, name='validate_promo'),
+
+    path(
+    'my-subscription/cancel-pending/<uuid:subscription_id>/',
+    views.cancel_pending_subscription,
+    name='cancel_pending',
+),
 ]

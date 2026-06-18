@@ -2,6 +2,7 @@
 from django.utils import timezone
 from .models import FeatureUsage, PlanFeatureAssignment
 from .models import Subscription
+from datetime import timedelta
 
 def get_or_create_feature_usage(subscription, feature):
     """
@@ -113,6 +114,42 @@ def get_all_feature_usage(subscription):
     
     return stats
 
+def cleanup_stale_pending_subscription(user, max_age_minutes=15):
+    """
+    Auto-expires a user's PENDING subscription once it's older than
+    max_age_minutes, and marks its linked Payment as FAILED so it
+    stops looking like an open transaction.
+
+    Teaching note:
+      This used to only run inside the subscribe_to_plan view, which meant
+      a user who landed anywhere else (plans_list, my_subscription) while
+      stuck on a pending subscription had no way to get unstuck until they
+      happened to revisit that one specific URL after 15 minutes. Calling
+      this from get_subscription_state() means EVERY page that checks
+      subscription state also performs this cleanup — the fix applies
+      everywhere automatically, not just one entry point.
+    """
+    from .models import Subscription, Payment
+
+    cutoff = timezone.now() - timedelta(minutes=max_age_minutes)
+
+    stale = Subscription.objects.filter(
+        user=user,
+        status=Subscription.Status.PENDING,
+        created_at__lt=cutoff,
+    )
+
+    if stale.exists():
+        # Mark linked payments FAILED BEFORE expiring the subscriptions —
+        # the subquery below depends on subscription.status still being
+        # PENDING at the moment it runs.
+        Payment.objects.filter(
+            subscription__in=stale,
+            status=Payment.PaymentStatus.PENDING,
+        ).update(status=Payment.PaymentStatus.FAILED)
+
+        stale.update(status=Subscription.Status.EXPIRED)
+
 def get_subscription_state(user):
     """
     Determine user's subscription state with precision.
@@ -125,6 +162,7 @@ def get_subscription_state(user):
         - subscription: Subscription object or None
         - state: 'active' | 'expired' | 'pending' | 'never'
     """
+    cleanup_stale_pending_subscription(user)
     # Check for active subscription
     active = Subscription.objects.filter(
         user=user,
@@ -210,7 +248,7 @@ def can_subscribe_to_plan(user, new_plan):
     
     # Pending payment
     if state['has_pending']:
-        return False, "Complete your pending payment first", 'blocked'
+        return False, "Complete your pending payment first", 'pending'
     
     # Expired or never subscribed
     if state['has_expired']:
