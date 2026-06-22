@@ -134,6 +134,11 @@ class SubscriptionPlan(models.Model):
         default=False,
         help_text='Highlight this plan (e.g., "Most Popular")'
     )
+    is_coming_soon = models.BooleanField(
+        _('coming soon'),
+        default=False,
+        help_text='Mark this plan as Coming Soon — visible but not subscribable'
+    )
     highlight_color = models.CharField(
         _('highlight color'),
         max_length=7,

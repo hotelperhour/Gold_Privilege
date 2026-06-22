@@ -101,7 +101,7 @@ class SubscriptionPlanAdmin(admin.ModelAdmin):
         }),
         (_('Display Settings'), {
             'fields': (
-                'is_featured', 'highlight_color', 'display_order'
+                'is_featured', 'is_coming_soon','highlight_color', 'display_order'
             )
         }),
         (_('Availability'), {

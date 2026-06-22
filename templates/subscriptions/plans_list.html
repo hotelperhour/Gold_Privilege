@@ -315,6 +315,25 @@
         margin-bottom: 20px;
     }
 
+    /* Coming soon card — desaturated overlay */
+.pricing-card.is-coming-soon {
+    position: relative;
+}
+.pricing-card.is-coming-soon::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 20px;
+    pointer-events: none;
+    z-index: 1;
+}
+.pricing-card.is-coming-soon .tagline-badge,
+.pricing-card.is-coming-soon .subscribe-btn {
+    z-index: 2;
+    position: relative;
+}
+
     .paystack-badge {
         display: inline-flex;
         align-items: center;
@@ -558,8 +577,13 @@
         {% else %}
             <div class="pricing-grid">
                 {% for plan in plans %}
-                    <div class="pricing-card" style="background-color: {{ plan.highlight_color }};">
-                        {% if plan.tagline %}
+                    <div class="pricing-card {% if plan.is_coming_soon %}is-coming-soon{% endif %}" 
+     style="background-color: {{ plan.highlight_color }};">
+                        {% if plan.is_coming_soon %}
+                            <div class="tagline-badge" style="color: {{ plan.highlight_color }}; background: #111;">
+                                🔜 Coming Soon
+                            </div>
+                        {% elif plan.tagline %}
                             <div class="tagline-badge" style="color: {{ plan.highlight_color }};">
                                 {{ plan.tagline }}
                             </div>
@@ -683,7 +707,11 @@
                         <!-- ═══════════════════════════════════════════════════════════ -->
                         <!-- PERFECT BUTTON LOGIC FOR ALL SCENARIOS -->
                         <!-- ═══════════════════════════════════════════════════════════ -->
-                        {% if user.is_authenticated %}
+                        {% if plan.is_coming_soon %}
+                            <button class="subscribe-btn" disabled style="opacity:0.7; cursor:not-allowed;">
+                                🔜 Coming Soon
+                            </button>
+                        {% elif user.is_authenticated %}
                         {% if subscription_state.subscription %}
                             {% with current_subscription=subscription_state.subscription %}
                                 {% if current_subscription.plan == plan %}

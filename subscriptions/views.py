@@ -235,6 +235,11 @@ def subscribe_to_plan(request, slug):
         messages.error(request, 'This plan is currently not available.')
         return redirect('subscriptions:plans_list')
     
+    # Block coming-soon plans server-side — prevents URL bypass
+    if plan.is_coming_soon:
+        messages.info(request, f'{plan.name} is coming soon. Stay tuned!')
+        return redirect('subscriptions:plans_list')
+    
     
     # ── CHECK SUBSCRIPTION STATE ──
     state = get_subscription_state(request.user)
