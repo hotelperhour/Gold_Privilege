@@ -625,7 +625,7 @@ def partner_check_in(request):
                         send_mail(
                             subject='Check-in Confirmed',
                             message=f'You have been checked in at {booking.venue.name}',
-                            from_email='noreply@goldprivilege.com',
+                            from_email='noreply@goldprivilege.net',
                             recipient_list=[booking.user.email],
                             fail_silently=True
                         )

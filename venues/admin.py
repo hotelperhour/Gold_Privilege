@@ -187,13 +187,21 @@ class VenueAdmin(admin.ModelAdmin):
     cover_image_preview.short_description = 'Cover Image Preview'
     
     def approve_venues(self, request, queryset):
-        """Bulk approve venues"""
+        """
+        Bulk approve venues.
+        Use save() instead of queryset.update() so venue approval emails/signals run.
+        """
         from django.utils import timezone
-        count = queryset.update(
-            status='APPROVED',
-            approved_by=request.user,
-            approved_at=timezone.now()
-        )
+
+        count = 0
+        for venue in queryset:
+            if venue.status != 'APPROVED':
+                venue.status = 'APPROVED'
+                venue.approved_by = request.user
+                venue.approved_at = timezone.now()
+                venue.save(update_fields=['status', 'approved_by', 'approved_at', 'updated_at'])
+                count += 1
+
         self.message_user(request, f'{count} venue(s) approved successfully.')
     approve_venues.short_description = 'Approve selected venues'
     

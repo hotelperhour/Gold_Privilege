@@ -63,7 +63,7 @@ Congratulations! Your partnership application has been approved.
 You can now log in to your partner dashboard and start managing your 
 venue listings and offers.
 
-Login here: https://goldprivilege.com/login
+Login here: https://goldprivilege.net/login
 
 Best regards,
 Gold Privilege Team
@@ -80,7 +80,7 @@ application at this time.
 
 Reason: {instance.rejection_reason or 'Please contact support for details'}
 
-If you have any questions, please contact us at support@goldprivilege.com
+If you have any questions, please contact us at support@goldprivilege.net
 
 Best regards,
 Gold Privilege Team

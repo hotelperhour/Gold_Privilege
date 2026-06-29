@@ -688,39 +688,84 @@
     flex: 1;
 }
 
-/* ═══ SPIN & WIN CAMPAIGN SECTION ═══ */
-.spin-campaign {
-    position: relative;
-    background: #020202;
-    overflow: hidden;
-    padding: 80px 0;
+/* Spin & Win Daily Popup */
+.spin-popup-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(10px);
 }
 
-/* Animated gold particles background */
-.spin-campaign::before {
+.spin-popup-overlay.is-visible {
+    display: flex;
+}
+
+.spin-popup {
+    position: relative;
+    width: min(940px, 100%);
+    max-height: calc(100vh - 48px);
+    overflow-y: auto;
+    background: #020202;
+    border: 1px solid rgba(229, 173, 4, 0.32);
+    border-radius: 28px;
+    box-shadow: 0 32px 90px rgba(0, 0, 0, 0.55);
+    padding: 42px;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 42px;
+    align-items: center;
+}
+
+.spin-popup::before {
     content: '';
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse at 20% 50%, rgba(229,173,4,0.12) 0%, transparent 60%),
-        radial-gradient(ellipse at 80% 50%, rgba(92,48,1,0.25) 0%, transparent 60%);
-    z-index: 0;
+        radial-gradient(ellipse at 18% 35%, rgba(229,173,4,0.16), transparent 58%),
+        radial-gradient(ellipse at 88% 60%, rgba(92,48,1,0.28), transparent 58%);
+    pointer-events: none;
 }
 
-.spin-campaign__inner {
+.spin-popup > * {
     position: relative;
     z-index: 1;
-    max-width: 1300px;
-    margin: 0 auto;
-    padding: 0 60px;
-    display: grid;
-    grid-template-columns: 1fr 420px;
-    gap: 60px;
-    align-items: center;
 }
 
-/* Left: copy */
-.spin-campaign__copy {}
+.spin-popup__close {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: 3;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.spin-popup__close:hover {
+    background: rgba(229,173,4,0.18);
+    border-color: rgba(229,173,4,0.45);
+    color: #E5AD04;
+}
+
+.spin-popup__visual {
+    position: relative;
+    min-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
 .spin-campaign__eyebrow {
     display: inline-flex;
@@ -735,11 +780,11 @@
 }
 
 .spin-campaign__title {
-    font-size: clamp(32px, 4vw, 52px);
+    font-size: clamp(30px, 4vw, 48px);
     font-weight: 800;
     color: #fff;
     line-height: 1.1;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .spin-campaign__title span {
@@ -747,19 +792,18 @@
 }
 
 .spin-campaign__desc {
-    font-size: 16px;
-    color: rgba(255,255,255,0.6);
+    font-size: 15px;
+    color: rgba(255,255,255,0.66);
     line-height: 1.7;
     max-width: 480px;
-    margin-bottom: 36px;
+    margin-bottom: 28px;
 }
 
-/* Prize pills */
 .spin-campaign__prizes {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 36px;
+    margin-bottom: 30px;
 }
 
 .spin-prize-pill {
@@ -769,66 +813,72 @@
     background: rgba(229,173,4,0.1);
     border: 1px solid rgba(229,173,4,0.25);
     border-radius: 30px;
-    padding: 8px 18px;
+    padding: 8px 16px;
     font-size: 13px;
     font-weight: 600;
     color: #E5AD04;
 }
 
-/* CTA button */
 .spin-campaign__btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     background: linear-gradient(135deg, #E5AD04 0%, #F9B036 50%, #C8860A 100%);
-    color: #000;
+    color: #000 !important;
     font-weight: 800;
-    font-size: 16px;
-    padding: 16px 40px;
+    font-size: 15px;
+    padding: 15px 34px;
     border-radius: 60px;
     text-decoration: none;
     transition: all 0.3s ease;
     box-shadow: 0 8px 28px rgba(229,173,4,0.35);
-    font-family: 'Poppins', sans-serif;
     border: none;
-    cursor: pointer;
-    letter-spacing: 0.5px;
 }
 
 .spin-campaign__btn:hover {
-    transform: translateY(-3px);
+    transform: translateY(-2px);
     box-shadow: 0 14px 36px rgba(229,173,4,0.5);
-    color: #000;
 }
 
 .spin-campaign__btn--secondary {
     background: transparent;
-    color: rgba(255,255,255,0.5);
-    border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.72) !important;
+    border: 1px solid rgba(255,255,255,0.18);
     box-shadow: none;
+}
+
+.spin-popup__actions {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.spin-popup__partner-note {
+    color: rgba(255,255,255,0.58);
     font-size: 14px;
-    font-weight: 500;
-    padding: 14px 32px;
+    margin-bottom: 0;
+    line-height: 1.6;
 }
 
-.spin-campaign__btn--secondary:hover {
-    border-color: rgba(255,255,255,0.3);
-    color: rgba(255,255,255,0.7);
-    transform: translateY(-2px);
-    box-shadow: none;
+.spin-popup__partner-note i {
+    color: #E5AD04;
+    margin-right: 6px;
 }
 
-/* Right: animated wheel visual */
-.spin-campaign__visual {
+.spin-reset-note {
     display: flex;
     align-items: center;
-    justify-content: center;
-    position: relative;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    margin-top: 16px;
 }
 
 .spin-wheel-preview {
-    width: 320px;
-    height: 320px;
+    width: 280px;
+    height: 280px;
     border-radius: 50%;
     position: relative;
     animation: wheel-idle 20s linear infinite;
@@ -837,20 +887,19 @@
 
 @keyframes wheel-idle {
     from { transform: rotate(0deg); }
-    to   { transform: rotate(360deg); }
+    to { transform: rotate(360deg); }
 }
 
-/* Wheel segments drawn via conic-gradient — mirrors your actual prize colors */
 .spin-wheel-preview__disc {
     width: 100%;
     height: 100%;
     border-radius: 50%;
     background: conic-gradient(
-        #5c3001    0deg   72deg,
-        #E5AD04   72deg  144deg,
-        #F9B036  144deg  216deg,
-        #C8860A  216deg  288deg,
-        #020202  288deg  360deg
+        #5c3001 0deg 72deg,
+        #E5AD04 72deg 144deg,
+        #F9B036 144deg 216deg,
+        #C8860A 216deg 288deg,
+        #020202 288deg 360deg
     );
     box-shadow:
         0 0 0 6px rgba(229,173,4,0.3),
@@ -858,7 +907,6 @@
         0 20px 60px rgba(0,0,0,0.6);
 }
 
-/* Hub */
 .spin-wheel-preview__hub {
     position: absolute;
     top: 50%;
@@ -877,19 +925,17 @@
     font-size: 20px;
     font-weight: 800;
     color: #000;
-    /* Counter-rotate hub so the star stays upright */
     animation: wheel-idle-reverse 20s linear infinite;
 }
 
 @keyframes wheel-idle-reverse {
     from { transform: translate(-50%, -50%) rotate(0deg); }
-    to   { transform: translate(-50%, -50%) rotate(-360deg); }
+    to { transform: translate(-50%, -50%) rotate(-360deg); }
 }
 
-/* Pointer */
 .spin-wheel-preview__pointer {
     position: absolute;
-    top: -18px;
+    top: 6px;
     left: 50%;
     transform: translateX(-50%);
     width: 0;
@@ -899,84 +945,152 @@
     border-top: 28px solid #E5AD04;
     filter: drop-shadow(0 4px 8px rgba(229,173,4,0.6));
     z-index: 10;
-    
 }
 
-/* Glow ring behind wheel */
-.spin-wheel-preview::before {
-    content: '';
-    position: absolute;
-    inset: -12px;
-    border-radius: 50%;
-    background: conic-gradient(
-        #E5AD04 0deg 60deg,
-        #5c3001 60deg 120deg,
-        #E5AD04 120deg 180deg,
-        #5c3001 180deg 240deg,
-        #E5AD04 240deg 300deg,
-        #5c3001 300deg 360deg
-    );
-    opacity: 0.2;
-    animation: ring-spin 8s linear infinite;
-    z-index: -1;
-}
-
-/* Floating coin particles */
 .spin-coin {
     position: absolute;
     font-size: 24px;
     animation: float-coin 4s ease-in-out infinite;
     opacity: 0.7;
 }
-.spin-coin:nth-child(1) { top: 5%;  left: 10%; animation-delay: 0s;   animation-duration: 3.5s; }
-.spin-coin:nth-child(2) { top: 20%; right: 5%; animation-delay: 0.8s; animation-duration: 4.2s; }
-.spin-coin:nth-child(3) { bottom: 15%; left: 5%;  animation-delay: 1.5s; animation-duration: 3.8s; }
-.spin-coin:nth-child(4) { bottom: 5%;  right: 12%; animation-delay: 2.1s; animation-duration: 4.5s; }
+
+.spin-coin:nth-child(1) { top: 8%; left: 8%; animation-delay: 0s; }
+.spin-coin:nth-child(2) { top: 18%; right: 8%; animation-delay: 0.8s; }
+.spin-coin:nth-child(3) { bottom: 18%; left: 8%; animation-delay: 1.5s; }
+.spin-coin:nth-child(4) { bottom: 8%; right: 12%; animation-delay: 2.1s; }
 
 @keyframes float-coin {
     0%, 100% { transform: translateY(0) rotate(0deg); }
-    50%       { transform: translateY(-16px) rotate(15deg); }
+    50% { transform: translateY(-16px) rotate(15deg); }
 }
 
-/* Daily reset note */
-.spin-reset-note {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: rgba(255,255,255,0.35);
-    margin-top: 16px;
-}
-
-
-
-@media (min-width: 768px) and (max-width: 1199px) {
-    .spin-campaign__visual {
-        width: 360px;
-        margin: 0 auto;
-    }
-}
-/* Responsive */
-@media (max-width: 900px) {
-    .spin-campaign__inner {
+@media (max-width: 860px) {
+    .spin-popup {
         grid-template-columns: 1fr;
-        gap: 24px;
-        padding: 0 30px;
+        gap: 22px;
+        padding: 34px 24px 28px;
         text-align: center;
     }
-    .spin-campaign__desc { max-width: 100%;  }
-    .spin-campaign__prizes { justify-content: center; }
-    .spin-campaign__visual { order: -1; }
-    .spin-reset-note { justify-content: center; }
-    .spin-wheel-preview { width: 240px; height: 240px; }
-    
+
+    .spin-popup__visual {
+        min-height: 220px;
+    }
+
+    .spin-wheel-preview {
+        width: 200px;
+        height: 200px;
+    }
+
+    .spin-campaign__prizes,
+    .spin-popup__actions,
+    .spin-reset-note {
+        justify-content: center;
+    }
 }
 
-@media (max-width: 600px) {
-    .spin-campaign { padding: 60px 0; }
-    .spin-campaign__inner { padding: 0 20px; }
-    .spin-wheel-preview { width: 200px; height: 200px; }
-    .spin-campaign__btn { font-size: 15px; padding: 14px 32px; }
+@media (max-width: 520px) {
+    .spin-popup-overlay {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .spin-popup {
+        width: 100%;
+        max-height: 100vh;
+        border-radius: 0;
+        padding: 64px 20px 28px;
+    }
+
+    .spin-campaign__btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 520px) {
+    .spin-popup-overlay {
+        padding: 16px;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.42);
+        backdrop-filter: blur(8px);
+    }
+
+    .spin-popup {
+        width: 100%;
+        max-height: none;
+        overflow: visible;
+        border-radius: 20px;
+        padding: 28px 18px 20px;
+        gap: 14px;
+    }
+
+    .spin-popup__visual {
+        min-height: 120px;
+    }
+
+    .spin-wheel-preview {
+        width: 110px;
+        height: 110px;
+    }
+
+    .spin-wheel-preview__hub {
+        width: 30px;
+        height: 30px;
+        font-size: 13px;
+        border-width: 2px;
+    }
+
+    .spin-wheel-preview__pointer {
+        top: 4px;
+        border-left-width: 8px;
+        border-right-width: 8px;
+        border-top-width: 16px;
+    }
+
+    .spin-coin {
+        display: none;
+    }
+
+    .spin-campaign__eyebrow {
+        font-size: 9px;
+        letter-spacing: 1.6px;
+        margin-bottom: 8px;
+    }
+
+    .spin-campaign__title {
+        font-size: 25px;
+        line-height: 1.12;
+        margin-bottom: 10px;
+    }
+
+    .spin-campaign__desc {
+        font-size: 13px;
+        line-height: 1.5;
+        margin-bottom: 14px;
+    }
+
+    .spin-campaign__prizes {
+        display: none;
+    }
+
+    .spin-campaign__btn {
+        width: 100%;
+        padding: 12px 18px;
+        font-size: 13px;
+        min-height: 44px;
+    }
+
+    .spin-reset-note {
+        margin-top: 10px;
+        font-size: 11px;
+        justify-content: center;
+    }
+
+    .spin-popup__close {
+        top: 10px;
+        right: 10px;
+        width: 34px;
+        height: 34px;
+    }
 }
 
 /* ── Tablet ── */
@@ -1462,85 +1576,14 @@
     </div>
 </section>
 
+<!-- Spin & Win Daily Popup -->
+<div class="spin-popup-overlay" id="spinPopupOverlay" aria-hidden="true">
+    <div class="spin-popup" role="dialog" aria-modal="true" aria-labelledby="spinPopupTitle">
+        <button type="button" class="spin-popup__close" id="spinPopupClose" aria-label="Close Spin and Win popup">
+            <i class="fas fa-times"></i>
+        </button>
 
-<!-- ═══ SPIN & WIN CAMPAIGN SECTION ═══ -->
-<section class="spin-campaign">
-    <div class="spin-campaign__inner">
-
-        {# ── Left: copy ────────────────────────────── #}
-        <div class="spin-campaign__copy">
-
-            <div class="spin-campaign__eyebrow">
-                <i class="fas fa-star"></i>
-                Daily Rewards
-                <i class="fas fa-star"></i>
-            </div>
-
-            <h2 class="spin-campaign__title">
-                Spin the Wheel.<br>
-                <span>Win Gold Coins</span> Daily.
-            </h2>
-
-            <p class="spin-campaign__desc">
-                Every active member gets free spins every day. Land on a prize
-                and watch coins drop straight into your wallet — instantly.
-                New prizes, new chances, every 24 hours.
-            </p>
-
-            {# Prize pills — static display, just marketing copy #}
-            <div class="spin-campaign__prizes">
-                <span class="spin-prize-pill"><i class="fas fa-coins"></i> 500 Coins</span>
-                <span class="spin-prize-pill"><i class="fas fa-coins"></i> 1,000 Coins</span>
-                <span class="spin-prize-pill"><i class="fas fa-coins"></i> 2,000 Coins</span>
-                <span class="spin-prize-pill"><i class="fas fa-coins"></i> 3,000 Coins</span>
-            </div>
-
-            {# ── Context-aware CTA ── #}
-            {% if user.is_authenticated %}
-                {% if user.user_type == 'SUBSCRIBER' %}
-                    {# Subscriber — go straight to spin page #}
-                    <a href="{% url 'games:spin' %}" class="spin-campaign__btn">
-                        <i class="fas fa-play"></i> Spin Now — It's Free
-                    </a>
-                    <div class="spin-reset-note">
-                        <i class="fas fa-moon"></i>
-                        Spins reset every midnight Lagos time
-                    </div>
-                {% elif user.user_type == 'PARTNER' %}
-                    {# Partner — inform, don't block, point them to subscribers #}
-                    <p style="color:rgba(255,255,255,0.45); font-size:14px; margin-bottom:0; line-height:1.6;">
-                        <i class="fas fa-info-circle" style="color:#E5AD04; margin-right:6px;"></i>
-                        Spin &amp; Win is exclusive to Gold Privilege subscribers.
-                        Share it with your customers!
-                    </p>
-                {% else %}
-                    {# Logged in but no user_type match — treat as guest #}
-                    <a href="{% url 'subscriptions:plans_list' %}" class="spin-campaign__btn">
-                        <i class="fas fa-crown"></i> Get a Subscription to Spin
-                    </a>
-                {% endif %}
-            {% else %}
-                {# Not logged in — invite to register, not just login #}
-                <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
-                    <a href="{% url 'account:register_user' %}" class="spin-campaign__btn">
-                        <i class="fas fa-user-plus"></i> Join & Spin for Free
-                    </a>
-                    <a href="{% url 'account:login' %}?next={% url 'games:spin' %}" 
-                       class="spin-campaign__btn spin-campaign__btn--secondary">
-                        Already a member? Sign in
-                    </a>
-                </div>
-                <div class="spin-reset-note">
-                    <i class="fas fa-lock"></i>
-                    Active subscription required to spin
-                </div>
-            {% endif %}
-
-        </div>
-
-        {# ── Right: animated wheel preview ─────────── #}
-        <div class="spin-campaign__visual">
-            {# Floating coin particles #}
+        <div class="spin-popup__visual">
             <span class="spin-coin">🪙</span>
             <span class="spin-coin">💰</span>
             <span class="spin-coin">🪙</span>
@@ -1548,14 +1591,71 @@
 
             <div class="spin-wheel-preview">
                 <div class="spin-wheel-preview__disc"></div>
-                
                 <div class="spin-wheel-preview__hub">★</div>
             </div>
             <div class="spin-wheel-preview__pointer"></div>
         </div>
 
+        <div class="spin-popup__content">
+            <div class="spin-campaign__eyebrow">
+                <i class="fas fa-star"></i>
+                Daily Rewards
+                <i class="fas fa-star"></i>
+            </div>
+
+            <h2 class="spin-campaign__title" id="spinPopupTitle">
+                Spin the Wheel.<br>
+                <span>Win Gold Coins</span> Daily.
+            </h2>
+
+            <p class="spin-campaign__desc">
+                Every active member gets free spins every day. Land on a prize
+                and watch coins drop straight into your wallet instantly.
+            </p>
+
+            <div class="spin-campaign__prizes">
+                <span class="spin-prize-pill"><i class="fas fa-coins"></i> 500 Coins</span>
+                <span class="spin-prize-pill"><i class="fas fa-coins"></i> 1,000 Coins</span>
+                <span class="spin-prize-pill"><i class="fas fa-coins"></i> 2,000 Coins</span>
+                <span class="spin-prize-pill"><i class="fas fa-coins"></i> 3,000 Coins</span>
+            </div>
+
+            {% if user.is_authenticated %}
+                {% if user.user_type == 'SUBSCRIBER' %}
+                    <a href="{% url 'games:spin' %}" class="spin-campaign__btn">
+                        <i class="fas fa-play"></i> Spin Now - It's Free
+                    </a>
+                    <div class="spin-reset-note">
+                        <i class="fas fa-moon"></i>
+                        Spins reset every midnight Lagos time
+                    </div>
+                {% elif user.user_type == 'PARTNER' %}
+                    <p class="spin-popup__partner-note">
+                        <i class="fas fa-info-circle"></i>
+                        Spin &amp; Win is exclusive to Gold Privilege subscribers.
+                    </p>
+                {% else %}
+                    <a href="{% url 'subscriptions:plans_list' %}" class="spin-campaign__btn">
+                        <i class="fas fa-crown"></i> Get a Subscription to Spin
+                    </a>
+                {% endif %}
+            {% else %}
+                <div class="spin-popup__actions">
+                    <a href="{% url 'account:register_user' %}" class="spin-campaign__btn">
+                        <i class="fas fa-user-plus"></i> Join & Spin for Free
+                    </a>
+                    <a href="{% url 'account:login' %}?next={% url 'games:spin' %}" class="spin-campaign__btn spin-campaign__btn--secondary">
+                        Sign In
+                    </a>
+                </div>
+                <div class="spin-reset-note">
+                    <i class="fas fa-lock"></i>
+                    Active subscription required to spin
+                </div>
+            {% endif %}
+        </div>
     </div>
-</section>
+</div>
 
 
  <!-- ═══ FAQ SECTION (copied from about page) ═══ -->
@@ -1756,5 +1856,59 @@ function toggleFaq(element) {
     items.forEach((item, i) => item.addEventListener('click', () => activate(i)));
     activate(0);
 })();
+
+// Spin & Win daily popup
+(function () {
+    const overlay = document.getElementById('spinPopupOverlay');
+    const closeBtn = document.getElementById('spinPopupClose');
+
+    if (!overlay || !closeBtn) return;
+
+    function lagosDateKey() {
+        try {
+            return new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Africa/Lagos',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            }).format(new Date());
+        } catch (e) {
+            return new Date().toISOString().slice(0, 10);
+        }
+    }
+
+    const storageKey = 'goldprivilege_spin_popup_seen_date';
+    const todayKey = lagosDateKey();
+
+    function closePopup() {
+        overlay.classList.remove('is-visible');
+        overlay.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        localStorage.setItem(storageKey, todayKey);
+    }
+
+    function openPopup() {
+        overlay.classList.add('is-visible');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    if (localStorage.getItem(storageKey) !== todayKey) {
+        window.setTimeout(openPopup, 700);
+    }
+
+    closeBtn.addEventListener('click', closePopup);
+
+    overlay.addEventListener('click', function (event) {
+        if (event.target === overlay) closePopup();
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && overlay.classList.contains('is-visible')) {
+            closePopup();
+        }
+    });
+})();
 </script>
+
 {% endblock %}

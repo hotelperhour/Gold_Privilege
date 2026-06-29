@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save, post_delete
+from django.db.models.signals import post_save, post_delete, pre_save
 from django.dispatch import receiver
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
@@ -10,160 +10,115 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+@receiver(pre_save, sender=Venue)
+def store_old_venue_status(sender, instance, **kwargs):
+    if not instance.pk:
+        instance._old_status = None
+        return
+
+    try:
+        old_instance = Venue.objects.only('status').get(pk=instance.pk)
+        instance._old_status = old_instance.status
+    except Venue.DoesNotExist:
+        instance._old_status = None
+
 
 @receiver(post_save, sender=Venue)
 def notify_venue_status_change(sender, instance, created, **kwargs):
     """
-    Send email notifications when venue status changes
+    Send email notifications when venue status changes.
+    Uses pre_save-captured old status because checking old status inside
+    post_save reads the already-saved value.
     """
+    protocol = 'https'
+    domain = getattr(settings, 'SITE_URL', 'https://goldprivilege.net').replace('https://', '').replace('http://', '').rstrip('/')
+
     if created:
-        # Notify partner about successful venue creation
         if instance.status == 'DRAFT':
             try:
                 subject = 'Venue Created Successfully - Gold Privilege'
                 context = {
                     'venue': instance,
                     'partner': instance.partner,
+                    'protocol': protocol,
+                    'domain': domain,
+                    'site_url': f'{protocol}://{domain}',
                 }
-                
-                html_message = render_to_string(
-                    'venues/emails/venue_created.html',
-                    context
-                )
+
+                html_message = render_to_string('venues/emails/venue_created.html', context)
                 plain_message = strip_tags(html_message)
-                
+
                 email = EmailMultiAlternatives(
                     subject=subject,
                     body=plain_message,
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    to=[instance.partner.user.email]
+                    to=[instance.partner.user.email],
                 )
                 email.attach_alternative(html_message, "text/html")
-                email.send(fail_silently=True)
-                
-            except Exception as e:
-                logger.error(f"Failed to send venue creation email: {e}")
-    
-    else:
-        # Check if status changed
-        old_instance = Venue.objects.filter(pk=instance.pk).first()
-        if old_instance and old_instance.status != instance.status:
-            
-            # Venue approved
-            if instance.status == 'APPROVED':
-                try:
-                    subject = 'Venue Approved! - Gold Privilege'
-                    context = {
-                        'venue': instance,
-                        'partner': instance.partner,
-                    }
-                    
-                    html_message = render_to_string(
-                        'venues/emails/venue_approved.html',
-                        context
-                    )
-                    plain_message = strip_tags(html_message)
-                    
-                    email = EmailMultiAlternatives(
-                        subject=subject,
-                        body=plain_message,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        to=[instance.partner.user.email]
-                    )
-                    email.attach_alternative(html_message, "text/html")
-                    email.send(fail_silently=True)
-                    
-                except Exception as e:
-                    logger.error(f"Failed to send venue approval email: {e}")
-            
-            # Venue rejected
-            elif instance.status == 'REJECTED':
-                try:
-                    subject = 'Venue Submission Update - Gold Privilege'
-                    context = {
-                        'venue': instance,
-                        'partner': instance.partner,
-                        'rejection_reason': instance.rejection_reason,
-                    }
-                    
-                    html_message = render_to_string(
-                        'venues/emails/venue_rejected.html',
-                        context
-                    )
-                    plain_message = strip_tags(html_message)
-                    
-                    email = EmailMultiAlternatives(
-                        subject=subject,
-                        body=plain_message,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        to=[instance.partner.user.email]
-                    )
-                    email.attach_alternative(html_message, "text/html")
-                    email.send(fail_silently=True)
-                    
-                except Exception as e:
-                    logger.error(f"Failed to send venue rejection email: {e}")
-            
-            # Venue submitted for review
-            elif instance.status == 'PENDING':
-                # Notify partner
-                try:
-                    subject = 'Venue Submitted for Review - Gold Privilege'
-                    context = {
-                        'venue': instance,
-                        'partner': instance.partner,
-                    }
-                    
-                    html_message = render_to_string(
-                        'venues/emails/venue_submitted_partner.html',
-                        context
-                    )
-                    plain_message = strip_tags(html_message)
-                    
-                    email = EmailMultiAlternatives(
-                        subject=subject,
-                        body=plain_message,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        to=[instance.partner.user.email]
-                    )
-                    email.attach_alternative(html_message, "text/html")
-                    email.send(fail_silently=True)
-                    
-                except Exception as e:
-                    logger.error(f"Failed to send venue submission email to partner: {e}")
-                
-                # Notify admins
-                try:
-                    admin_emails = CustomUser.objects.filter(
-                        is_staff=True,
-                        is_active=True
-                    ).values_list('email', flat=True)
-                    
-                    if admin_emails:
-                        subject = 'New Venue Pending Approval - Gold Privilege'
-                        context = {
-                            'venue': instance,
-                            'partner': instance.partner,
-                        }
-                        
-                        html_message = render_to_string(
-                            'venues/emails/venue_submitted_admin.html',
-                            context
-                        )
-                        plain_message = strip_tags(html_message)
-                        
-                        email = EmailMultiAlternatives(
-                            subject=subject,
-                            body=plain_message,
-                            from_email=settings.DEFAULT_FROM_EMAIL,
-                            to=list(admin_emails)
-                        )
-                        email.attach_alternative(html_message, "text/html")
-                        email.send(fail_silently=True)
-                        
-                except Exception as e:
-                    logger.error(f"Failed to send venue submission email to admins: {e}")
+                email.send(fail_silently=False)
 
+            except Exception as e:
+                logger.error(f"Failed to send venue creation email: {e}", exc_info=True)
+
+        return
+
+    old_status = getattr(instance, '_old_status', None)
+
+    if old_status == instance.status:
+        return
+
+    if instance.status == 'APPROVED':
+        try:
+            subject = 'Venue Approved! - Gold Privilege'
+            context = {
+                'venue': instance,
+                'partner': instance.partner,
+                'protocol': protocol,
+                'domain': domain,
+                'site_url': f'{protocol}://{domain}',
+            }
+
+            html_message = render_to_string('venues/emails/venue_approved.html', context)
+            plain_message = strip_tags(html_message)
+
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=plain_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[instance.partner.user.email],
+            )
+            email.attach_alternative(html_message, "text/html")
+            email.send(fail_silently=False)
+
+        except Exception as e:
+            logger.error(f"Failed to send venue approval email: {e}", exc_info=True)
+
+    elif instance.status == 'REJECTED':
+        try:
+            subject = 'Venue Submission Update - Gold Privilege'
+            context = {
+                'venue': instance,
+                'partner': instance.partner,
+                'rejection_reason': instance.rejection_reason,
+                'protocol': protocol,
+                'domain': domain,
+                'site_url': f'{protocol}://{domain}',
+            }
+
+            html_message = render_to_string('venues/emails/venue_rejected.html', context)
+            plain_message = strip_tags(html_message)
+
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=plain_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[instance.partner.user.email],
+            )
+            email.attach_alternative(html_message, "text/html")
+            email.send(fail_silently=False)
+
+        except Exception as e:
+            logger.error(f"Failed to send venue rejection email: {e}", exc_info=True)
 
 
 @receiver(post_save, sender='venues.Venue')

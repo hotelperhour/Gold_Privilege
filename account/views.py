@@ -296,15 +296,18 @@ def send_welcome_email(user, request=None):
     else:
         template = 'account/emails/welcome_subscriber.html'
  
-    # Build absolute URLs for email clients. Email images must not be relative.
-    if request is not None:
+    # Email clients need public absolute URLs. Prefer SITE_URL so production emails
+    # do not accidentally use localhost or an internal proxy host.
+    site_url = getattr(settings, 'SITE_URL', '').rstrip('/')
+
+    if not site_url and request is not None:
         site_url = request.build_absolute_uri('/').rstrip('/')
-        wallet_url = request.build_absolute_uri(reverse('wallet:wallet_dashboard'))
-        dashboard_url = request.build_absolute_uri(reverse('account:dashboard'))
-    else:
-        site_url = getattr(settings, 'SITE_URL', 'https://goldprivilege.net').rstrip('/')
-        wallet_url = f'{site_url}/wallet/'
-        dashboard_url = f'{site_url}/dashboard/'
+
+    if not site_url:
+        site_url = 'https://goldprivilege.net'
+
+    wallet_url = f'{site_url}{reverse("wallet:wallet_dashboard")}'
+    dashboard_url = f'{site_url}{reverse("account:dashboard")}'
 
     if user.user_type == 'PARTNER':
         welcome_hero_url = f"{site_url}{static('images/emails/welcome-partner.jpg')}"
